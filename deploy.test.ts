@@ -11,6 +11,7 @@ import {
 } from "./lib/steps/get-commits-since-latest-release.ts";
 import {
   DetermineNextReleaseStep,
+  DetermineNextReleaseStepConfig,
 } from "./lib/steps/determine-next-release.ts";
 import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts";
 import { DeployStep } from "./lib/steps/deploy.ts";
@@ -112,6 +113,31 @@ describe("test github actions output", () => {
       0
     );
   })
+  it("should set new pre-release version output when a new pre-release is created", async () => {
+    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [new GitHubCommitFake({
+        message: "feat: trigger a release",
+        sha: "trigger-release",
+      })],
+      nextReleaseVersion: "1.0.0-beta.1",
+      determineNextReleaseStepConfig: {
+          branches: [{
+            branch_name: 'main',
+            prerelease: true,
+            version_suffix: 'beta'
+          }]
+      },
+    });
+
+    assertEquals(
+      githubActionsSetOutputMock.calls[0].args[0].key,
+      "new_release_version"      
+    );
+    assertEquals(
+      githubActionsSetOutputMock.calls[0].args[0].value,
+      "1.0.0-beta.1"
+    );
+  })
 })
 
 describe("user facing logs", () => {
@@ -172,11 +198,13 @@ const setupTestEnvironmentAndRun = async ({
   commitsSinceLatestRelease,
   nextReleaseVersion,
   gitCommitCreatedDuringDeploy,
+  determineNextReleaseStepConfig,
 }: {
   latestRelease?: GitHubRelease;
   commitsSinceLatestRelease?: GitHubCommit[];
   nextReleaseVersion?: string;
   gitCommitCreatedDuringDeploy?: GitHubCommit;
+  determineNextReleaseStepConfig?: DetermineNextReleaseStepConfig;
 }) => {
   Deno.env.set("GITHUB_REF", "refs/heads/main");
   Deno.env.set("GITHUB_REPOSITORY", "levibostian/new-deployment-tool");
@@ -231,7 +259,7 @@ const setupTestEnvironmentAndRun = async ({
     githubActions,
     "getDetermineNextReleaseStepConfig",
     () => {
-      return undefined;
+      return determineNextReleaseStepConfig
     },
   );
   const githubActionsSetOutputMock = stub(

@@ -46,3 +46,23 @@ Deno.test("getDetermineNextReleaseStepConfig throws error when env variable is s
     Error,
   );
 });
+
+Deno.test("getDetermineNextReleaseStepConfig throws error when provide an invalid JSON format", () => {
+  const givenConfig = `
+    {
+      'branches': [
+        {branch_name: 'main', prerelease: false},
+        {branch_name: 'beta', prerelease: true},
+        {branch_name: 'alpha', prerelease: true}
+      ]
+    }
+  `
+  Deno.env.set("INPUT_ANALYZE_COMMITS_CONFIG", givenConfig);
+  const githubActions = new GitHubActionsImpl();
+  assertThrows(
+    () => {
+      githubActions.getDetermineNextReleaseStepConfig();
+    },
+    Error,
+  );
+});
