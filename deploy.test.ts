@@ -11,13 +11,14 @@ import {
 } from "./lib/steps/get-commits-since-latest-release.ts";
 import {
   DetermineNextReleaseStep,
+  DetermineNextReleaseStepConfig,
 } from "./lib/steps/determine-next-release.ts";
 import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts";
 import { DeployStep } from "./lib/steps/deploy.ts";
 import { getLogMock } from "./lib/log.test.ts";
 import { GitHubActions } from "./lib/github-actions.ts";
 
-describe("run the tool", () => {
+describe("run the tool in different scenarios", () => {
   afterEach(() => {
     restore();
   });
@@ -82,6 +83,63 @@ describe("run the tool", () => {
   });
 });
 
+describe("test github actions output", () => {
+  it("should set new release version output when a new release is created", async () => {
+    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [new GitHubCommitFake({
+        message: "feat: trigger a release",
+        sha: "trigger-release",
+      })],
+      nextReleaseVersion: "1.0.0",
+    });
+
+    assertEquals(
+      githubActionsSetOutputMock.calls[0].args[0].key,
+      "new_release_version"      
+    );
+    assertEquals(
+      githubActionsSetOutputMock.calls[0].args[0].value,
+      "1.0.0"
+    );
+  })
+  it("should not set new release version output when no new release is created", async () => {
+    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [],
+      nextReleaseVersion: "1.0.0",
+    });
+
+    assertEquals(
+      githubActionsSetOutputMock.calls.length,
+      0
+    );
+  })
+  it("should set new pre-release version output when a new pre-release is created", async () => {
+    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [new GitHubCommitFake({
+        message: "feat: trigger a release",
+        sha: "trigger-release",
+      })],
+      nextReleaseVersion: "1.0.0-beta.1",
+      determineNextReleaseStepConfig: {
+          branches: [{
+            branch_name: 'main',
+            prerelease: true,
+            version_suffix: 'beta'
+          }]
+      },
+    });
+
+    assertEquals(
+      githubActionsSetOutputMock.calls[0].args[0].key,
+      "new_release_version"      
+    );
+    assertEquals(
+      githubActionsSetOutputMock.calls[0].args[0].value,
+      "1.0.0-beta.1"
+    );
+  })
+})
+
 describe("user facing logs", () => {
   it("given no commits will trigger a release, expect logs to easily communicate that to the user", async (t) => {
     const { logMock } = await setupTestEnvironmentAndRun({
@@ -140,11 +198,13 @@ const setupTestEnvironmentAndRun = async ({
   commitsSinceLatestRelease,
   nextReleaseVersion,
   gitCommitCreatedDuringDeploy,
+  determineNextReleaseStepConfig,
 }: {
   latestRelease?: GitHubRelease;
   commitsSinceLatestRelease?: GitHubCommit[];
   nextReleaseVersion?: string;
   gitCommitCreatedDuringDeploy?: GitHubCommit;
+  determineNextReleaseStepConfig?: DetermineNextReleaseStepConfig;
 }) => {
   Deno.env.set("GITHUB_REF", "refs/heads/main");
   Deno.env.set("GITHUB_REPOSITORY", "levibostian/new-deployment-tool");
@@ -199,7 +259,14 @@ const setupTestEnvironmentAndRun = async ({
     githubActions,
     "getDetermineNextReleaseStepConfig",
     () => {
-      return undefined;
+      return determineNextReleaseStepConfig
+    },
+  );
+  const githubActionsSetOutputMock = stub(
+    githubActions,
+    "setOutput",
+    () => {
+      return;
     },
   );
 
@@ -220,6 +287,7 @@ const setupTestEnvironmentAndRun = async ({
     deployStepMock,
     createNewReleaseStepMock,
     logMock,
-    githubActionsGetDetermineNextReleaseStepConfigMock
+    githubActionsGetDetermineNextReleaseStepConfigMock,
+    githubActionsSetOutputMock,
   };
 };

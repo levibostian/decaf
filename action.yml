@@ -19,6 +19,11 @@ inputs:
     description: 'Configure the behavior when analyzing commits.'
     default: ''
 
+outputs:
+  new_release_version:
+    description: 'If a new release was created, this is the version of that release.'
+    value: ${{ steps.deployment.outputs.new_release_version }}
+
 runs:
   using: "composite"
   steps:
@@ -32,6 +37,7 @@ runs:
       #
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
       run: deno run --allow-env=GITHUB_REF,DRY_RUN,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG --allow-net="api.github.com" --allow-run --allow-read="/tmp,/var/folders" --allow-write="/tmp,/var/folders" https://raw.githubusercontent.com/levibostian/new-deployment-tool/${{ inputs.version }}/index.ts
+      id: deployment
       shell: bash 
       env:
         DRY_RUN: ${{ inputs.dry_run_mode }}

@@ -171,4 +171,6 @@ export const run = async ({
   log.notice(
     `🎉 Congratulations! The deployment process has completed. Bye-bye 👋!`, 
   );
+
+  githubActions.setOutput({key: "new_release_version", value: nextReleaseVersion});
 };

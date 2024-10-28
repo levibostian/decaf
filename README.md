@@ -172,9 +172,17 @@ Some git commits that you push to your deployment branch should be released (fea
 
 If your team is not used to using a special format for git commit messages, you may find [this tool useful](https://github.com/levibostian/action-conventional-pr-linter) to lint pull requests before you click *Squash and merge* and perform a deployment. 
 
+🎊 Congrats! You're all setup for automated deployments! 
+
 *Tip:* We suggest checking out [how to create pre-production releases](#create-prerelease-versions) to see if this is something you're interested in. 
 
 > Note: In the future, we plan on allowing you to customize how git commits are analyzed so you can use a git commit message format your team decides. Until then, you must use conventional commits format. 
+
+# Outputs 
+
+This tool provides you with outputs to help you understand what happened during the deployment process.
+
+* `new_release_version` - If a new release was created, this is the version of that release.
 
 # Configuration 
 
