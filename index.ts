@@ -7,7 +7,7 @@ import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-si
 import { GetLatestReleaseStepImpl } from "./lib/steps/get-latest-release.ts";
 import { exec } from "./lib/exec.ts";
 import { git } from "./lib/git.ts";
-import * as log from "./lib/log.ts";
+import {logger} from "./lib/log.ts";
 import { GitHubActionsImpl } from "./lib/github-actions.ts";
 
 /*
@@ -25,6 +25,6 @@ await run({
   determineNextReleaseStep: new DetermineNextReleaseStepImpl(),
   deployStep: new DeployStepImpl(exec, git),
   createNewReleaseStep: new CreateNewReleaseStepImpl(githubApi),
-  log,
+  log: logger,
   githubActions: new GitHubActionsImpl()
 });

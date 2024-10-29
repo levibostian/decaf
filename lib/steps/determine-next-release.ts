@@ -1,7 +1,7 @@
 import { GitHubCommit, GitHubRelease } from "../github-api.ts";
 import * as semver from "jsr:@std/semver";
 import { versionBumpForCommitBasedOnConventionalCommit } from "../conventional-commits.ts";
-import * as log from "../log.ts";
+import { Logger, logger } from "../log.ts";
 import { GetNextReleaseVersionEnvironment } from "../types/environment.ts";
 
 export interface DetermineNextReleaseStepConfig {
@@ -22,6 +22,12 @@ export interface DetermineNextReleaseStep {
 }
 
 export class DetermineNextReleaseStepImpl implements DetermineNextReleaseStep {
+  private log: Logger;
+
+  constructor(log: Logger = logger) {
+    this.log = log;
+  }
+
   async getNextReleaseVersion({ config, environment, commits, latestRelease }: {
     config?: DetermineNextReleaseStepConfig;
     environment: GetNextReleaseVersionEnvironment;
@@ -30,15 +36,31 @@ export class DetermineNextReleaseStepImpl implements DetermineNextReleaseStep {
   }): Promise<string | null> {
     // First, parse all commits to determine the version bump for each commit.
     const versionBumpsForEachCommit = commits.map((commit) => {
-      log.message(
-        `Analyzing commit: ${commit.message} to determine if it should trigger a new release.`,
-      );
+      const firstLineOfCommitMessage = commit.message.split("\n")[0];
+      const abbreviatedFirstLineOfCommitMessage = firstLineOfCommitMessage.length > 50 ? firstLineOfCommitMessage.substring(0, 50) + "..." : firstLineOfCommitMessage;
+      const first8CharactersOfCommitHash = commit.sha.substring(0, 8);
 
       const versionBumpForCommit =
         versionBumpForCommitBasedOnConventionalCommit(
           commit,
         );
-      log.message(`The release type for the commit is ${versionBumpForCommit}`);
+
+      const logPrefix = `${abbreviatedFirstLineOfCommitMessage} (${first8CharactersOfCommitHash})`
+      switch (versionBumpForCommit) {
+        case "major":
+          this.log.message(`${logPrefix} => indicates a major release.`);
+          break;
+        case "minor":
+          this.log.message(`${logPrefix} => indicates a minor release.`);
+          break;
+        case "patch":
+          this.log.message(`${logPrefix} => indicates a patch release.`);
+          break;
+        default:
+          this.log.message(`${logPrefix} => does not indicate a release.`);
+          break;
+      }
+
       return versionBumpForCommit;
     }).filter((versionBump) =>
       versionBump !== undefined
