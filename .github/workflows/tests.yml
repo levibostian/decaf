@@ -14,13 +14,24 @@ jobs:
         deno-version: v1.x
 
     - name: Run Deno tests
-      run: deno test --allow-env --allow-run --allow-read --allow-write --junit-path reports/junit.xml
+      run: deno test --allow-env --allow-run --allow-read --allow-write --junit-path reports/junit.xml --coverage=reports/coverage/    
+
+    - name: Generate coverage report 
+      run: deno coverage --lcov --output=reports/coverage.lcov reports/coverage/
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
         name: junit-results
         path: reports/junit.xml
+
+    - name: Upload coverage for analysis
+      uses: coverallsapp/github-action@v2
+      with:
+        file: reports/coverage.lcov
+      env:
+        # try and speedup the action by homebrew not having to do more then it needs when installing the coveralls tool
+        HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: true
 
     - name: Annotate failed tests
       if: always() # Run with test/lint failures.
