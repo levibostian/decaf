@@ -67,3 +67,12 @@ export function notice(message: string) {
 export function message(message: string) {
   log("message", message);
 }
+
+export const logger: Logger = {
+  debug,
+  warning,
+  error,
+  notice,
+  message,
+};
+

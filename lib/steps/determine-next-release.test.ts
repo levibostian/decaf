@@ -1,7 +1,11 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/assert_equals.ts";
 import { GitHubCommit, GitHubRelease } from "../github-api.ts";
 import { DetermineNextReleaseStepImpl } from "./determine-next-release.ts";
-import { GitHubReleaseFake } from "../github-api.test.ts";
+import { GitHubCommitFake, GitHubReleaseFake } from "../github-api.test.ts";
+import { before, beforeEach, describe, it } from "jsr:@std/testing@1/bdd";
+import { Logger } from "../log.ts";
+import { getLogMock, LogMock } from "../log.test.ts";
+import { assertSnapshot } from "jsr:@std/testing@1/snapshot";
 
 const defaultEnvironment = {
   gitCurrentBranch: "main",
@@ -219,4 +223,74 @@ Deno.test("given latest version is prerelease and next release is prerelease but
     },
   );
   assertEquals(result, "1.3.0-beta.1");
+})
+
+describe("user facing logs", () => {
+  let logMock: LogMock;
+
+  beforeEach(() => {
+    logMock = getLogMock()
+  })
+
+  it("given commit that does not trigger a release, expect logs to communicate this clearly", async (t) => {
+    const commits: GitHubCommit[] = [new GitHubCommitFake(
+      {
+        message: "chore: does not trigger a release",
+      }
+    )];
+    await new DetermineNextReleaseStepImpl(logMock).getNextReleaseVersion({
+        environment: defaultEnvironment,
+        commits,
+        latestRelease: null,
+      },
+    );
+    await assertSnapshot(t, logMock.getLogs({includeDebugLogs: false}));
+  });
+
+  it("given super long commit messages, expect logs to not be super long", async (t) => {
+    const commitMessage = "feat: " + "a".repeat(1000);
+    const commits: GitHubCommit[] = [new GitHubCommitFake(
+      {
+        message: commitMessage,
+      }
+    )];
+    await new DetermineNextReleaseStepImpl(logMock).getNextReleaseVersion({
+        environment: defaultEnvironment,
+        commits,
+        latestRelease: null,
+      },
+    );
+    await assertSnapshot(t, logMock.getLogs({includeDebugLogs: false}));
+  });
+
+  it("given commit message multiple lines long, expect logs to not be super long", async (t) => {
+    const commitMessage = "feat: " + "a\n".repeat(1000);
+    const commits: GitHubCommit[] = [new GitHubCommitFake(
+      {
+        message: commitMessage,
+      }
+    )];
+    await new DetermineNextReleaseStepImpl(logMock).getNextReleaseVersion({
+        environment: defaultEnvironment,
+        commits,
+        latestRelease: null,
+      },
+    );
+    await assertSnapshot(t, logMock.getLogs({includeDebugLogs: false}));
+  });
+
+  it("given many commits, expect logs to read them all nicely", async (t) => {
+    const commits: GitHubCommit[] = [
+      new GitHubCommitFake({message: "feat: add new feature"}),
+      new GitHubCommitFake({message: "fix: resolve issue"}),
+      new GitHubCommitFake({message: "chore: update dependencies"}),
+    ];
+    await new DetermineNextReleaseStepImpl(logMock).getNextReleaseVersion({
+        environment: defaultEnvironment,
+        commits,
+        latestRelease: null,
+      },
+    );
+    await assertSnapshot(t, logMock.getLogs({includeDebugLogs: false}));
+  })
 })

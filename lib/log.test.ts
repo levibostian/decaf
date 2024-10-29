@@ -1,7 +1,7 @@
 import { stub } from "jsr:@std/testing@1/mock";
 import { Logger } from "./log.ts";
 
-interface LogMock extends Logger {
+export interface LogMock extends Logger {
   messages: { level: ("debug" | "warning" | "error" | "notice" | "message"), message: string }[];
 
   getLogs({includeDebugLogs}: {includeDebugLogs: boolean}): string[]

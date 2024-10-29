@@ -1,7 +1,7 @@
 import { GitHubCommit, GitHubRelease } from "../github-api.ts";
 import * as semver from "jsr:@std/semver";
 import { versionBumpForCommitBasedOnConventionalCommit } from "../conventional-commits.ts";
-import * as log from "../log.ts";
+import { Logger, logger } from "../log.ts";
 import { GetNextReleaseVersionEnvironment } from "../types/environment.ts";
 
 export interface DetermineNextReleaseStepConfig {
@@ -22,6 +22,12 @@ export interface DetermineNextReleaseStep {
 }
 
 export class DetermineNextReleaseStepImpl implements DetermineNextReleaseStep {
+  private log: Logger;
+
+  constructor(log: Logger = logger) {
+    this.log = log;
+  }
+
   async getNextReleaseVersion({ config, environment, commits, latestRelease }: {
     config?: DetermineNextReleaseStepConfig;
     environment: GetNextReleaseVersionEnvironment;
@@ -31,30 +37,27 @@ export class DetermineNextReleaseStepImpl implements DetermineNextReleaseStep {
     // First, parse all commits to determine the version bump for each commit.
     const versionBumpsForEachCommit = commits.map((commit) => {
       const firstLineOfCommitMessage = commit.message.split("\n")[0];
+      const abbreviatedFirstLineOfCommitMessage = firstLineOfCommitMessage.length > 50 ? firstLineOfCommitMessage.substring(0, 50) + "..." : firstLineOfCommitMessage;
       const first8CharactersOfCommitHash = commit.sha.substring(0, 8);
-
-      log.message("") // Add a new line for better readability.
-      log.message(
-        `Analyzing commit: ${firstLineOfCommitMessage} (${first8CharactersOfCommitHash}) to determine if it should trigger a new release.`,
-      );
 
       const versionBumpForCommit =
         versionBumpForCommitBasedOnConventionalCommit(
           commit,
         );
 
+      const logPrefix = `${abbreviatedFirstLineOfCommitMessage} (${first8CharactersOfCommitHash})`
       switch (versionBumpForCommit) {
         case "major":
-          log.message(`The commit indicates a major release.`);
+          this.log.message(`${logPrefix} => indicates a major release.`);
           break;
         case "minor":
-          log.message(`The commit indicates a minor release.`);
+          this.log.message(`${logPrefix} => indicates a minor release.`);
           break;
         case "patch":
-          log.message(`The commit indicates a patch release.`);
+          this.log.message(`${logPrefix} => indicates a patch release.`);
           break;
         default:
-          log.message(`The commit does not indicate a release.`);
+          this.log.message(`${logPrefix} => does not indicate a release.`);
           break;
       }
 
