@@ -30,15 +30,34 @@ export class DetermineNextReleaseStepImpl implements DetermineNextReleaseStep {
   }): Promise<string | null> {
     // First, parse all commits to determine the version bump for each commit.
     const versionBumpsForEachCommit = commits.map((commit) => {
+      const firstLineOfCommitMessage = commit.message.split("\n")[0];
+      const first8CharactersOfCommitHash = commit.sha.substring(0, 8);
+
+      log.message("") // Add a new line for better readability.
       log.message(
-        `Analyzing commit: ${commit.message} to determine if it should trigger a new release.`,
+        `Analyzing commit: ${firstLineOfCommitMessage} (${first8CharactersOfCommitHash}) to determine if it should trigger a new release.`,
       );
 
       const versionBumpForCommit =
         versionBumpForCommitBasedOnConventionalCommit(
           commit,
         );
-      log.message(`The release type for the commit is ${versionBumpForCommit}`);
+
+      switch (versionBumpForCommit) {
+        case "major":
+          log.message(`The commit indicates a major release.`);
+          break;
+        case "minor":
+          log.message(`The commit indicates a minor release.`);
+          break;
+        case "patch":
+          log.message(`The commit indicates a patch release.`);
+          break;
+        default:
+          log.message(`The commit does not indicate a release.`);
+          break;
+      }
+
       return versionBumpForCommit;
     }).filter((versionBump) =>
       versionBump !== undefined
