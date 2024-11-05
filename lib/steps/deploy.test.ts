@@ -18,7 +18,7 @@ const defaultEnvironment: DeployEnvironment = {
   gitRepoName: "repo",
   gitCommitsSinceLastRelease: [],
   nextVersionName: "1.0.0",
-  isDryRun: false,
+  testMode: true,
   lastRelease: null, 
 };
 
@@ -102,15 +102,17 @@ describe("run the user given deploy commands", () => {
   it("should run normally and succeed, given no deploy commands", async () => {
     Deno.env.delete("INPUT_DEPLOY_COMMANDS");
 
-    stub(git, "commit", async (args) => {
+    // Fail if any git commands are run
+    stub(exec, "run", async (args) => {
       return {
-        sha: "123",
-        message: "success",
-        date: new Date(),
+        exitCode: 1,
+        stdout: "error",
+        output: undefined,
       };
     });
-    stub(git, "push", async (args) => {
-      return;
+
+    stub(git, "areAnyFilesStaged", async (args) => {
+      return false
     });
 
     await new DeployStepImpl(exec, git).runDeploymentCommands({

@@ -94,12 +94,7 @@ describe("test github actions output", () => {
     });
 
     assertEquals(
-      githubActionsSetOutputMock.calls[0].args[0].key,
-      "new_release_version"      
-    );
-    assertEquals(
-      githubActionsSetOutputMock.calls[0].args[0].value,
-      "1.0.0"
+      githubActionsSetOutputMock.calls[1].args[0], {key: "new_release_version", value: "1.0.0"},
     );
   })
   it("should not set new release version output when no new release is created", async () => {
@@ -108,10 +103,7 @@ describe("test github actions output", () => {
       nextReleaseVersion: "1.0.0",
     });
 
-    assertEquals(
-      githubActionsSetOutputMock.calls.length,
-      0
-    );
+    assertEquals(githubActionsSetOutputMock.calls.filter(call => call.args[0].key === "new_release_version").length, 0);
   })
   it("should set new pre-release version output when a new pre-release is created", async () => {
     const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
@@ -130,12 +122,7 @@ describe("test github actions output", () => {
     });
 
     assertEquals(
-      githubActionsSetOutputMock.calls[0].args[0].key,
-      "new_release_version"      
-    );
-    assertEquals(
-      githubActionsSetOutputMock.calls[0].args[0].value,
-      "1.0.0-beta.1"
+      githubActionsSetOutputMock.calls[1].args[0], {key: "new_release_version", value: "1.0.0-beta.1"},      
     );
   })
 })
@@ -193,22 +180,63 @@ describe("user facing logs", () => {
   })
 })
 
+describe("test the event that triggered running the tool", () => {
+  it("should exit early if the tool is triggered by an unsupported event", async () => {
+    const {getLatestReleaseStepMock} = await setupTestEnvironmentAndRun({
+      githubActionEventThatTriggeredTool: "release"
+    });
+
+    assertEquals(getLatestReleaseStepMock.calls.length, 0);
+  })
+  it("should run a deployment if triggered from a push event", async () => {
+    const {githubActionsSetOutputMock} = await setupTestEnvironmentAndRun({
+      githubActionEventThatTriggeredTool: "push",
+      nextReleaseVersion: "1.0.0",
+      commitsSinceLatestRelease: [new GitHubCommitFake({
+        message: "feat: trigger a release",
+        sha: "trigger-release",
+      })],
+    });
+
+    assertEquals(githubActionsSetOutputMock.calls[1].args[0].value, "1.0.0");
+    assertEquals(githubActionsSetOutputMock.calls[0].args[0], {key: "test_mode_on", value: "false"});
+  })
+  it("should run a deployment in test mode if triggered from a pull_request event", async () => {
+    const {githubActionsSetOutputMock} = await setupTestEnvironmentAndRun({
+      githubActionEventThatTriggeredTool: "pull_request",
+      nextReleaseVersion: "1.0.0",
+      commitsSinceLatestRelease: [new GitHubCommitFake({
+        message: "feat: trigger a release",
+        sha: "trigger-release",
+      })],
+    });
+
+    assertEquals(
+      githubActionsSetOutputMock.calls[1].args[0], {key: "new_release_version", value: "1.0.0"},
+    );
+    assertEquals(githubActionsSetOutputMock.calls[0].args[0], {key: "test_mode_on", value: "true"});
+  })
+})
+
 const setupTestEnvironmentAndRun = async ({
   latestRelease,
   commitsSinceLatestRelease,
   nextReleaseVersion,
   gitCommitCreatedDuringDeploy,
   determineNextReleaseStepConfig,
+  githubActionEventThatTriggeredTool,
 }: {
   latestRelease?: GitHubRelease;
   commitsSinceLatestRelease?: GitHubCommit[];
   nextReleaseVersion?: string;
   gitCommitCreatedDuringDeploy?: GitHubCommit;
   determineNextReleaseStepConfig?: DetermineNextReleaseStepConfig;
+  githubActionEventThatTriggeredTool?: string;
 }) => {
+  // default to push event, since we want to test the actual deployment process and not test mode by default. 
+  Deno.env.set("GITHUB_EVENT_NAME", githubActionEventThatTriggeredTool || "push"); 
   Deno.env.set("GITHUB_REF", "refs/heads/main");
   Deno.env.set("GITHUB_REPOSITORY", "levibostian/new-deployment-tool");
-  Deno.env.set("DRY_RUN", "false");
 
   const getLatestReleaseStep = {} as GetLatestReleaseStep;
   const getLatestReleaseStepMock = stub(

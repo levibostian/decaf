@@ -10,7 +10,7 @@ export interface GetLatestReleaseEnvironment {
   gitCurrentBranch: string
   gitRepoOwner: string,
   gitRepoName: string,
-  isDryRun: boolean,
+  testMode: boolean,
 }
 
 export interface GetNextReleaseVersionEnvironment extends GetLatestReleaseEnvironment {

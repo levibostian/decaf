@@ -13,7 +13,7 @@ const defaultEnvironment = {
   gitCommitsSinceLastRelease: [],
   gitRepoOwner: "owner",
   gitRepoName: "repo",
-  isDryRun: false,
+  testMode: false,
 };
 
 Deno.test("given this is first release, not prerelease, expect default version", async () => {
