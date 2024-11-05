@@ -8,7 +8,7 @@ const givenPluginInput: DeployEnvironment = {
   gitRepoName: "repo",
   gitCommitsSinceLastRelease: [],
   nextVersionName: "1.0.0",
-  isDryRun: false,
+  testMode: true,
   lastRelease: null,
 };
 

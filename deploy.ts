@@ -39,16 +39,29 @@ export const run = async ({
   log.message(`Ok, let's get started with the deployment!`);
   log.message(`--------------------------------`);
 
+   const githubEventName = Deno.env.get("GITHUB_EVENT_NAME");
+   log.debug(`GITHUB_EVENT_NAME: ${githubEventName}`);
+
+   // For safety, have default value be true. 
+   let runInTestMode = true;
+  
+   if (githubEventName === "pull_request") {     
+     log.notice(`I see that the tool got triggered to run from a pull request event. I will run in test mode which means that I will run the deployment process as if it were a real deployment but I will not actually deploy anything. Think of it like a read-only deployment.`);
+     log.notice(`Running in test mode. We are in a pull request event.`);
+     // TODO: we will do our merge stuff 
+   } else if (githubEventName === "push") {
+    runInTestMode = false;     
+   } else {
+    log.warning(`It looks like the tool got triggered to run from an unsupported GitHub Actions event: ${githubEventName}. Try running it again from a pull request or a push event.`);
+    return;
+   }
+
+   githubActions.setOutput({key: "test_mode_on", value: runInTestMode.toString()});
+
   const githubRef = Deno.env.get("GITHUB_REF")!;
   log.debug(`GITHUB_REF: ${githubRef}`);
   const currentBranch = githubRef.replace("refs/heads/", "");
   log.debug(`name of current git branch: ${currentBranch}`);
-  const isDryRunMode = Deno.env.get("DRY_RUN") === "true";
-  if (isDryRunMode) {
-    log.warning(
-      `Dry run mode is enabled. This means that I will not actually deploy anything. I will only print out what I would do if I were to deploy.`,
-    );
-  }
 
   // example value for GITHUB_REPOSITORY: "denoland/deno"
   const githubRepositoryFromEnvironment = Deno.env.get("GITHUB_REPOSITORY")!;
@@ -114,7 +127,7 @@ export const run = async ({
     gitCurrentBranch: currentBranch,
     gitRepoOwner: owner,
     gitRepoName: repo,
-    isDryRun: isDryRunMode,
+    testMode: runInTestMode,
     gitCommitsSinceLastRelease: listOfCommits,
     lastRelease,
   };
@@ -149,25 +162,22 @@ export const run = async ({
   }
 
   log.notice(
-    `✏️ The code has been shipped. The final piece of the deployment process is creating a new release on GitHub for the new version, ${nextReleaseVersion}. Creating that now...`,
+    `✏️ The code has been shipped. The final piece of the deployment process is creating a new release on GitHub for the new version, ${nextReleaseVersion}. Creating that now...${(runInTestMode ? "(Test mode is enabled so I will not create the new release)" : "")}`,
   );
-  if (isDryRunMode) {
-    log.warning(
-      `Dry run mode is enabled. I would have created a new release on GitHub with the new version: ${nextReleaseVersion}`,
+
+  if (!runInTestMode) {
+    await createNewReleaseStep.createNewRelease({
+      owner,
+      repo,
+      tagName: nextReleaseVersion,
+      commit: newestCommit,
+    });
+  
+    log.message(
+      `New release has been created on GitHub. View the release: https://github.com/${owner}/${repo}/releases/${nextReleaseVersion}`, 
     );
-    return;
   }
-  await createNewReleaseStep.createNewRelease({
-    owner,
-    repo,
-    tagName: nextReleaseVersion,
-    commit: newestCommit,
-  });
-
-  log.message(
-    `New release has been created on GitHub. View the release: https://github.com/${owner}/${repo}/releases/${nextReleaseVersion}`, 
-  );
-
+  
   log.notice(
     `🎉 Congratulations! The deployment process has completed. Bye-bye 👋!`, 
   );

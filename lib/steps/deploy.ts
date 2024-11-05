@@ -82,7 +82,7 @@ export class DeployStepImpl implements DeployStep {
       // First part of using branches that we control is delete the existing local branch if it exists. This ensures that we have a clean slate for this deployment and prevents some git errors. 
       // If the previous deployment failed, there is a chance that the branch already exists. We want a clean slate for the deployment so we want this branch gone. 
       if (await this.git.doesLocalBranchExist({ exec: this.exec, branch: deploymentBranchName })) {
-        await this.git.deleteBranch({ exec: this.exec, branch: deploymentBranchName, dryRun: environment.isDryRun });
+        await this.git.deleteBranch({ exec: this.exec, branch: deploymentBranchName, dryRun: environment.testMode });
       } 
 
       // Create and checkout the branch for the deployment. Sometimes, git will not allow you to checkout a different branch if you have changes that need committing. 
@@ -92,13 +92,13 @@ export class DeployStepImpl implements DeployStep {
       gitCommitCreated = await this.git.commit({
         exec: this.exec,
         message: `Deploy version ${environment.nextVersionName}`,
-        dryRun: environment.isDryRun,
+        dryRun: environment.testMode,
       });
       await this.git.push({
         exec: this.exec,
         branch: deploymentBranchName,
         forcePush: true, // if a previous deployment failed, this branch could exist on remote. Force push will cleanup remote branch. It's safe since we control this branch. 
-        dryRun: environment.isDryRun,
+        dryRun: environment.testMode,
       });
 
       log.message(`Deployment changes have been pushed to your GitHub repo. You can view the changes here: https://github.com/${environment.gitRepoOwner}/${environment.gitRepoName}/tree/${deploymentBranchName}`);

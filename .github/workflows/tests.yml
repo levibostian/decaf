@@ -42,6 +42,7 @@ jobs:
 
   test-it-runs:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' # Only run on PRs, otherwise we will trigger a deployment by accident. 
     permissions:    
       contents: read # only offer read permissions for dry-run to prevent accidental deployments
     steps:
@@ -50,7 +51,6 @@ jobs:
       uses: ./      
       with: 
         version: ${{ github.sha }}
-        dry_run_mode: 'true'
         github_token: ${{ secrets.github_token }}
         # Test that the config is read by the tool and pre-release versions are working. 
         analyze_commits_config: |

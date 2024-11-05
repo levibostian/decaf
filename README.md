@@ -183,6 +183,7 @@ If your team is not used to using a special format for git commit messages, you 
 This tool provides you with outputs to help you understand what happened during the deployment process.
 
 * `new_release_version` - If a new release was created, this is the version of that release.
+* `test_mode_on` - If test mode was on when the tool ran. Value is string values "true" or "false".
 
 # Configuration 
 
@@ -251,7 +252,7 @@ but it can help in certain situations.
 
 Replace the github URL with `deploy.ts` to tell Deno to run the local file not
 the remote file. Add 2 extra environment variables...
-`DRY_RUN=true INPUT_GITHUB_TOKEN="XXX" deno...`
+`GITHUB_EVENT_NAME=pull_request INPUT_GITHUB_TOKEN="XXX" deno...`
 
 # Tests
 

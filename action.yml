@@ -12,9 +12,6 @@ inputs:
     description: 'List of commands to run to deploy your project.'
     required: true
     default: ''
-  dry_run_mode:
-    description: 'Run the deployment tool in dry-run mode. Note: this is currently for internal use only and API may change.'
-    default: 'false'
   analyze_commits_config:
     description: 'Configure the behavior when analyzing commits.'
     default: ''
@@ -23,6 +20,9 @@ outputs:
   new_release_version:
     description: 'If a new release was created, this is the version of that release.'
     value: ${{ steps.deployment.outputs.new_release_version }}
+  test_mode_on:
+    description: 'If test mode was on when the tool ran. Value is string values "true" or "false".'
+    value: ${{ steps.deployment.outputs.test_mode_on }}
 
 runs:
   using: "composite"
@@ -36,11 +36,10 @@ runs:
       # Deno's runtime permissions are a great feature. It would be nice to take advantage of it, however, it may not be possible with future features like running plugins. 
       #
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
-      run: deno run --allow-env=GITHUB_REF,DRY_RUN,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG --allow-net="api.github.com" --allow-run --allow-read="/tmp,/var/folders" --allow-write="/tmp,/var/folders" https://raw.githubusercontent.com/levibostian/new-deployment-tool/${{ inputs.version }}/index.ts
+      run: deno run --allow-env=GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG --allow-net="api.github.com" --allow-run --allow-read="/tmp,/var/folders" --allow-write="/tmp,/var/folders" https://raw.githubusercontent.com/levibostian/new-deployment-tool/${{ inputs.version }}/index.ts
       id: deployment
       shell: bash 
       env:
-        DRY_RUN: ${{ inputs.dry_run_mode }}
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
         INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
