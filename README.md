@@ -107,7 +107,13 @@ input_data = json.loads(input_data_json_string)
 # Your script can now get whatever data is useful, such as the new version name. 
 next_version_name = input_data.get("nextVersionName")
 
-# For a full list of all JSON keys available to you, see: https://github.com/levibostian/new-deployment-tool/blob/main/lib/steps/types/deploy.ts#L3-L10
+# IMPORTANT: Test mode 
+# When running this tool in a pull request, the tool will run in "test mode".
+# When in test mode, run your deployment script as usual, but do not push code to your production server to actually deploy code.
+# Feel free to push to a test server or just print out what you would do.
+is_in_test_mode = input_data.get("testMode")
+
+# For a full list of all JSON keys available to you, see: https://github.com/levibostian/new-deployment-tool/blob/HEAD/lib/types/environment.ts
 ```
 
 #### 2. Perform the deployment
