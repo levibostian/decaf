@@ -32,7 +32,7 @@ describe("add", () => {
 
   it("should throw an error, given the command fails", async () => {
     stub(exec, "run", async (args) => {
-      return { exitCode: 1, stdout: "error", output: undefined };
+      throw new Error("error");
     });
 
     assertRejects(async () => {
@@ -74,7 +74,7 @@ describe("commit", () => {
 
   it("should throw an error, given the command fails", async () => {
     stub(exec, "run", async (args) => {
-      return { exitCode: 1, stdout: "error", output: undefined };
+      throw new Error("error");
     });
 
     assertRejects(async () => {
@@ -198,7 +198,7 @@ describe("push", () => {
 
   it("should throw an error, given the command fails", async () => {
     stub(exec, "run", async (args) => {
-      return { exitCode: 1, stdout: "error", output: undefined };
+      throw new Error("error");
     });
 
     assertRejects(async () => {
@@ -298,7 +298,7 @@ describe("areAnyFilesStaged", () => {
 
   it("should throw an error, given the command fails", async () => {
     stub(exec, "run", async (args) => {
-      return { exitCode: 1, stdout: "error", output: undefined };
+      throw new Error("error");
     });
 
     assertRejects(async () => {
@@ -326,7 +326,7 @@ describe("deleteBranch", () => {
 
   it("should throw an error, given the command fails", async () => {
     stub(exec, "run", async (args) => {
-      return { exitCode: 1, stdout: "error", output: undefined };
+      throw new Error("error");
     });
 
     assertRejects(async () => {
@@ -371,7 +371,7 @@ describe("checkoutBranch", () => {
 
   it("should throw an error, given the command fails", async () => {
     stub(exec, "run", async (args) => {
-      return { exitCode: 1, stdout: "error", output: undefined };
+      throw new Error("error");
     });
 
     assertRejects(async () => {

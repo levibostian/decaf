@@ -1,0 +1,46 @@
+export const snapshot = {};
+
+snapshot[`snapshot test all of the merge options > merge, should generate the correct git commands 1`] = `
+[
+  "git checkout feature",
+  "git pull",
+  "git checkout main",
+  "git pull",
+  'git config user.name "Deployment Test"',
+  'git config user.email "test@test.com"',
+  "git checkout main",
+  'git merge feature -m "title-here" -m "message-here"',
+]
+`;
+
+snapshot[`snapshot test all of the merge options > squash, should generate the correct git commands 1`] = `
+[
+  "git checkout feature",
+  "git pull",
+  "git checkout main",
+  "git pull",
+  'git config user.name "Deployment Test"',
+  'git config user.email "test@test.com"',
+  "git checkout feature",
+  "git rebase main",
+  "git rev-list --count main..feature",
+  'git reset --soft HEAD~3 && git commit -m "title-here" -m "message-here"',
+  "git checkout main",
+  'git merge feature -m "title-here" -m "message-here" --ff-only',
+]
+`;
+
+snapshot[`snapshot test all of the merge options > rebase, should generate the correct git commands 1`] = `
+[
+  "git checkout feature",
+  "git pull",
+  "git checkout main",
+  "git pull",
+  'git config user.name "Deployment Test"',
+  'git config user.email "test@test.com"',
+  "git checkout feature",
+  "git rebase main",
+  "git checkout main",
+  'git merge feature -m "title-here" -m "message-here" --ff-only',
+]
+`;

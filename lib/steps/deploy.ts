@@ -39,7 +39,7 @@ export class DeployStepImpl implements DeployStep {
       [];
 
     for (const command of deployCommands) {
-      const { exitCode, output } = await this.exec.run({ command, input: environment, displayLogs: true });
+      const { exitCode, output } = await this.exec.run({ command, input: environment, displayLogs: true, throwOnNonZeroExitCode: false });
 
       if (exitCode !== 0) {
         log.error(

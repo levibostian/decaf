@@ -19,6 +19,7 @@ export interface Exec {
       input: DeployEnvironment | undefined;
       displayLogs?: boolean;
       envVars?: { [key: string]: string };
+      throwOnNonZeroExitCode?: boolean;
     },
   ) => Promise<RunResult>;
 }
@@ -34,11 +35,12 @@ We use a popular package to parse the string into the correct args list. See aut
 To make this function testable, we not only have the stdout and stderr be piped to the console, but we return it from this function so tests can verify the output of the command.
 */
 const run = async (
-  { command, input, displayLogs, envVars }: {
+  { command, input, displayLogs, envVars, throwOnNonZeroExitCode }: {
     command: string;
     input: DeployEnvironment | undefined;
     displayLogs?: boolean;
     envVars?: { [key: string]: string };
+    throwOnNonZeroExitCode?: boolean;
   },
 ): Promise<
   { exitCode: number; stdout: string; output: DeployCommandOutput | undefined }
@@ -142,6 +144,15 @@ const run = async (
     `exit code, ${code}, command output: ${JSON.stringify(commandOutput)}`,
   );
 
+  let shouldThrowError = true 
+  if (throwOnNonZeroExitCode !== undefined && throwOnNonZeroExitCode == false) {
+    shouldThrowError = false
+  }
+
+  if (code !== 0 && shouldThrowError) {
+    throw new Error(`Command: ${command}, failed with exit code: ${code}`);
+  }
+
   return {
     exitCode: code,
     stdout: capturedStdout,
@@ -150,5 +161,5 @@ const run = async (
 };
 
 export const exec: Exec = {
-  run,
+  run
 };
