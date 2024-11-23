@@ -20,18 +20,24 @@ export interface Git {
   doesLocalBranchExist: (
     { exec, branch }: { exec: Exec; branch: string },
   ) => Promise<boolean>;
+  merge: ({exec, branchToMergeIn, commitTitle, commitMessage, fastForwardOnly }: {exec: Exec, branchToMergeIn: string, commitTitle: string, commitMessage: string, fastForwardOnly?: boolean }) => Promise<void>;
+  pull: ({exec}: {exec: Exec}) => Promise<void>;
+  setUser: (
+    { exec, name, email }: { exec: Exec; name: string; email: string },
+  ) => Promise<void>;
+  squash: ({ exec, branchToSquash, branchMergingInto, commitTitle, commitMessage }: { exec: Exec; branchToSquash: string; branchMergingInto: string; commitTitle: string; commitMessage: string }) => Promise<void>;
+  rebase: (
+    { exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string },
+  ) => Promise<void>;
 }
 
 const add = async (
   { exec, filePath }: { exec: Exec; filePath: string },
 ): Promise<void> => {
-  const { exitCode } = await exec.run({
+  await exec.run({
     command: `git add ${filePath}`,
     input: undefined,
   });
-  if (exitCode !== 0) {
-    throw new Error(`Failed to add file to git: ${filePath}`);
-  }
 };
 
 const commit = async (
@@ -42,7 +48,7 @@ const commit = async (
     // Resources to find this author info:
     // https://github.com/orgs/community/discussions/26560
     // https://github.com/peter-evans/create-pull-request/blob/0c2a66fe4af462aa0761939bd32efbdd46592737/action.yml
-    const { exitCode } = await exec.run({
+    await exec.run({
       command: `git commit -m "${message}"${dryRun ? " --dry-run" : ""}`,
       input: undefined,
       envVars: {
@@ -54,9 +60,6 @@ const commit = async (
           "41898282+github-actions[bot]@users.noreply.github.com",
       },
     });
-    if (exitCode !== 0) {
-      throw new Error(`Failed to commit changes to git: ${message}`);
-    }
   }
 
   return getLatestCommit({ exec });
@@ -72,25 +75,19 @@ const push = async (
     return;
   }
 
-  const { exitCode } = await exec.run({
+  await exec.run({
     command: gitCommand,
     input: undefined,
   });
-  if (exitCode !== 0) {
-    throw new Error(`Failed to push changes to git: ${branch}`);
-  }
 };
 
 const areAnyFilesStaged = async (
   { exec }: { exec: Exec },
 ): Promise<boolean> => {
-  const { exitCode, stdout } = await exec.run({
+  const { stdout } = await exec.run({
     command: `git diff --cached --name-only`,
     input: undefined,
   });
-  if (exitCode !== 0) {
-    throw new Error(`Failed to check if any files are staged in git.`);
-  }
 
   return stdout.trim() !== "";
 };
@@ -98,13 +95,10 @@ const areAnyFilesStaged = async (
 const getLatestCommit = async (
   { exec }: { exec: Exec },
 ): Promise<GitHubCommit> => {
-  const { exitCode, stdout } = await exec.run({
+  const { stdout } = await exec.run({
     command: `git log -1 --pretty=format:"%H%n%s%n%ci"`,
     input: undefined,
   });
-  if (exitCode !== 0) {
-    throw new Error(`Failed to get latest commit hash from git.`);
-  }
 
   const [sha, message, dateString] = stdout.trim().split("\n");
 
@@ -119,26 +113,20 @@ const deleteBranch = async (
   if (dryRun) {
     log.message(`[Dry Run] ${deleteLocalBranchCommand}`);
   } else {
-    const { exitCode } = await exec.run({
+    await exec.run({
       command: deleteLocalBranchCommand,
       input: undefined,
     });
-    if (exitCode !== 0) {
-      throw new Error(`Failed to delete branch from local: ${branch}`);
-    }
   }
 }
 
 const checkoutBranch = async (
   { exec, branch, createBranchIfNotExist }: { exec: Exec; branch: string; createBranchIfNotExist: boolean },
 ): Promise<void> => {
-  const { exitCode } = await exec.run({
+  await exec.run({
     command: `git checkout ${createBranchIfNotExist ? "-b " : ""}${branch}`,
     input: undefined,
   });
-  if (exitCode !== 0) {
-    throw new Error(`Failed to checkout branch: ${branch}`);
-  }
 }
 
 const doesLocalBranchExist = async (
@@ -147,10 +135,73 @@ const doesLocalBranchExist = async (
   const { exitCode } = await exec.run({
     command: `git show-ref --verify --quiet refs/heads/${branch}`,
     input: undefined,
+    throwOnNonZeroExitCode: false,
   });
 
   return exitCode === 0;
 }
+
+const merge = async({exec, branchToMergeIn, commitTitle, commitMessage, fastForwardOnly}: {exec: Exec, branchToMergeIn: string, commitTitle: string, commitMessage: string, fastForwardOnly?: boolean}): Promise<void> => {
+  await exec.run({
+    command: `git merge ${branchToMergeIn} -m "${commitTitle}" -m "${commitMessage}"${fastForwardOnly ? " --ff-only" : ""}`,
+    input: undefined,
+  });
+}
+
+const pull = async({exec}: {exec: Exec}): Promise<void> => {
+  await exec.run({
+    command: `git pull`,
+    input: undefined,
+  });
+
+}
+
+const setUser = async (
+  { exec, name, email }: { exec: Exec; name: string; email: string },
+): Promise<void> => {
+  await exec.run({
+    command: `git config user.name "${name}"`,
+    input: undefined,
+  });
+
+  await exec.run({
+    command: `git config user.email "${email}"`,
+    input: undefined,
+  });
+};
+
+// Squash all commits of a branch into 1 commit
+const squash = async (
+  { exec, branchToSquash, branchMergingInto, commitTitle, commitMessage }: { exec: Exec; branchToSquash: string; branchMergingInto: string; commitTitle: string; commitMessage: string },
+): Promise<void> => {
+  // We need to find out how many commits 1 branch is ahead of the other to find out how many unique commits there are. 
+  const { stdout } = await exec.run({
+    command: `git rev-list --count ${branchMergingInto}..${branchToSquash}`,
+    input: undefined,
+  });
+
+  const numberOfCommitsAheadOfBranchMergingInto = parseInt(stdout.trim());
+
+  if (numberOfCommitsAheadOfBranchMergingInto === 0) {
+    log.message(`Branches ${branchToSquash} and ${branchMergingInto} are already up to date. No commits to squash.`);
+    return;
+  }
+
+  // Now that we know how many commits are ahead, we can squash all of those commits into 1 commit.
+  await exec.run({
+    command: `git reset --soft HEAD~${numberOfCommitsAheadOfBranchMergingInto} && git commit -m "${commitTitle}" -m "${commitMessage}"`,
+    input: undefined,
+  });
+}
+
+const rebase = async (
+  { exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string },
+): Promise<void> => {
+  await exec.run({
+    command: `git rebase ${branchToRebaseOnto}`,
+    input: undefined,
+  });
+};
 
 export const git: Git = {
   add,
@@ -159,5 +210,10 @@ export const git: Git = {
   areAnyFilesStaged,
   deleteBranch,
   checkoutBranch,
-  doesLocalBranchExist
+  doesLocalBranchExist,
+  merge,
+  pull,
+  setUser,
+  squash,
+  rebase,
 };
