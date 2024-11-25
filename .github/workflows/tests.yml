@@ -45,6 +45,7 @@ jobs:
     if: github.event_name == 'pull_request' # Only run on PRs, otherwise we will trigger a deployment by accident. 
     permissions:    
       contents: read # only offer read permissions for dry-run to prevent accidental deployments
+      pull-requests: write # allow commenting on PRs
     steps:
     - uses: actions/checkout@v4
     - name: Run deployment tool in dry-run mode
