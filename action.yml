@@ -18,6 +18,9 @@ inputs:
   simulated_merge_type:
     description: 'When running in a pull request, what type of merge to simulate to run the tool in test mode. Note: This input option is planned to go away in favor of reading github repo settings. Options: merge, squash, rebase.'
     default: 'merge' # options: merge, squash, rebase
+  make_pull_request_comment:
+    description: 'If a pull request comment should be made. Value is string values "true" or "false".'
+    default: 'true'
 
 outputs:
   new_release_version:
@@ -39,6 +42,28 @@ runs:
       run: git fetch
       shell: bash 
 
+    - name: Find pull request comment previously created, if there is one. 
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: peter-evans/find-comment@v3
+      id: find-comment
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: 'github-actions[bot]'
+        body-includes: '<!-- new-deployment-tool-deploy-run-output -->'
+        token: ${{ inputs.github_token }}  
+        
+    - name: Create or update pull request comment with new deployment tool output
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ github.event_name == 'pull_request' && inputs.make_pull_request_comment == 'true' }}
+      with:
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          <!-- new-deployment-tool-deploy-run-output -->
+          ## New deployment tool results
+          Running deployment...refresh webpage to see results when done. 
+        edit-mode: replace
+
     - name: Run deployment tool 
       # Deno's runtime permissions are a great feature. It would be nice to take advantage of it, however, it may not be possible with future features like running plugins. 
       #
@@ -50,3 +75,41 @@ runs:
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
         INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
+
+    - name: Pull request comment if the deployment failed 
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome != 'success' }}
+      with:
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          <!-- new-deployment-tool-deploy-run-output -->
+          ## New deployment tool results 
+          There was a failure when running the deployment. Check [the logs](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) to see what went wrong.
+        edit-mode: replace
+
+    - name: Pull request comment if there will be a release
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome == 'success' && steps.deployment.outputs.new_release_version != '' }}
+      with:
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          <!-- new-deployment-tool-deploy-run-output -->
+          ## New deployment tool results
+          If this pull request and all of it's parent pull requests are merged, a new release will be created.
+          The next version of the project will be: ${{ steps.deployment.outputs.new_release_version }}
+        edit-mode: replace
+
+    - name: Pull request comment if there will not be a release
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome == 'success' && steps.deployment.outputs.new_release_version == '' }}
+      with:
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          <!-- new-deployment-tool-deploy-run-output -->
+          ## New deployment tool results
+          This pull request and all of it's parent pull requests do not have any changes that would trigger a new release.          
+        edit-mode: replace        
+
