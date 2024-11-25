@@ -36,8 +36,8 @@ describe("snapshot test all of the merge options", () => {
     restore();
   });
 
-  it("merge, should generate the correct git commands", async (t) => {
-    await simulateMerge.merge({
+  it("merge, should generate the correct git commands, should end on target branch", async (t) => {
+    await simulateMerge.performSimulation('merge', {
       baseBranch: "feature",
       targetBranch: "main",
       commitTitle: "title-here",
@@ -45,10 +45,12 @@ describe("snapshot test all of the merge options", () => {
     });
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command ));
+
+    assertEndsOnTargetBranch("main");
   });
 
-  it("squash, should generate the correct git commands", async (t) => {
-    await simulateMerge.squash({
+  it("squash, should generate the correct git commands, should end on target branch", async (t) => {
+    await simulateMerge.performSimulation('squash', {
       baseBranch: "feature",
       targetBranch: "main",
       commitTitle: "title-here",
@@ -56,10 +58,12 @@ describe("snapshot test all of the merge options", () => {
     });
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command ));
+
+    assertEndsOnTargetBranch("main");
   });
 
-  it("rebase, should generate the correct git commands", async (t) => {
-    await simulateMerge.rebase({
+  it("rebase, should generate the correct git commands, should end on target branch", async (t) => {
+    await simulateMerge.performSimulation('rebase', {
       baseBranch: "feature",
       targetBranch: "main",
       commitTitle: "title-here",
@@ -67,5 +71,12 @@ describe("snapshot test all of the merge options", () => {
     });
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command ));
+
+    assertEndsOnTargetBranch("main");    
   });
+
+  const assertEndsOnTargetBranch = (targetBranch: string) => {
+    const lastCheckoutCommand = execMock.calls.filter((call) => call.args[0].command.includes("git checkout")).pop()
+    assertEquals(lastCheckoutCommand?.args[0].command.includes(targetBranch), true)
+  }
 });

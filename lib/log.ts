@@ -25,7 +25,9 @@ export interface Logger {
 
 // Generic log function
 function log(level: keyof typeof levels, message: string) {
-  console.log(`${levels[level]}${message}`);
+  message.split("\n").forEach((line) => {
+    console.log(`${levels[level]}${line}`);
+  })
 }
 
 /**

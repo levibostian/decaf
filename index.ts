@@ -9,6 +9,7 @@ import { exec } from "./lib/exec.ts";
 import { git } from "./lib/git.ts";
 import {logger} from "./lib/log.ts";
 import { GitHubActionsImpl } from "./lib/github-actions.ts";
+import { SimulateMergeImpl } from "./lib/simulate-merge.ts";
 
 /*
 This file is the entrypoint for running the tool.
@@ -26,5 +27,6 @@ await run({
   deployStep: new DeployStepImpl(exec, git),
   createNewReleaseStep: new CreateNewReleaseStepImpl(githubApi),
   log: logger,
-  githubActions: new GitHubActionsImpl()
+  githubActions: new GitHubActionsImpl(),
+  simulateMerge: new SimulateMergeImpl(git, exec),
 });

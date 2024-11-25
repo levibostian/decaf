@@ -92,6 +92,7 @@ const run = async (
   const child = process.spawn();
 
   let capturedStdout = "";
+  let capturedStderr = "";
 
   child.stdout.pipeTo(
     new WritableStream({
@@ -118,6 +119,8 @@ const run = async (
         } else {
           log.debug(decodedChunk);
         }
+
+        capturedStderr += decodedChunk.trimEnd();
       },
     }),
   );
@@ -150,7 +153,7 @@ const run = async (
   }
 
   if (code !== 0 && shouldThrowError) {
-    throw new Error(`Command: ${command}, failed with exit code: ${code}`);
+    throw new Error(`Command: ${command}, failed with exit code: ${code}, output: ${capturedStdout}, stderr: ${capturedStderr}`);
   }
 
   return {
