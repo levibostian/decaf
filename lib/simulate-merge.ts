@@ -3,6 +3,7 @@ import { Git } from "./git.ts";
 
 
 export interface SimulateMerge {
+  performSimulation(type: 'merge' | 'rebase' | 'squash', { baseBranch, targetBranch, commitTitle, commitMessage }: { baseBranch: string, targetBranch: string, commitTitle: string, commitMessage: string }): Promise<void>;
   merge: ({ baseBranch, targetBranch, commitTitle, commitMessage }: { baseBranch: string, targetBranch: string, commitTitle: string, commitMessage: string }) => Promise<void>;
   squash: ({ baseBranch, targetBranch, commitTitle, commitMessage }: { baseBranch: string, targetBranch: string, commitTitle: string, commitMessage: string }) => Promise<void>;
   rebase: ({ baseBranch, targetBranch, commitTitle, commitMessage }: { baseBranch: string, targetBranch: string, commitTitle: string, commitMessage: string }) => Promise<void>;
@@ -10,6 +11,17 @@ export interface SimulateMerge {
 
 export class SimulateMergeImpl implements SimulateMerge {
   constructor(private git: Git, private exec: Exec) {}
+
+  performSimulation(simulateMergeType: 'merge' | 'rebase' | 'squash', { baseBranch, targetBranch, commitTitle, commitMessage }: { baseBranch: string, targetBranch: string, commitTitle: string, commitMessage: string }) {
+    switch (simulateMergeType) {
+      case "merge":
+        return this.merge({baseBranch, targetBranch, commitTitle, commitMessage});
+      case "rebase":
+        return this.rebase({baseBranch, targetBranch, commitTitle, commitMessage});
+      case "squash":
+        return this.squash({baseBranch, targetBranch, commitTitle, commitMessage});
+    }
+  }
 
   // Perform a merge, including creating a merge commit
   async merge({ baseBranch, targetBranch, commitTitle, commitMessage }: { baseBranch: string, targetBranch: string, commitTitle: string, commitMessage: string }) {

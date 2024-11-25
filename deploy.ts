@@ -6,6 +6,7 @@ import { DetermineNextReleaseStep } from "./lib/steps/determine-next-release.ts"
 import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts";
 import {DeployEnvironment, GetNextReleaseVersionEnvironment} from "./lib/types/environment.ts";
 import { GitHubActions } from "./lib/github-actions.ts";
+import { SimulateMerge } from "./lib/simulate-merge.ts";
 
 export const run = async ({
   getLatestReleaseStep,
@@ -14,6 +15,7 @@ export const run = async ({
   deployStep,
   createNewReleaseStep,
   githubActions,
+  simulateMerge,
   log,
 }: {
   getLatestReleaseStep: GetLatestReleaseStep;
@@ -22,12 +24,18 @@ export const run = async ({
   deployStep: DeployStep;
   createNewReleaseStep: CreateNewReleaseStep;
   githubActions: GitHubActions;
+  simulateMerge: SimulateMerge;
   log: Logger;
 }): Promise<void> => {
   // Parse the configuration set by the user first so we can fail early if the configuration is invalid. Fast feedback for the user. 
   // Have the function throw if the JSON parsing fails. it will then exit the function. 
   const determineNextReleaseStepConfig = githubActions.getDetermineNextReleaseStepConfig();
   log.debug(`determine next release step config: ${JSON.stringify(determineNextReleaseStepConfig)}`);
+
+  if (githubActions.getEventThatTriggeredThisRun() !== "push" && githubActions.getEventThatTriggeredThisRun() !== "pull_request") {
+    log.error(`Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${githubActions.getEventThatTriggeredThisRun()}. Bye bye...`);
+    return 
+  }
 
   log.notice(`👋 Hello! I am a tool called new-deployment-tool. I help you deploy your projects.`);
   log.message(
@@ -39,28 +47,9 @@ export const run = async ({
   log.message(`Ok, let's get started with the deployment!`);
   log.message(`--------------------------------`);
 
-   const githubEventName = Deno.env.get("GITHUB_EVENT_NAME");
-   log.debug(`GITHUB_EVENT_NAME: ${githubEventName}`);
-
-   // For safety, have default value be true. 
-   let runInTestMode = true;
-  
-   if (githubEventName === "pull_request") {     
-     log.notice(`I see that the tool got triggered to run from a pull request event. I will run in test mode which means that I will run the deployment process as if it were a real deployment but I will not actually deploy anything. Think of it like a read-only deployment.`);
-     log.notice(`Running in test mode. We are in a pull request event.`);
-     // TODO: we will do our merge stuff 
-   } else if (githubEventName === "push") {
-    runInTestMode = false;     
-   } else {
-    log.warning(`It looks like the tool got triggered to run from an unsupported GitHub Actions event: ${githubEventName}. Try running it again from a pull request or a push event.`);
-    return;
-   }
-
-   githubActions.setOutput({key: "test_mode_on", value: runInTestMode.toString()});
-
   const githubRef = Deno.env.get("GITHUB_REF")!;
   log.debug(`GITHUB_REF: ${githubRef}`);
-  const currentBranch = githubRef.replace("refs/heads/", "");
+  let currentBranch = githubRef.replace("refs/heads/", "");
   log.debug(`name of current git branch: ${currentBranch}`);
 
   // example value for GITHUB_REPOSITORY: "denoland/deno"
@@ -69,6 +58,28 @@ export const run = async ({
   log.debug(
     `github repository executing in: ${githubRepositoryFromEnvironment}. owner: ${owner}, repo: ${repo}`,
   );
+
+  const testModeContext = await githubActions.isRunningInPullRequest()
+  const runInTestMode = testModeContext !== undefined;
+
+  if (testModeContext) {
+    const baseBranch = testModeContext.baseBranch
+    const targetBranch = testModeContext.targetBranch;
+    const commitTitle = testModeContext.prTitle;
+    const commitMessage = testModeContext.prDescription;
+    const simulateMergeType = githubActions.getSimulatedMergeType();
+
+    log.notice(`🧪 I see that the tool got triggered to run from a pull request event. I will run in test mode which means that I will run the deployment process but I will not actually deploy anything.`);
+    log.notice(`🧪 To begin running in test mode, I will simulate merging the current pull request. To do that, I will perform a git ${simulateMergeType} from branch ${baseBranch} into branch ${targetBranch}.`);
+
+    await simulateMerge.performSimulation(simulateMergeType, {baseBranch, targetBranch, commitTitle, commitMessage});
+
+    currentBranch = targetBranch; // after the merge, the current branch is now the target branch.    
+
+    log.notice(`🧪 Simulated merge complete. You will notice that for the remainder of the deployment process, the current branch will be ${targetBranch} instead of the pull request branch ${baseBranch}.`);
+  }
+
+  githubActions.setOutput({key: "test_mode_on", value: runInTestMode.toString()});
 
   log.notice(`👀 I see that the git branch ${currentBranch} is checked out. We will begin the deployment process from the latest commit of this branch.`);
 

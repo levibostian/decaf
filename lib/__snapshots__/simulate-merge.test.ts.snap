@@ -1,6 +1,6 @@
 export const snapshot = {};
 
-snapshot[`snapshot test all of the merge options > merge, should generate the correct git commands 1`] = `
+snapshot[`snapshot test all of the merge options > merge, should generate the correct git commands, should end on target branch 1`] = `
 [
   "git checkout feature",
   "git pull",
@@ -13,7 +13,7 @@ snapshot[`snapshot test all of the merge options > merge, should generate the co
 ]
 `;
 
-snapshot[`snapshot test all of the merge options > squash, should generate the correct git commands 1`] = `
+snapshot[`snapshot test all of the merge options > squash, should generate the correct git commands, should end on target branch 1`] = `
 [
   "git checkout feature",
   "git pull",
@@ -30,7 +30,7 @@ snapshot[`snapshot test all of the merge options > squash, should generate the c
 ]
 `;
 
-snapshot[`snapshot test all of the merge options > rebase, should generate the correct git commands 1`] = `
+snapshot[`snapshot test all of the merge options > rebase, should generate the correct git commands, should end on target branch 1`] = `
 [
   "git checkout feature",
   "git pull",

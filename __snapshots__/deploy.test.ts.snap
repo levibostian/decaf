@@ -73,3 +73,26 @@ snapshot[`user facing logs > given no new commits created during deployment, exp
   "🎉 Congratulations! The deployment process has completed. Bye-bye 👋!",
 ]
 `;
+
+snapshot[`user facing logs > given running in test mode, given commits that trigger a release, expect logs to easily communicate that to the user 1`] = `
+[
+  "👋 Hello! I am a tool called new-deployment-tool. I help you deploy your projects.",
+  "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
+  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/new-deployment-tool/",
+  "Ok, let's get started with the deployment!",
+  "--------------------------------",
+  "🧪 I see that the tool got triggered to run from a pull request event. I will run in test mode which means that I will run the deployment process but I will not actually deploy anything.",
+  "🧪 To begin running in test mode, I will simulate merging the current pull request. To do that, I will perform a git merge from branch sweet-feature into branch main.",
+  "🧪 Simulated merge complete. You will notice that for the remainder of the deployment process, the current branch will be main instead of the pull request branch sweet-feature.",
+  "👀 I see that the git branch main is checked out. We will begin the deployment process from the latest commit of this branch.",
+  "🔍 First, I need to get the latest release that was created on the git branch main. I'll look for it now...",
+  "Looks like the latest release on the git branch main is: 1.0.0",
+  "📜 Next, I need to know all of the changes (git commits) that have been done on git branch main since the latest release of 1.0.0. I'll look for them now...",
+  "I found 1 git commits created since the latest release of 1.0.0.",
+  "📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...",
+  "After analyzing all of the git commits, I have determined the next release version will be: 1.0.0",
+  "🚢 It's time to ship 1.0.0! I will now run all of the deployment commands provided in your project's configuration file...",
+  "✏️ The code has been shipped. The final piece of the deployment process is creating a new release on GitHub for the new version, 1.0.0. Creating that now...(Test mode is enabled so I will not create the new release)",
+  "🎉 Congratulations! The deployment process has completed. Bye-bye 👋!",
+]
+`;
