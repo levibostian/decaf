@@ -7,24 +7,26 @@ import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts";
 import {DeployEnvironment, GetNextReleaseVersionEnvironment} from "./lib/types/environment.ts";
 import { GitHubActions } from "./lib/github-actions.ts";
 import { SimulateMerge } from "./lib/simulate-merge.ts";
+import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts";
+import { GitHubCommit } from "./lib/github-api.ts";
 
 export const run = async ({
+  prepareEnvironmentForTestMode,
   getLatestReleaseStep,
   getCommitsSinceLatestReleaseStep,
   determineNextReleaseStep,
   deployStep,
   createNewReleaseStep,
   githubActions,
-  simulateMerge,
   log,
 }: {
+  prepareEnvironmentForTestMode: PrepareTestModeEnvStep;
   getLatestReleaseStep: GetLatestReleaseStep;
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep;
   determineNextReleaseStep: DetermineNextReleaseStep;
   deployStep: DeployStep;
   createNewReleaseStep: CreateNewReleaseStep;
   githubActions: GitHubActions;
-  simulateMerge: SimulateMerge;
   log: Logger;
 }): Promise<void> => {
   // Parse the configuration set by the user first so we can fail early if the configuration is invalid. Fast feedback for the user. 
@@ -47,9 +49,7 @@ export const run = async ({
   log.message(`Ok, let's get started with the deployment!`);
   log.message(`--------------------------------`);
 
-  const githubRef = Deno.env.get("GITHUB_REF")!;
-  log.debug(`GITHUB_REF: ${githubRef}`);
-  let currentBranch = githubRef.replace("refs/heads/", "");
+  let currentBranch = githubActions.getNameOfCurrentBranch()
   log.debug(`name of current git branch: ${currentBranch}`);
 
   // example value for GITHUB_REPOSITORY: "denoland/deno"
@@ -59,24 +59,19 @@ export const run = async ({
     `github repository executing in: ${githubRepositoryFromEnvironment}. owner: ${owner}, repo: ${repo}`,
   );
 
-  const testModeContext = await githubActions.isRunningInPullRequest()
-  const runInTestMode = testModeContext !== undefined;
+  const runInTestMode = (await githubActions.isRunningInPullRequest()) !== undefined;
+  let commitsCreatedDuringSimulatedMerges: GitHubCommit[] = [];
+  if (runInTestMode) {
+    log.notice(`🧪 I see that I got triggered to run from a pull request event. In pull requests, I run in test mode which means that I will run the deployment process but I will not actually deploy anything.`);
 
-  if (testModeContext) {
-    const baseBranch = testModeContext.baseBranch
-    const targetBranch = testModeContext.targetBranch;
-    const commitTitle = testModeContext.prTitle;
-    const commitMessage = testModeContext.prDescription;
-    const simulateMergeType = githubActions.getSimulatedMergeType();
+    log.notice(`🧪 In test mode, I also simulate merging the current pull request and all parent pull requests (Note, I don't actually merge any pull requests). Simulating now...`);
+    const prepareEnvironmentForTestModeResults = await prepareEnvironmentForTestMode.prepareEnvironmentForTestMode({owner, repo, startingBranch: currentBranch});
 
-    log.notice(`🧪 I see that the tool got triggered to run from a pull request event. I will run in test mode which means that I will run the deployment process but I will not actually deploy anything.`);
-    log.notice(`🧪 To begin running in test mode, I will simulate merging the current pull request. To do that, I will perform a git ${simulateMergeType} from branch ${baseBranch} into branch ${targetBranch}.`);
+    const pullRequestBranchBeforeSimulatedMerges = currentBranch;
+    currentBranch = prepareEnvironmentForTestModeResults?.currentGitBranch || currentBranch;
+    commitsCreatedDuringSimulatedMerges = prepareEnvironmentForTestModeResults?.commitsCreatedDuringSimulatedMerges || [];
 
-    await simulateMerge.performSimulation(simulateMergeType, {baseBranch, targetBranch, commitTitle, commitMessage});
-
-    currentBranch = targetBranch; // after the merge, the current branch is now the target branch.    
-
-    log.notice(`🧪 Simulated merge complete. You will notice that for the remainder of the deployment process, the current branch will be ${targetBranch} instead of the pull request branch ${baseBranch}.`);
+    log.notice(`🧪 Simulated merges complete. You will notice that for the remainder of the deployment process, the current branch will be ${currentBranch} instead of the pull request branch ${pullRequestBranchBeforeSimulatedMerges}.`)
   }
 
   githubActions.setOutput({key: "test_mode_on", value: runInTestMode.toString()});
@@ -128,6 +123,11 @@ export const run = async ({
       JSON.stringify(listOfCommits[listOfCommits.length - 1])
     }`,
   );
+
+  // if we are running in test mode and ran simulated merges, add those created commits to list of commits to have analyzed. 
+  // add commits to beginning of list as newest commits should be first in list, like `git log`
+  listOfCommits.unshift(...commitsCreatedDuringSimulatedMerges);
+
   log.message(`I found ${listOfCommits.length} git commits created since ${lastRelease ? `the latest release of ${lastRelease.tag.name}` : `the git branch ${currentBranch} was created`}.`);
 
   log.notice(

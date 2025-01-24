@@ -3,6 +3,7 @@ import * as log from './log.ts';
 import * as githubActions from 'npm:@actions/core';
 
 export interface GitHubActions {
+  getNameOfCurrentBranch(): string;
   getDetermineNextReleaseStepConfig(): DetermineNextReleaseStepConfig | undefined;
   getSimulatedMergeType(): 'merge' | 'rebase' | 'squash';
   getEventThatTriggeredThisRun(): 'push' | 'pull_request' | unknown;
@@ -11,6 +12,22 @@ export interface GitHubActions {
 }
 
 export class GitHubActionsImpl implements GitHubActions {
+  getNameOfCurrentBranch(): string {
+    const githubRef = Deno.env.get("GITHUB_REF")!;    
+    log.debug(`GITHUB_REF: ${githubRef}`);
+
+    // if the ref starts with "refs/pull/", then it's a pull request. 
+    // the tool is only compatible with branch names that start with "refs/heads/".
+    // We need a different way to get the branch name.
+    if (githubRef.startsWith("refs/pull/")) { 
+      const githubHeadRef = Deno.env.get("GITHUB_HEAD_REF")!;
+      log.debug(`GITHUB_HEAD_REF: ${githubHeadRef}`);
+      return githubHeadRef;
+    }
+
+    return githubRef.replace("refs/heads/", "");
+  }
+
   getDetermineNextReleaseStepConfig(): DetermineNextReleaseStepConfig | undefined {
     const githubActionInputKey = "analyze_commits_config";
 

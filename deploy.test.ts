@@ -18,6 +18,8 @@ import { DeployStep } from "./lib/steps/deploy.ts";
 import { getLogMock } from "./lib/log.test.ts";
 import { GitHubActions } from "./lib/github-actions.ts";
 import { SimulateMerge } from "./lib/simulate-merge.ts";
+import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts";
+import { mock, when } from "./lib/mock/mock.ts";
 
 describe("run the tool in different scenarios", () => {
   afterEach(() => {
@@ -126,6 +128,56 @@ describe("test github actions output", () => {
       githubActionsSetOutputMock.calls[1].args[0], {key: "new_release_version", value: "1.0.0-beta.1"},      
     );
   })
+  it("should set test mode output when running in test mode", async () => {
+    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [new GitHubCommitFake({
+        message: "feat: trigger a release",
+        sha: "trigger-release",
+      })],
+      nextReleaseVersion: "1.0.0",
+      githubActionEventThatTriggeredTool: "pull_request",
+      commitsCreatedBySimulatedMerge: [new GitHubCommitFake()],
+    });
+
+    assertEquals(
+      githubActionsSetOutputMock.calls[0].args[0], {key: "test_mode_on", value: "true"},
+    );
+  })
+  it("should add commits created during simulated merges to list of commits to analyze", async () => {    
+    const givenLatestCommitOnBranch = new GitHubCommitFake({
+      message: "feat: trigger a release",
+      sha: "trigger-release",
+    });
+
+    const givenCommitsCreatedBySimulatedMerge = [
+      new GitHubCommitFake({
+        message: "Merge commit created during simulated merge",
+        sha: "merge-commit-created-during-simulated-merge",
+      }),
+      new GitHubCommitFake({
+        message: "feat: commit created during simulated merge",
+        sha: "commit-created-during-simulated-merge",
+      }),
+    ];
+
+    const expectedCommitsAnalyzed = [
+      givenCommitsCreatedBySimulatedMerge[0], // newest commit first. like `git log`
+      givenCommitsCreatedBySimulatedMerge[1],
+      givenLatestCommitOnBranch,
+    ]
+
+    const { determineNextReleaseStepMock } = await setupTestEnvironmentAndRun({
+      pullRequestTargetBranchName: "main",
+      currentBranchName: "sweet-feature",
+      githubActionEventThatTriggeredTool: "pull_request",
+      commitsSinceLatestRelease: [givenLatestCommitOnBranch],
+      gitCommitCreatedDuringDeploy: undefined,
+      nextReleaseVersion: "1.0.0",
+      commitsCreatedBySimulatedMerge: givenCommitsCreatedBySimulatedMerge,
+    });
+
+    assertEquals(determineNextReleaseStepMock.calls[0].args[0].commits, expectedCommitsAnalyzed);
+  })
 })
 
 describe("user facing logs", () => {
@@ -204,15 +256,15 @@ describe("user facing logs", () => {
 
 describe("test the event that triggered running the tool", () => {
   it("should exit early if the tool is triggered by an unsupported event", async () => {
-    const {getLatestReleaseStepMock, simulateMergeMock} = await setupTestEnvironmentAndRun({
+    const {getLatestReleaseStepMock, prepareEnvironmentForTestModeMock} = await setupTestEnvironmentAndRun({
       githubActionEventThatTriggeredTool: "release"
     });
 
     assertEquals(getLatestReleaseStepMock.calls.length, 0);
-    assertEquals(simulateMergeMock.calls.length, 0);
+    assertEquals(prepareEnvironmentForTestModeMock.calls.length, 0);
   })
   it("should run a deployment if triggered from a push event, expect not to run simulated merge", async () => {
-    const {githubActionsSetOutputMock, simulateMergeMock} = await setupTestEnvironmentAndRun({
+    const {githubActionsSetOutputMock, prepareEnvironmentForTestModeMock} = await setupTestEnvironmentAndRun({
       githubActionEventThatTriggeredTool: "push",
       nextReleaseVersion: "1.0.0",
       commitsSinceLatestRelease: [new GitHubCommitFake({
@@ -223,13 +275,13 @@ describe("test the event that triggered running the tool", () => {
 
     assertEquals(githubActionsSetOutputMock.calls[1].args[0].value, "1.0.0");
     assertEquals(githubActionsSetOutputMock.calls[0].args[0], {key: "test_mode_on", value: "false"});
-    assertEquals(simulateMergeMock.calls.length, 0);
+    assertEquals(prepareEnvironmentForTestModeMock.calls.length, 0);
   })
   it("should run a deployment in test mode if triggered from a pull_request event, expect to run merge simulation", async () => {
     const givenBaseBranch = "sweet-feature";
     const givenTargetBranch = "main";
 
-    const {githubActionsSetOutputMock, simulateMergeMock, getLatestReleaseStepMock} = await setupTestEnvironmentAndRun({
+    const {githubActionsSetOutputMock, prepareEnvironmentForTestModeMock, getLatestReleaseStepMock} = await setupTestEnvironmentAndRun({
       pullRequestTargetBranchName: givenTargetBranch,
       currentBranchName: givenBaseBranch,
       githubActionEventThatTriggeredTool: "pull_request",
@@ -244,7 +296,7 @@ describe("test the event that triggered running the tool", () => {
       githubActionsSetOutputMock.calls[1].args[0], {key: "new_release_version", value: "1.0.0"},
     );
     assertEquals(githubActionsSetOutputMock.calls[0].args[0], {key: "test_mode_on", value: "true"});
-    assertEquals(simulateMergeMock.calls.length, 1);
+    assertEquals(prepareEnvironmentForTestModeMock.calls.length, 1);
 
     // We expect that after simulated merge, the current branch is now the target branch.
     assertEquals(getLatestReleaseStepMock.calls[0].args[0].branch, givenTargetBranch)
@@ -260,6 +312,7 @@ const setupTestEnvironmentAndRun = async ({
   githubActionEventThatTriggeredTool,
   pullRequestTargetBranchName,
   currentBranchName,
+  commitsCreatedBySimulatedMerge,
 }: {
   latestRelease?: GitHubRelease;
   commitsSinceLatestRelease?: GitHubCommit[];
@@ -269,6 +322,7 @@ const setupTestEnvironmentAndRun = async ({
   githubActionEventThatTriggeredTool?: string;
   pullRequestTargetBranchName?: string;
   currentBranchName?: string;
+  commitsCreatedBySimulatedMerge?: GitHubCommit[];
 }) => {
   // Set some defaults. 
   const pullRequestTargetBranch = pullRequestTargetBranchName || "main"; // assume we are running a pull_request event that merges into main 
@@ -354,20 +408,26 @@ const setupTestEnvironmentAndRun = async ({
     return 'merge';
   })
 
-  const simulateMerge = {} as SimulateMerge;
-  const simulateMergeMock = stub(simulateMerge, "performSimulation", async () => {
-    return;
+  stub(githubActions, "getNameOfCurrentBranch", () => {
+    return currentBranch;
   });
 
+  const prepareEnvironmentForTestMode = mock<PrepareTestModeEnvStep>()
+  const prepareEnvironmentForTestModeMock = when(prepareEnvironmentForTestMode, "prepareEnvironmentForTestMode", async () => {
+    if (!isRunningInPullRequest) return undefined;
+
+    return {currentGitBranch: pullRequestTargetBranch, commitsCreatedDuringSimulatedMerges: commitsCreatedBySimulatedMerge || []}
+  })
+
   await run({
+    prepareEnvironmentForTestMode,
     getLatestReleaseStep,
     getCommitsSinceLatestReleaseStep,
     determineNextReleaseStep,
     deployStep,
     createNewReleaseStep,
     log: logMock,
-    githubActions,
-    simulateMerge,
+    githubActions
   });
 
   return {
@@ -380,6 +440,6 @@ const setupTestEnvironmentAndRun = async ({
     githubActionsGetDetermineNextReleaseStepConfigMock,
     githubActionsSetOutputMock,
     githubActionsIsRunningInPullRequestMock,
-    simulateMergeMock
+    prepareEnvironmentForTestModeMock
   };
 };
