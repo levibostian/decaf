@@ -42,6 +42,17 @@ runs:
       run: git fetch
       shell: bash 
 
+    - name: Pull all branches so it's available locally and we can view the commit history of all branches 
+      run: |
+        git config pull.rebase false  # or true or ff only, depending on your preference
+        
+        for branch in $(git branch -r | grep -v '\->'); do
+          local_branch="${branch#origin/}"
+          git branch --track "$local_branch" "$branch" || true
+          git pull origin "$local_branch" || true
+        done
+      shell: bash
+
     - name: Find pull request comment previously created, if there is one. 
       if: ${{ github.event_name == 'pull_request' }}
       uses: peter-evans/find-comment@v3
@@ -68,7 +79,7 @@ runs:
       # Deno's runtime permissions are a great feature. It would be nice to take advantage of it, however, it may not be possible with future features like running plugins. 
       #
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
-      run: deno run --allow-env=GITHUB_OUTPUT,GITHUB_EVENT_PATH,GITHUB_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG --allow-net="api.github.com" --allow-run --allow-read="/tmp,/var/folders,/home/runner/work/_temp" --allow-write="/tmp,/var/folders,/home/runner/work/_temp" https://raw.githubusercontent.com/levibostian/new-deployment-tool/${{ inputs.version }}/index.ts
+      run: deno run --allow-env=GITHUB_OUTPUT,GITHUB_EVENT_PATH,GITHUB_REF,GITHUB_HEAD_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG --allow-net="api.github.com" --allow-run --allow-read="/tmp,/var/folders,/home/runner/work/_temp" --allow-write="/tmp,/var/folders,/home/runner/work/_temp" https://raw.githubusercontent.com/levibostian/new-deployment-tool/${{ inputs.version }}/index.ts
       id: deployment
       shell: bash 
       env:
@@ -111,5 +122,5 @@ runs:
           <!-- new-deployment-tool-deploy-run-output -->
           ## New deployment tool results
           This pull request and all of it's parent pull requests do not have any changes that would trigger a new release.          
-        edit-mode: replace        
+        edit-mode: replace
 

@@ -1,3 +1,4 @@
+import { exec } from "./exec.ts";
 import { Exec } from "./exec.ts";
 import { GitHubCommit } from "./github-api.ts";
 import * as log from "./log.ts";
@@ -29,6 +30,8 @@ export interface Git {
   rebase: (
     { exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string },
   ) => Promise<void>;
+  getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitHubCommit }): Promise<GitHubCommit[]>;
+  getLatestCommitOnBranch({exec, branch}: {exec: Exec, branch: string}): Promise<GitHubCommit>;
 }
 
 const add = async (
@@ -203,6 +206,34 @@ const rebase = async (
   });
 };
 
+const getLatestCommitsSince = async (
+  { exec, commit }: { exec: Exec; commit: GitHubCommit },
+): Promise<GitHubCommit[]> => {
+  const { stdout } = await exec.run({
+    command: `git log --pretty=format:"%H|%s|%ci" ${commit.sha}..HEAD`,
+    input: undefined,
+  });
+
+  return stdout.trim().split("\n").map((commitString) => {
+    const [sha, message, dateString] = commitString.split("|");
+
+    return { sha, message, date: new Date(dateString) };
+  });
+};
+
+const getLatestCommitOnBranch = async (
+  {exec, branch}: {exec: Exec, branch: string}
+): Promise<GitHubCommit> => {
+  const { stdout } = await exec.run({
+    command: `git log -1 --pretty=format:"%H|%s|%ci" ${branch}`,
+    input: undefined,
+  });
+
+  const [sha, message, dateString] = stdout.trim().split("|");
+
+  return { sha, message, date: new Date(dateString) };
+}
+
 export const git: Git = {
   add,
   commit,
@@ -216,4 +247,6 @@ export const git: Git = {
   setUser,
   squash,
   rebase,
+  getLatestCommitsSince,
+  getLatestCommitOnBranch
 };

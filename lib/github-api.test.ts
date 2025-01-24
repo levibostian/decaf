@@ -51,6 +51,33 @@ const assertTokenSet = (): boolean => {
   }
 };
 
+describe("getPullRequestStack", () => {
+  it("should return null for pull request that does not exist", async () => {
+    if (!assertTokenSet()) return;
+
+    const actualPRStack = await GitHubApiImpl.getPullRequestStack({
+      owner: "levibostian",
+      repo: "new-deployment-tool",
+      startingBranch: "does-not-exist",
+    });
+
+    assertEquals(actualPRStack, null);
+  });
+
+  it("should return full stack, in order, given a branch", async () => {
+    if (!assertTokenSet()) return;
+
+    const actualPRStack = await GitHubApiImpl.getPullRequestStack({
+      owner: "levibostian",
+      repo: "new-deployment-tool",
+      startingBranch: "spr/alpha/00aa0a8b",
+    });
+
+    // it will not actually be null. check the stdout when running the test to see the true value. 
+    assertEquals(actualPRStack, null);
+  });
+});
+
 describe("getTagsWithGitHubReleases", () => {
   it("should return sorted list of tags that are also releases", async () => {
     if (!assertTokenSet()) return;
