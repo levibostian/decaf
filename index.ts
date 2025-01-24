@@ -10,6 +10,7 @@ import { git } from "./lib/git.ts";
 import {logger} from "./lib/log.ts";
 import { GitHubActionsImpl } from "./lib/github-actions.ts";
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts";
+import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts";
 
 /*
 This file is the entrypoint for running the tool.
@@ -17,8 +18,10 @@ This file has no automated tests written for it. Keep the size of this file smal
 */
 
 const githubApi = GitHubApiImpl;
+const githubActions = new GitHubActionsImpl();
 
 await run({
+  prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, githubActions, new SimulateMergeImpl(git, exec)),
   getLatestReleaseStep: new GetLatestReleaseStepImpl(githubApi),
   getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(
     githubApi,
@@ -27,6 +30,5 @@ await run({
   deployStep: new DeployStepImpl(exec, git),
   createNewReleaseStep: new CreateNewReleaseStepImpl(githubApi),
   log: logger,
-  githubActions: new GitHubActionsImpl(),
-  simulateMerge: new SimulateMergeImpl(git, exec),
+  githubActions: githubActions
 });

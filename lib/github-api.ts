@@ -27,6 +27,88 @@ interface GitHubCommitApiResponse {
   };
 }
 
+export interface GitHubPullRequest {
+  prNumber: number;
+  targetBranchName: string;
+  sourceBranchName: string;
+  title: string;
+  description: string;
+}
+
+// Returns list of all open pull requests that are stacked on top of each other.
+// Index 0 is the newest pull request.
+const getPullRequestStack = async({owner, repo, startingBranch}: {owner: string, repo: string, startingBranch: string}): Promise<GitHubPullRequest[]> => {
+  // get list of all open pull requests. 
+  const graphqlQuery = `
+query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequests(first: $numberOfResults, states: [OPEN], after: $endCursor, orderBy: {field: CREATED_AT, direction: DESC}) {
+      nodes {
+        prNumber: number
+        targetBranchName: baseRefName
+        sourceBranchName: headRefName     
+        title: title
+        description: body # description in markdown. you can do html or text instead. 
+      }
+      pageInfo {        
+        endCursor
+        hasNextPage
+      }
+    }
+  }
+}
+`;
+  
+  let pullRequests: GitHubPullRequest[] = [];
+
+  await githubGraphqlRequestPaging<{
+    data: {
+      repository: {
+        pullRequests: {
+          nodes: {
+            prNumber: number;
+            targetBranchName: string;
+            sourceBranchName: string;
+            title: string;
+            description: string;
+          }[];
+          pageInfo: {
+            endCursor: string;
+            hasNextPage: boolean;
+          };
+        };
+      };
+    };
+  }>(
+    graphqlQuery,
+    { owner, repo, numberOfResults: 100 },
+    async (response) => {
+      pullRequests.push(...response.data.repository.pullRequests.nodes)
+      return true 
+    }    
+  );
+
+  // Takes the list of all pull requests for the repo and puts into a list, starting at the startingBranch PR, and creates the stack. Going from starting to the top of the stack (example: PR 1 -> PR 2 -> PR 3). 
+  const startingPullRequest = pullRequests.find((pr) => pr.sourceBranchName === startingBranch)
+  if (!startingPullRequest) throw new Error(`Could not get pull request stack because not able to find pull request for starting branch, ${startingBranch}. This is unexpected.`)
+
+  const prStack: GitHubPullRequest[] = [startingPullRequest]
+  let sourceBranchSearchingFor = startingBranch
+
+  while (true) {
+    const nextPullRequest = pullRequests.find((pr) => pr.targetBranchName === sourceBranchSearchingFor)
+
+    if (!nextPullRequest) {
+      break
+    }
+
+    prStack.push(nextPullRequest)
+    sourceBranchSearchingFor = nextPullRequest.sourceBranchName
+  }
+
+  return prStack
+}
+
 // Get a list of github releases.
 // The github rest api does not return the git tag (and commit sha) for a release. You would need to also call the tags endpoint and match the tag name to the release name (painful).
 // But I found you can use the github graphql api to get this information in 1 call.
@@ -45,7 +127,7 @@ const getTagsWithGitHubReleases = async (
   const graphqlQuery = `
 query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int!) {
   repository(owner: $owner, name: $repo) {
-    releases(first: $numberOfResults, after: $endCursor, orderBy: {field: CREATED_AT, direction: DESC}) {
+    releases(first: $numberOfResults, after: $endCursor) {
       nodes {
         name # name of github release 
         createdAt # "2024-06-06T04:26:30Z"
@@ -354,10 +436,12 @@ export interface GitHubApi {
   getTagsWithGitHubReleases: typeof getTagsWithGitHubReleases;
   getCommitsForBranch: typeof getCommitsForBranch;
   createGitHubRelease: typeof createGitHubRelease;
+  getPullRequestStack: typeof getPullRequestStack;
 }
 
 export const GitHubApiImpl: GitHubApi = {
   getTagsWithGitHubReleases,
   getCommitsForBranch,
   createGitHubRelease,
+  getPullRequestStack,
 };
