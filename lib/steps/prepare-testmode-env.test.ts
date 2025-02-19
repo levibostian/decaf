@@ -6,6 +6,8 @@ import { SimulateMerge } from "../simulate-merge.ts";
 import { PrepareTestModeEnvStepImpl } from "./prepare-testmode-env.ts";
 import { mock, when } from "../mock/mock.ts";
 import { GitHubCommitFake } from "../github-api.test.ts";
+import { Git } from "../git.ts";
+import { Exec } from "../exec.ts";
 
 describe("prepareEnvironmentForTestMode", () => {
   let step: PrepareTestModeEnvStepImpl;
@@ -13,16 +15,22 @@ describe("prepareEnvironmentForTestMode", () => {
   let githubActions: GitHubActions;
   let gitHubApi: GitHubApi
   let simulateMerge: SimulateMerge;
+  let git: Git;
+  let exec: Exec;
   
   beforeEach(() => {
     githubActions = mock();
     gitHubApi = mock();
     simulateMerge = mock();
+    git = mock();
+    exec = mock();
 
     step = new PrepareTestModeEnvStepImpl(
       gitHubApi,
       githubActions,
       simulateMerge,
+      git,
+      exec,
     );
   })
 
@@ -41,6 +49,7 @@ describe("prepareEnvironmentForTestMode", () => {
   it("should perform simulated merge on all pull requests in stack, given multiple pull requests in stack, expect to get list of commits made", async () => {
     const givenMergeType: 'merge' | 'squash' | 'rebase' = 'merge';
 
+    when(git, "createLocalBranchFromRemote", async () => {});
     when(githubActions, "getSimulatedMergeType", () => givenMergeType);
     when(githubActions, "isRunningInPullRequest", async () => ({baseBranch: "feature-branch-2", targetBranch: "feature-branch-1", prTitle: "title", prDescription: "description"}));
 

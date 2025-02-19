@@ -32,6 +32,7 @@ export interface Git {
   ) => Promise<void>;
   getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitHubCommit }): Promise<GitHubCommit[]>;
   getLatestCommitOnBranch({exec, branch}: {exec: Exec, branch: string}): Promise<GitHubCommit>;
+  createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>;
 }
 
 const add = async (
@@ -234,6 +235,55 @@ const getLatestCommitOnBranch = async (
   return { sha, message, date: new Date(dateString) };
 }
 
+/**
+ * Makes sure that we have a local branch that has all of the commits that the remote branch has.
+ * 
+ * There are a lot of commands here, just to get a local branch of a remote branch. After many attempts to simplify this, we would hit many different errors. 
+ * I believe that complexity comes because we run this tool on a CI server where the git config might be different. 
+ * Running all of these commands and running each command by itself (example: not running `git checkout -b` to try and combine creating a branch and checking it out)
+ * have given the most consistent results.
+ */
+const createLocalBranchFromRemote = async (
+  { exec, branch }: { exec: Exec; branch: string },
+): Promise<void> => {
+  const currentBranchName = (await exec.run({
+    command: `git branch --show-current`,
+    input: undefined,
+  })).stdout.trim();
+
+  // Perform a fetch, otherwise you might get errors about origin branch not being found. 
+  await exec.run({
+    command: `git fetch origin`,
+    input: undefined,
+  });
+
+  // Create a local branch that tracks the remote branch.
+  await exec.run({
+    command: `git branch --track ${branch} origin/${branch}`,
+    input: undefined,
+  });
+
+  // Checkout the branch so we can pull it.
+  await exec.run({
+    command: `git checkout ${branch}`,
+    input: undefined,
+  });
+
+  // Pull the branch from the remote.
+  // Adding --no-rebase to avoid an error that could happen when you run pull. 
+  // The error is: You have divergent branches and need to specify how to reconcile them.
+  await exec.run({
+    command: `git pull --no-rebase origin ${branch}`,
+    input: undefined,
+  });
+
+  // Switch back to the branch we were on before.
+  await exec.run({
+    command: `git checkout ${currentBranchName}`,
+    input: undefined,
+  });
+};
+
 export const git: Git = {
   add,
   commit,
@@ -248,5 +298,6 @@ export const git: Git = {
   squash,
   rebase,
   getLatestCommitsSince,
-  getLatestCommitOnBranch
+  getLatestCommitOnBranch,
+  createLocalBranchFromRemote
 };

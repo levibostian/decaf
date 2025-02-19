@@ -126,6 +126,8 @@ const run = async (
   );
 
   const code = (await child.status).code;
+  if (capturedStdout) log.debug(capturedStdout);
+  if (capturedStderr) log.debug(capturedStderr);
 
   let commandOutput: DeployCommandOutput | undefined;
 
