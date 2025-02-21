@@ -37,21 +37,6 @@ runs:
       uses: denoland/setup-deno@v1
       with:
         deno-version: v1.x
-    
-    - name: Fetch all branches so we can reference base branch to merge into 
-      run: git fetch
-      shell: bash 
-
-    - name: Pull all branches so it's available locally and we can view the commit history of all branches 
-      run: |
-        git config pull.rebase false  # or true or ff only, depending on your preference
-        
-        for branch in $(git branch -r | grep -v '\->'); do
-          local_branch="${branch#origin/}"
-          git branch --track "$local_branch" "$branch" || true
-          git pull origin "$local_branch" || true
-        done
-      shell: bash
 
     - name: Find pull request comment previously created, if there is one. 
       if: ${{ github.event_name == 'pull_request' }}

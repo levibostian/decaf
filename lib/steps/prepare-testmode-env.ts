@@ -1,3 +1,5 @@
+import { Exec } from "../exec.ts";
+import { Git } from "../git.ts";
 import { GitHubActions } from "../github-actions.ts";
 import { GitHubApi, GitHubCommit } from "../github-api.ts";
 import { SimulateMerge } from "../simulate-merge.ts";
@@ -11,7 +13,7 @@ export interface PrepareTestModeEnvStep {
 }
 
 export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
-  constructor(private githubApi: GitHubApi, private githubActions: GitHubActions, private simulateMerge: SimulateMerge) {}
+  constructor(private githubApi: GitHubApi, private githubActions: GitHubActions, private simulateMerge: SimulateMerge, private git: Git, private exec: Exec) {}
 
   prepareEnvironmentForTestMode = async ({ owner, repo, startingBranch }: {
     owner: string;
@@ -30,11 +32,15 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     const commitsCreatedDuringSimulatedMerges: GitHubCommit[] = [];
     
     for await (const pr of pullRequestStack) {
-        const commitsCreated = await this.simulateMerge.performSimulation(simulateMergeType, {baseBranch: pr.sourceBranchName, targetBranch: pr.targetBranchName, commitTitle: pr.title, commitMessage: pr.description});
+      // make sure that a local branch exists for the PR branches so we can check simulate the merge by running merge commands between the branches. 
+      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.sourceBranchName });
+      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.targetBranchName });
 
-        commitsCreatedDuringSimulatedMerges.unshift(...commitsCreated);
-        currentBranch = pr.targetBranchName // after merging, the branch we are on will be different. 
-      }
+      const commitsCreated = await this.simulateMerge.performSimulation(simulateMergeType, {baseBranch: pr.sourceBranchName, targetBranch: pr.targetBranchName, commitTitle: pr.title, commitMessage: pr.description});
+
+      commitsCreatedDuringSimulatedMerges.unshift(...commitsCreated);
+      currentBranch = pr.targetBranchName // after merging, the branch we are on will be different. 
+    }
 
     return { currentGitBranch: currentBranch, commitsCreatedDuringSimulatedMerges };
   }

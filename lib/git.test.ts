@@ -403,3 +403,40 @@ describe("doesLocalBranchExist", () => {
     assertEquals(actual, false);
   });
 })
+
+describe("createLocalBranchFromRemote", () => {
+  afterEach(() => {
+    restore();
+  });
+
+  it("should execute the expected commands, given a branch", async () => {
+    const execMock = stub(exec, "run", async (args) => {
+      if (args.command.includes("--show-current")) {
+       return { exitCode: 0, stdout: "branch-im-on", output: undefined };
+      }
+
+      return { exitCode: 0, stdout: "", output: undefined };
+    });
+
+    await git.createLocalBranchFromRemote({ exec, branch: "branch-to-pull" });
+
+    assertEquals(execMock.calls.map((call) => call.args[0].command), [
+      "git branch --show-current",
+      "git fetch origin",
+      "git branch --track branch-to-pull origin/branch-to-pull",
+      "git checkout branch-to-pull",
+      "git pull --no-rebase origin branch-to-pull",
+      "git checkout branch-im-on",
+    ]);
+  });
+
+  it("should throw an error, given a command fails", async () => {
+    stub(exec, "run", async (args) => {
+      throw new Error("");
+    });
+
+    assertRejects(async () => {
+      await git.createLocalBranchFromRemote({ exec, branch: "main" });
+    }, Error);
+  });
+});
