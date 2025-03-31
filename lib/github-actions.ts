@@ -1,6 +1,6 @@
 import { DetermineNextReleaseStepConfig } from "./steps/determine-next-release.ts";
 import * as log from './log.ts';
-import * as githubActions from 'npm:@actions/core';
+import * as githubActions from '@actions/core';
 
 export interface GitHubActions {
   getNameOfCurrentBranch(): string;

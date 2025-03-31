@@ -1,4 +1,4 @@
-import { stub, spy, GetParametersFromProp, GetReturnFromProp, Stub } from "jsr:@std/testing@1/mock";
+import { stub, spy, GetParametersFromProp, GetReturnFromProp, Stub } from "@std/testing/mock";
 
 /**
  * Example: 

@@ -38,6 +38,10 @@ runs:
       with:
         deno-version: v2.x
 
+    - name: Install dependencies
+      run: deno install --frozen
+      shell: bash
+
     - name: Find pull request comment previously created, if there is one. 
       if: ${{ github.event_name == 'pull_request' }}
       uses: peter-evans/find-comment@v3

@@ -1,11 +1,11 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/assert_equals.ts";
+import { assertEquals } from "@std/assert"
 import { GitHubCommit, GitHubRelease } from "../github-api.ts";
 import { DetermineNextReleaseStepImpl } from "./determine-next-release.ts";
 import { GitHubCommitFake, GitHubReleaseFake } from "../github-api.test.ts";
-import { before, beforeEach, describe, it } from "jsr:@std/testing@1/bdd";
+import { before, beforeEach, describe, it } from "@std/testing/bdd";
 import { Logger } from "../log.ts";
 import { getLogMock, LogMock } from "../log.test.ts";
-import { assertSnapshot } from "jsr:@std/testing@1/snapshot";
+import { assertSnapshot } from "@std/testing/snapshot";
 
 const defaultEnvironment = {
   gitCurrentBranch: "main",

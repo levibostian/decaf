@@ -3,7 +3,7 @@ import {
   isDeployCommandOutput,
 } from "./steps/types/deploy.ts";
 import * as log from "./log.ts";
-import * as shellQuote from "npm:shell-quote@1.8.1";
+import * as shellQuote from "shell-quote";
 import { DeployEnvironment } from "./types/environment.ts";
 
 export interface RunResult {

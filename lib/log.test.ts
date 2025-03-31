@@ -1,4 +1,4 @@
-import { stub } from "jsr:@std/testing@1/mock";
+import { stub } from "@std/testing/mock";
 import { Logger } from "./log.ts";
 
 export interface LogMock extends Logger {

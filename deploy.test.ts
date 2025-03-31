@@ -1,7 +1,7 @@
-import { assertEquals } from "jsr:@std/assert@1";
-import { afterEach, describe, it } from "jsr:@std/testing@1/bdd";
-import { restore, stub } from "jsr:@std/testing@1/mock";
-import { assertSnapshot } from "jsr:@std/testing@1/snapshot";
+import { assertEquals } from "@std/assert";
+import { afterEach, describe, it } from "@std/testing/bdd";
+import { restore, stub } from "@std/testing/mock";
+import { assertSnapshot } from "@std/testing/snapshot";
 import { GetLatestReleaseStep } from "./lib/steps/get-latest-release.ts";
 import { run } from "./deploy.ts";
 import { GitHubCommit, GitHubRelease } from "./lib/github-api.ts";
