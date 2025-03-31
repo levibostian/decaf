@@ -36,7 +36,7 @@ runs:
     - name: Install Deno runtime to run the CLI
       uses: denoland/setup-deno@v1
       with:
-        deno-version: v1.x
+        deno-version: v2.x
 
     - name: Find pull request comment previously created, if there is one. 
       if: ${{ github.event_name == 'pull_request' }}
