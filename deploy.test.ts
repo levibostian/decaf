@@ -178,6 +178,34 @@ describe("test github actions output", () => {
 
     assertEquals(determineNextReleaseStepMock.calls[0].args[0].commits, expectedCommitsAnalyzed);
   })
+
+  // Test a bug found where you are in test mode > simulate merge > new commits are made > tool says "zero commits created" > exits early.
+  it("should not exit early if parent branch has no commits, but we make new commits during simulated merge", async () => {    
+    const givenCommitsCreatedBySimulatedMerge = [
+      new GitHubCommitFake({
+        message: "Merge commit created during simulated merge",
+        sha: "merge-commit-created-during-simulated-merge",
+      }),
+      new GitHubCommitFake({
+        message: "feat: commit created during simulated merge",
+        sha: "commit-created-during-simulated-merge",
+      }),
+    ];
+  
+    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+      pullRequestTargetBranchName: "main",
+      currentBranchName: "sweet-feature",
+      githubActionEventThatTriggeredTool: "pull_request",
+      commitsSinceLatestRelease: [],
+      gitCommitCreatedDuringDeploy: undefined,
+      nextReleaseVersion: "1.0.0",
+      commitsCreatedBySimulatedMerge: givenCommitsCreatedBySimulatedMerge,
+    });
+  
+    const didExitEarly = githubActionsSetOutputMock.calls.filter(call => call.args[0].key === "new_release_version").length === 0;
+  
+    assertEquals(didExitEarly, false);
+  })
 })
 
 describe("user facing logs", () => {

@@ -110,6 +110,11 @@ export const run = async ({
       branch: currentBranch,
       latestRelease: lastRelease,
     });
+
+  // if we are running in test mode and ran simulated merges, add those created commits to list of commits to have analyzed. 
+  // add commits to beginning of list as newest commits should be first in list, like `git log`
+  listOfCommits.unshift(...commitsCreatedDuringSimulatedMerges);
+
   if (listOfCommits.length === 0) {
     log.warning(
       `Looks like zero commits have been created since the latest release. This means there is no new code created and therefore, the deployment process stops here. Bye-bye 👋!`,
@@ -123,10 +128,6 @@ export const run = async ({
       JSON.stringify(listOfCommits[listOfCommits.length - 1])
     }`,
   );
-
-  // if we are running in test mode and ran simulated merges, add those created commits to list of commits to have analyzed. 
-  // add commits to beginning of list as newest commits should be first in list, like `git log`
-  listOfCommits.unshift(...commitsCreatedDuringSimulatedMerges);
 
   log.message(`I found ${listOfCommits.length} git commits created since ${lastRelease ? `the latest release of ${lastRelease.tag.name}` : `the git branch ${currentBranch} was created`}.`);
 
