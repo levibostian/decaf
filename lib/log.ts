@@ -1,4 +1,4 @@
-import colors from "npm:ansi-styles@6.2.1";
+import colors from "ansi-styles";
 
 // log.ts
 // This module provides a simple API for logging messages at different levels to GitHub Actions.

@@ -1,5 +1,5 @@
 import { exec } from "./exec.ts";
-import { assertEquals } from "jsr:@std/assert@1";
+import { assertEquals } from "@std/assert";
 import { DeployEnvironment } from "./types/environment.ts";
 
 const givenPluginInput: DeployEnvironment = {

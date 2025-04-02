@@ -1,5 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/assert_equals.ts";
-import { assertThrows } from "https://deno.land/std@0.224.0/assert/assert_throws.ts";
+import { assertEquals, assertThrows } from "@std/assert"
 import { GitHubActionsImpl } from "./github-actions.ts";
 import { DetermineNextReleaseStepConfig } from "./steps/determine-next-release.ts";
 

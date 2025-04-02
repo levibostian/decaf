@@ -38,6 +38,10 @@ runs:
       with:
         deno-version: v2.x
 
+    - name: Compile the CLI
+      run: deno task compile
+      shell: bash
+
     - name: Find pull request comment previously created, if there is one. 
       if: ${{ github.event_name == 'pull_request' }}
       uses: peter-evans/find-comment@v3
@@ -64,7 +68,7 @@ runs:
       # Deno's runtime permissions are a great feature. It would be nice to take advantage of it, however, it may not be possible with future features like running plugins. 
       #
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
-      run: deno run --allow-env=GITHUB_OUTPUT,GITHUB_EVENT_PATH,GITHUB_REF,GITHUB_HEAD_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG --allow-net="api.github.com" --allow-run --allow-read="/tmp,/var/folders,/home/runner/work/_temp" --allow-write="/tmp,/var/folders,/home/runner/work/_temp" https://raw.githubusercontent.com/levibostian/new-deployment-tool/${{ inputs.version }}/index.ts
+      run: ./deployer
       id: deployment
       shell: bash 
       env:

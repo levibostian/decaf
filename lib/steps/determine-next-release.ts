@@ -1,5 +1,5 @@
 import { GitHubCommit, GitHubRelease } from "../github-api.ts";
-import * as semver from "jsr:@std/semver";
+import * as semver from "@std/semver";
 import { versionBumpForCommitBasedOnConventionalCommit } from "../conventional-commits.ts";
 import { Logger, logger } from "../log.ts";
 import { GetNextReleaseVersionEnvironment } from "../types/environment.ts";

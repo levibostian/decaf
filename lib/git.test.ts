@@ -2,13 +2,13 @@ import {
   assertEquals,
   assertFalse,
   assertRejects,
-} from "jsr:@std/assert@1";
-import { afterEach, describe, it } from "jsr:@std/testing@1/bdd";
+} from "@std/assert";
+import { afterEach, describe, it } from "@std/testing/bdd";
 import {
   assertSpyCall,
   restore,
   stub,
-} from "jsr:@std/testing@1/mock";
+} from "@std/testing/mock";
 import { exec, RunResult } from "./exec.ts";
 import { git } from "./git.ts";
 

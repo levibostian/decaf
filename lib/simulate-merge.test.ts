@@ -2,19 +2,19 @@ import {
   assertEquals,
   assertFalse,
   assertRejects,
-} from "jsr:@std/assert@1";
-import { afterEach, before, beforeEach, describe, it } from "jsr:@std/testing@1/bdd";
+} from "@std/assert";
+import { afterEach, before, beforeEach, describe, it } from "@std/testing/bdd";
 import {
   assertSpyCall,
   restore,
   Stub,
   stub,
-} from "jsr:@std/testing@1/mock";
+} from "@std/testing/mock";
 import { exec, RunResult } from "./exec.ts";
 import { SimulateMerge, SimulateMergeImpl } from "./simulate-merge.ts"
 import { git } from "./git.ts";
 import { Exec } from "./exec.ts";
-import { assertSnapshot } from "jsr:@std/testing@1/snapshot";
+import { assertSnapshot } from "@std/testing/snapshot";
 
 describe("snapshot test all of the merge options", () => {
   let simulateMerge: SimulateMerge;

@@ -1,5 +1,5 @@
-import { assert, assertEquals } from "jsr:@std/assert@1";
-import { beforeEach, describe, it } from "jsr:@std/testing@1/bdd";
+import { assert, assertEquals } from "@std/assert";
+import { beforeEach, describe, it } from "@std/testing/bdd";
 import { GitHubApi } from "../github-api.ts";
 import { GitHubActions } from "../github-actions.ts";
 import { SimulateMerge } from "../simulate-merge.ts";

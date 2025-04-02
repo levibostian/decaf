@@ -1,6 +1,6 @@
-import { assertEquals } from "jsr:@std/assert@1";
-import { afterEach, describe, it } from "jsr:@std/testing@1/bdd";
-import { restore, stub } from "jsr:@std/testing@1/mock";
+import { assertEquals } from "@std/assert";
+import { afterEach, describe, it } from "@std/testing/bdd";
+import { restore, stub } from "@std/testing/mock";
 import { GitHubApiImpl } from "../github-api.ts";
 import { GetLatestReleaseStepImpl } from "./get-latest-release.ts";
 

@@ -1,11 +1,11 @@
-import { assertEquals, assertNotEquals, assertRejects } from "jsr:@std/assert@1";
-import { afterEach, beforeEach, describe, it } from "jsr:@std/testing@1/bdd";
+import { assertEquals, assertNotEquals, assertRejects } from "@std/assert";
+import { afterEach, beforeEach, describe, it } from "@std/testing/bdd";
 import {
   assertSpyCall,
   assertSpyCallArg,
   restore,
   stub,
-} from "jsr:@std/testing@1/mock";
+} from "@std/testing/mock";
 import { exec } from "../exec.ts";
 import { DeployStep, DeployStepImpl } from "./deploy.ts";
 import { git } from "../git.ts";
