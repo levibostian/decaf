@@ -1,44 +1,46 @@
-import * as log from "./log.ts";
+import * as log from "./log.ts"
 
 export interface GitHubRelease {
   tag: {
-    name: string;
+    name: string
     commit: {
-      sha: string;
-    };
-  };
-  name: string;
-  created_at: Date;
+      sha: string
+    }
+  }
+  name: string
+  created_at: Date
 }
 
 export interface GitHubCommit {
-  sha: string;
-  message: string;
-  date: Date;
+  sha: string
+  message: string
+  date: Date
 }
 
 interface GitHubCommitApiResponse {
-  sha: string;
+  sha: string
   commit: {
-    message: string;
+    message: string
     committer: {
-      date: string;
-    };
-  };
+      date: string
+    }
+  }
 }
 
 export interface GitHubPullRequest {
-  prNumber: number;
-  targetBranchName: string;
-  sourceBranchName: string;
-  title: string;
-  description: string;
+  prNumber: number
+  targetBranchName: string
+  sourceBranchName: string
+  title: string
+  description: string
 }
 
 // Returns list of all open pull requests that are stacked on top of each other.
 // Index 0 is the newest pull request.
-const getPullRequestStack = async({owner, repo, startingBranch}: {owner: string, repo: string, startingBranch: string}): Promise<GitHubPullRequest[]> => {
-  // get list of all open pull requests. 
+const getPullRequestStack = async (
+  { owner, repo, startingBranch }: { owner: string; repo: string; startingBranch: string },
+): Promise<GitHubPullRequest[]> => {
+  // get list of all open pull requests.
   const graphqlQuery = `
 query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int!) {
   repository(owner: $owner, name: $repo) {
@@ -57,40 +59,44 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
     }
   }
 }
-`;
-  
-  let pullRequests: GitHubPullRequest[] = [];
+`
+
+  let pullRequests: GitHubPullRequest[] = []
 
   await githubGraphqlRequestPaging<{
     data: {
       repository: {
         pullRequests: {
           nodes: {
-            prNumber: number;
-            targetBranchName: string;
-            sourceBranchName: string;
-            title: string;
-            description: string;
-          }[];
+            prNumber: number
+            targetBranchName: string
+            sourceBranchName: string
+            title: string
+            description: string
+          }[]
           pageInfo: {
-            endCursor: string;
-            hasNextPage: boolean;
-          };
-        };
-      };
-    };
+            endCursor: string
+            hasNextPage: boolean
+          }
+        }
+      }
+    }
   }>(
     graphqlQuery,
     { owner, repo, numberOfResults: 100 },
     async (response) => {
       pullRequests.push(...response.data.repository.pullRequests.nodes)
-      return true 
-    }    
-  );
+      return true
+    },
+  )
 
-  // Takes the list of all pull requests for the repo and puts into a list, starting at the startingBranch PR, and creates the stack. Going from starting to the top of the stack (example: PR 1 -> PR 2 -> PR 3). 
+  // Takes the list of all pull requests for the repo and puts into a list, starting at the startingBranch PR, and creates the stack. Going from starting to the top of the stack (example: PR 1 -> PR 2 -> PR 3).
   const startingPullRequest = pullRequests.find((pr) => pr.sourceBranchName === startingBranch)
-  if (!startingPullRequest) throw new Error(`Could not get pull request stack because not able to find pull request for starting branch, ${startingBranch}. This is unexpected.`)
+  if (!startingPullRequest) {
+    throw new Error(
+      `Could not get pull request stack because not able to find pull request for starting branch, ${startingBranch}. This is unexpected.`,
+    )
+  }
 
   const prStack: GitHubPullRequest[] = [startingPullRequest]
   let sourceBranchSearchingFor = startingBranch
@@ -114,10 +120,10 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
 // But I found you can use the github graphql api to get this information in 1 call.
 const getTagsWithGitHubReleases = async (
   { owner, repo, processReleases, numberOfResults }: {
-    owner: string;
-    repo: string;
-    processReleases: (data: GitHubRelease[]) => Promise<boolean>;
-    numberOfResults?: number;
+    owner: string
+    repo: string
+    processReleases: (data: GitHubRelease[]) => Promise<boolean>
+    numberOfResults?: number
   },
 ): Promise<void> => {
   // Gets list of tags that also have a github release made for it.
@@ -148,30 +154,30 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
     }
   }
 }
-`;
+`
 
   await githubGraphqlRequestPaging<{
     data: {
       repository: {
         releases: {
           nodes: {
-            name: string;
-            createdAt: string;
-            isDraft: boolean;
+            name: string
+            createdAt: string
+            isDraft: boolean
             tag: {
-              name: string;
+              name: string
               target: {
-                oid: string;
-              };
-            };
-          }[];
+                oid: string
+              }
+            }
+          }[]
           pageInfo: {
-            endCursor: string;
-            hasNextPage: boolean;
-          };
-        };
-      };
-    };
+            endCursor: string
+            hasNextPage: boolean
+          }
+        }
+      }
+    }
   }>(
     graphqlQuery,
     { owner, repo, numberOfResults: numberOfResults || 100 },
@@ -188,20 +194,20 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
             },
             name: release.name,
             created_at: new Date(release.createdAt),
-          };
-        });
+          }
+        })
 
-      return processReleases(releases);
+      return processReleases(releases)
     },
-  );
-};
+  )
+}
 
 const getCommitsForBranch = async <T>(
   { owner, repo, branch, processCommits }: {
-    owner: string;
-    repo: string;
-    branch: string;
-    processCommits: (data: GitHubCommit[]) => Promise<boolean>;
+    owner: string
+    repo: string
+    branch: string
+    processCommits: (data: GitHubCommit[]) => Promise<boolean>
   },
 ) => {
   return await githubApiRequestPaging<GitHubCommitApiResponse[]>(
@@ -212,18 +218,18 @@ const getCommitsForBranch = async <T>(
           sha: response.sha,
           message: response.commit.message,
           date: new Date(response.commit.committer.date),
-        };
-      }));
+        }
+      }))
     },
-  );
-};
+  )
+}
 
 const createGitHubRelease = async (
   { owner, repo, tagName, commit }: {
-    owner: string;
-    repo: string;
-    tagName: string;
-    commit: GitHubCommit;
+    owner: string
+    repo: string
+    tagName: string
+    commit: GitHubCommit
   },
 ) => {
   await githubApiRequest(
@@ -237,8 +243,8 @@ const createGitHubRelease = async (
       draft: false,
       prerelease: false,
     },
-  );
-};
+  )
+}
 
 // Make a GitHub Rest API request.
 const githubApiRequest = async <T>(
@@ -250,34 +256,32 @@ const githubApiRequest = async <T>(
     "Authorization": `Bearer ${Deno.env.get("INPUT_GITHUB_TOKEN")}`,
     "Accept": "application/vnd.github.v3+json",
     "Content-Type": "application/json",
-  };
+  }
 
   log.debug(
-    `GitHub API request: ${method}:${url}, headers: ${
-      JSON.stringify(headers)
-    }, body: ${JSON.stringify(body)}`,
-  );
+    `GitHub API request: ${method}:${url}, headers: ${JSON.stringify(headers)}, body: ${JSON.stringify(body)}`,
+  )
 
   const response = await fetch(url, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
-  });
+  })
 
   if (!response.ok) {
     throw new Error(
       `Failed to call github API endpoint: ${url}, given error: ${response.statusText}`,
-    );
+    )
   }
 
-  const responseJsonBody: T = await response.json();
+  const responseJsonBody: T = await response.json()
 
   return {
     status: response.status,
     body: responseJsonBody,
     headers: response.headers,
-  };
-};
+  }
+}
 
 // Make a GitHub Rest API request that supports paging. Takes in a function that gets called for each page of results.
 // In that function, return true if you want to get the next page of results.
@@ -285,24 +289,24 @@ async function githubApiRequestPaging<RESPONSE>(
   initialUrl: string,
   processResponse: (data: RESPONSE) => Promise<boolean>,
 ): Promise<void> {
-  let url = initialUrl;
-  let getNextPage = true;
+  let url = initialUrl
+  let getNextPage = true
 
   while (getNextPage) {
-    const response = await githubApiRequest<RESPONSE>(url);
+    const response = await githubApiRequest<RESPONSE>(url)
 
-    getNextPage = await processResponse(response.body);
+    getNextPage = await processResponse(response.body)
 
     // for propagation, add nextLink to responseJsonBody. It's the URL that should be used in the next HTTP request to get the next page of results.
     const linkHeader = response.headers.get("Link")?.match(
       /<(.*?)>; rel="next"/,
-    );
-    const nextPageUrl = linkHeader ? linkHeader[1] : undefined;
+    )
+    const nextPageUrl = linkHeader ? linkHeader[1] : undefined
 
     if (!nextPageUrl) {
-      getNextPage = false;
+      getNextPage = false
     } else {
-      url = nextPageUrl;
+      url = nextPageUrl
     }
   }
 }
@@ -341,41 +345,39 @@ const githubGraphqlRequest = async <T>(query: string, variables: object) => {
   const headers = {
     "Authorization": `Bearer ${Deno.env.get("INPUT_GITHUB_TOKEN")}`,
     "Content-Type": "application/json",
-  };
+  }
 
   const body = JSON.stringify({
     query,
     variables,
-  });
+  })
 
   log.debug(
-    `GitHub graphql request: headers: ${
-      JSON.stringify(headers)
-    }, body: ${body}`,
-  );
+    `GitHub graphql request: headers: ${JSON.stringify(headers)}, body: ${body}`,
+  )
 
   const response = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers,
     body,
-  });
+  })
 
   if (!response.ok) {
     throw new Error(
       `Failed to call github graphql api. Given error: ${response.statusText}`,
-    );
+    )
   }
 
-  const responseJsonBody: T = await response.json();
+  const responseJsonBody: T = await response.json()
 
-  log.debug(`GitHub graphql response: ${JSON.stringify(responseJsonBody)}`);
+  log.debug(`GitHub graphql response: ${JSON.stringify(responseJsonBody)}`)
 
   return {
     status: response.status,
     body: responseJsonBody,
     headers: response.headers,
-  };
-};
+  }
+}
 
 // Make a GitHub GraphQL API request that supports paging. Takes in a function that gets called for each page of results.
 // Assumptions when using this function:
@@ -396,47 +398,47 @@ async function githubGraphqlRequestPaging<RESPONSE>(
     _obj: any,
   ): { hasNextPage: boolean; endCursor: string } {
     // Create a shallow copy of the object to avoid modifying the original
-    const obj = { ..._obj };
+    const obj = { ..._obj }
 
     // nodes is the JSON response. It could be a really big object. Do not perform recursion on it, so let's delete it.
-    delete obj["nodes"];
+    delete obj["nodes"]
 
     for (const key in obj) {
       if (key === "pageInfo") {
-        return obj[key] as { hasNextPage: boolean; endCursor: string };
+        return obj[key] as { hasNextPage: boolean; endCursor: string }
       } else {
-        return findPageInfo(obj[key]);
+        return findPageInfo(obj[key])
       }
     }
 
     throw new Error(
       "pageInfo object not found in response. Did you forget to add pageInfo to your graphql query?",
-    );
+    )
   }
 
-  let getNextPage = true;
+  let getNextPage = true
   while (getNextPage) {
-    const response = await githubGraphqlRequest<RESPONSE>(query, variables);
+    const response = await githubGraphqlRequest<RESPONSE>(query, variables)
 
-    getNextPage = await processResponse(response.body);
+    getNextPage = await processResponse(response.body)
 
-    const pageInfo = findPageInfo(response.body);
+    const pageInfo = findPageInfo(response.body)
 
-    log.debug(`pageInfo: ${JSON.stringify(pageInfo)}`);
+    log.debug(`pageInfo: ${JSON.stringify(pageInfo)}`)
 
     if (!pageInfo.hasNextPage) {
-      getNextPage = false;
+      getNextPage = false
     } else {
-      variables["endCursor"] = pageInfo.endCursor;
+      variables["endCursor"] = pageInfo.endCursor
     }
   }
 }
 
 export interface GitHubApi {
-  getTagsWithGitHubReleases: typeof getTagsWithGitHubReleases;
-  getCommitsForBranch: typeof getCommitsForBranch;
-  createGitHubRelease: typeof createGitHubRelease;
-  getPullRequestStack: typeof getPullRequestStack;
+  getTagsWithGitHubReleases: typeof getTagsWithGitHubReleases
+  getCommitsForBranch: typeof getCommitsForBranch
+  createGitHubRelease: typeof createGitHubRelease
+  getPullRequestStack: typeof getPullRequestStack
 }
 
 export const GitHubApiImpl: GitHubApi = {
@@ -444,4 +446,4 @@ export const GitHubApiImpl: GitHubApi = {
   getCommitsForBranch,
   createGitHubRelease,
   getPullRequestStack,
-};
+}

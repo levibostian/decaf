@@ -1,25 +1,24 @@
-import { GitHubApi, GitHubCommit, GitHubRelease } from "../github-api.ts";
+import { GitHubApi, GitHubCommit, GitHubRelease } from "../github-api.ts"
 
 export interface GetCommitsSinceLatestReleaseStep {
   getAllCommitsSinceGivenCommit({ owner, repo, branch, latestRelease }: {
-    owner: string;
-    repo: string;
-    branch: string;
-    latestRelease: GitHubRelease | null;
-  }): Promise<GitHubCommit[]>;
+    owner: string
+    repo: string
+    branch: string
+    latestRelease: GitHubRelease | null
+  }): Promise<GitHubCommit[]>
 }
 
-export class GetCommitsSinceLatestReleaseStepImpl
-  implements GetCommitsSinceLatestReleaseStep {
+export class GetCommitsSinceLatestReleaseStepImpl implements GetCommitsSinceLatestReleaseStep {
   constructor(private githubApi: GitHubApi) {}
 
   async getAllCommitsSinceGivenCommit({ owner, repo, branch, latestRelease }: {
-    owner: string;
-    repo: string;
-    branch: string;
-    latestRelease: GitHubRelease | null;
+    owner: string
+    repo: string
+    branch: string
+    latestRelease: GitHubRelease | null
   }): Promise<GitHubCommit[]> {
-    let returnResult: GitHubCommit[] = [];
+    let returnResult: GitHubCommit[] = []
 
     await this.githubApi.getCommitsForBranch({
       owner,
@@ -29,19 +28,19 @@ export class GetCommitsSinceLatestReleaseStepImpl
         for (const commit of commits) {
           // We do not want to include the last tag commit in the list of commits. This may result in making a release from this commit which we do not want.
           if (commit.sha === latestRelease?.tag.commit.sha) {
-            return false; // stop paging when we reach the last tag commit
+            return false // stop paging when we reach the last tag commit
           }
 
-          returnResult.push(commit);
+          returnResult.push(commit)
         }
 
-        return true; // continue paging
+        return true // continue paging
       },
-    });
+    })
 
     // sort commits by date. first commit is the newest one
-    returnResult.sort((a, b) => b.date.getTime() - a.date.getTime());
+    returnResult.sort((a, b) => b.date.getTime() - a.date.getTime())
 
-    return returnResult;
+    return returnResult
   }
 }
