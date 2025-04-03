@@ -54,6 +54,7 @@ runs:
         
     - name: Create or update pull request comment with new deployment tool output
       uses: peter-evans/create-or-update-comment@v4
+      id: create-or-update-comment
       if: ${{ github.event_name == 'pull_request' && inputs.make_pull_request_comment == 'true' }}
       with:
         comment-id: ${{ steps.find-comment.outputs.comment-id }}
@@ -80,7 +81,7 @@ runs:
       uses: peter-evans/create-or-update-comment@v4
       if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome != 'success' }}
       with:
-        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
           <!-- new-deployment-tool-deploy-run-output -->
@@ -92,7 +93,7 @@ runs:
       uses: peter-evans/create-or-update-comment@v4
       if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome == 'success' && steps.deployment.outputs.new_release_version != '' }}
       with:
-        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
           <!-- new-deployment-tool-deploy-run-output -->
@@ -105,7 +106,7 @@ runs:
       uses: peter-evans/create-or-update-comment@v4
       if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome == 'success' && steps.deployment.outputs.new_release_version == '' }}
       with:
-        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
           <!-- new-deployment-tool-deploy-run-output -->
