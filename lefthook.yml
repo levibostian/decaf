@@ -2,5 +2,5 @@ pre-commit:
   commands:
     deno_fmt:
       run: deno fmt
-      include: '**/*.ts'
-      glob: true
+      glob: '**/*.ts'
+      stage_fixed: true # Stage files that were fixed
