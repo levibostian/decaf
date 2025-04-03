@@ -1,0 +1,18 @@
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Deno
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: v2.x
+
+    - name: Run formatter and fail if not formatted
+      run: |
+        deno fmt --check || (echo "Code has not been formatted. May I suggest you install git hooks on your development machine?" && exit 1)
