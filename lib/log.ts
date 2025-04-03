@@ -1,4 +1,4 @@
-import colors from "ansi-styles";
+import colors from "ansi-styles"
 
 // log.ts
 // This module provides a simple API for logging messages at different levels to GitHub Actions.
@@ -13,20 +13,20 @@ const levels = {
   error: `::error::${colors.white.open}`, // Lines are highlighted with red in the GitHub Actions logs.
   notice: `${colors.blue.open}`, // Notice messages, a way to highlight important information, displayed in blue.
   message: `${colors.white.open}`,
-};
+}
 
 export interface Logger {
-  debug: (message: string) => void;
-  warning: (message: string) => void;
-  error: (message: string) => void;
-  notice: (message: string) => void;
-  message: (message: string) => void;
+  debug: (message: string) => void
+  warning: (message: string) => void
+  error: (message: string) => void
+  notice: (message: string) => void
+  message: (message: string) => void
 }
 
 // Generic log function
 function log(level: keyof typeof levels, message: string) {
   message.split("\n").forEach((line) => {
-    console.log(`${levels[level]}${line}`);
+    console.log(`${levels[level]}${line}`)
   })
 }
 
@@ -35,7 +35,7 @@ function log(level: keyof typeof levels, message: string) {
  * Debug messages are useful for detailed troubleshooting information.
  */
 export function debug(message: string) {
-  log("debug", message);
+  log("debug", message)
 }
 
 /**
@@ -43,7 +43,7 @@ export function debug(message: string) {
  * Warning messages are useful for non-critical issues that should be highlighted to users.
  */
 export function warning(message: string) {
-  log("warning", message);
+  log("warning", message)
 }
 
 /**
@@ -51,7 +51,7 @@ export function warning(message: string) {
  * Error messages are critical and indicate something went wrong during the execution of the workflow.
  */
 export function error(message: string) {
-  log("error", message);
+  log("error", message)
 }
 
 /**
@@ -59,7 +59,7 @@ export function error(message: string) {
  * Notice messages are useful for highlighting important information that is not necessarily an error or warning.
  */
 export function notice(message: string) {
-  log("notice", message);
+  log("notice", message)
 }
 
 /**
@@ -67,7 +67,7 @@ export function notice(message: string) {
  * These messages are displayed in the standard log color and are useful for general information.
  */
 export function message(message: string) {
-  log("message", message);
+  log("message", message)
 }
 
 export const logger: Logger = {
@@ -76,5 +76,4 @@ export const logger: Logger = {
   error,
   notice,
   message,
-};
-
+}

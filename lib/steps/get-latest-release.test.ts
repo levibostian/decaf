@@ -1,24 +1,24 @@
-import { assertEquals } from "@std/assert";
-import { afterEach, describe, it } from "@std/testing/bdd";
-import { restore, stub } from "@std/testing/mock";
-import { GitHubApiImpl } from "../github-api.ts";
-import { GetLatestReleaseStepImpl } from "./get-latest-release.ts";
+import { assertEquals } from "@std/assert"
+import { afterEach, describe, it } from "@std/testing/bdd"
+import { restore, stub } from "@std/testing/mock"
+import { GitHubApiImpl } from "../github-api.ts"
+import { GetLatestReleaseStepImpl } from "./get-latest-release.ts"
 
 describe("getLatestReleaseForBranch", () => {
   afterEach(() => {
-    restore();
-  });
+    restore()
+  })
 
   it("should return null, given no commits for branch", async () => {
     stub(GitHubApiImpl, "getTagsWithGitHubReleases", (args) => {
-      args.processReleases([]);
-      return Promise.resolve();
-    });
+      args.processReleases([])
+      return Promise.resolve()
+    })
 
     stub(GitHubApiImpl, "getCommitsForBranch", (args) => {
-      args.processCommits([]);
-      return Promise.resolve();
-    });
+      args.processCommits([])
+      return Promise.resolve()
+    })
 
     assertEquals(
       await new GetLatestReleaseStepImpl(GitHubApiImpl)
@@ -28,19 +28,19 @@ describe("getLatestReleaseForBranch", () => {
           branch: "branch",
         }),
       null,
-    );
-  });
+    )
+  })
 
   it("should return null, given no github releases", async () => {
     stub(GitHubApiImpl, "getCommitsForBranch", (args) => {
-      args.processCommits([{ sha: "sha", message: "", date: new Date() }]);
-      return Promise.resolve();
-    });
+      args.processCommits([{ sha: "sha", message: "", date: new Date() }])
+      return Promise.resolve()
+    })
 
     stub(GitHubApiImpl, "getTagsWithGitHubReleases", (args) => {
-      args.processReleases([]);
-      return Promise.resolve();
-    });
+      args.processReleases([])
+      return Promise.resolve()
+    })
 
     assertEquals(
       await new GetLatestReleaseStepImpl(GitHubApiImpl)
@@ -50,15 +50,15 @@ describe("getLatestReleaseForBranch", () => {
           branch: "branch",
         }),
       null,
-    );
-  });
+    )
+  })
 
   it("should return null, given no matching github release for branch", async () => {
     // Test with multiple pages of commits to test it works as expected.
     let getCommitsReturnResults = [
       [{ sha: "commit-A", message: "", date: new Date() }],
       [{ sha: "commit-B", message: "", date: new Date() }],
-    ];
+    ]
 
     stub(
       GitHubApiImpl,
@@ -68,28 +68,28 @@ describe("getLatestReleaseForBranch", () => {
           tag: { name: "", commit: { sha: "commit-C" } },
           name: "",
           created_at: new Date(),
-        }]);
+        }])
       },
-    );
+    )
 
     stub(GitHubApiImpl, "getCommitsForBranch", async (args) => {
       // Keep looping until "false" is returned from processCommits to indicate that we do not want to process more pages of commits.
       while (true) {
         const shouldGetAnotherPage = await args.processCommits(
           getCommitsReturnResults.shift()!,
-        );
+        )
 
         // Since we never found a matching release for the commits, we should expect to get another page of commits.
-        assertEquals(shouldGetAnotherPage, true);
+        assertEquals(shouldGetAnotherPage, true)
 
         // Expect to not need to get another page of commits if we have found the latest release.
         if (getCommitsReturnResults.length === 0) {
-          break;
+          break
         }
       }
 
-      return Promise.resolve();
-    });
+      return Promise.resolve()
+    })
 
     assertEquals(
       await new GetLatestReleaseStepImpl(GitHubApiImpl)
@@ -99,8 +99,8 @@ describe("getLatestReleaseForBranch", () => {
           branch: "branch",
         }),
       null,
-    );
-  });
+    )
+  })
 
   it("should return the latest release, given a matching github release for branch", async () => {
     // Test with multiple pages of commits to test it works as expected.
@@ -114,7 +114,7 @@ describe("getLatestReleaseForBranch", () => {
         { sha: "commit-2", message: "", date: new Date(2) }, // This commit has a matching tag.
         { sha: "commit-1", message: "", date: new Date(1) }, // this commit has a matching tag
       ],
-    ];
+    ]
 
     stub(
       GitHubApiImpl,
@@ -131,31 +131,31 @@ describe("getLatestReleaseForBranch", () => {
             name: "",
             created_at: new Date(1),
           },
-        ]);
+        ])
       },
-    );
+    )
 
     stub(GitHubApiImpl, "getCommitsForBranch", async (args) => {
       // Keep looping until "false" is returned from processCommits to indicate that we do not want to process more pages of commits.
       while (true) {
         const shouldGetAnotherPage = await args.processCommits(
           getCommitsReturnResults.shift()!,
-        );
+        )
 
         // Expect to not need to get another page of commits if we have found the latest release.
         if (getCommitsReturnResults.length === 0) {
-          assertEquals(shouldGetAnotherPage, false);
+          assertEquals(shouldGetAnotherPage, false)
         } else {
-          assertEquals(shouldGetAnotherPage, true);
+          assertEquals(shouldGetAnotherPage, true)
         }
 
         if (!shouldGetAnotherPage) {
-          break;
+          break
         }
       }
 
-      return Promise.resolve();
-    });
+      return Promise.resolve()
+    })
 
     assertEquals(
       await new GetLatestReleaseStepImpl(GitHubApiImpl)
@@ -169,6 +169,6 @@ describe("getLatestReleaseForBranch", () => {
         name: "",
         created_at: new Date(2),
       },
-    );
-  });
-});
+    )
+  })
+})
