@@ -49,7 +49,7 @@ runs:
       with:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: 'github-actions[bot]'
-        body-includes: '<!-- new-deployment-tool-deploy-run-output -->'
+        body-includes: '<!-- new-deployment-tool-deploy-run-output-${{ inputs.simulated_merge_type }} -->'
         token: ${{ inputs.github_token }}  
         
     - name: Create or update pull request comment with new deployment tool output
@@ -60,9 +60,9 @@ runs:
         comment-id: ${{ steps.find-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          <!-- new-deployment-tool-deploy-run-output -->
+          <!-- new-deployment-tool-deploy-run-output-${{ inputs.simulated_merge_type }} -->
           ## New deployment tool results
-          Running deployment...refresh webpage to see results when done. 
+          Running deployment, simulating ${{ inputs.simulated_merge_type }} for merging...refresh webpage to see results when done. 
         edit-mode: replace
 
     - name: Run deployment tool 
@@ -84,9 +84,9 @@ runs:
         comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          <!-- new-deployment-tool-deploy-run-output -->
+          <!-- new-deployment-tool-deploy-run-output-${{ inputs.simulated_merge_type }} -->
           ## New deployment tool results 
-          There was a failure when running the deployment. Check [the logs](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) to see what went wrong.
+          🚫 There was a failure when running the deployment. Check [the logs](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) to see what went wrong.
         edit-mode: replace
 
     - name: Pull request comment if there will be a release
@@ -96,10 +96,11 @@ runs:
         comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          <!-- new-deployment-tool-deploy-run-output -->
+          <!-- new-deployment-tool-deploy-run-output-${{ inputs.simulated_merge_type }} -->
           ## New deployment tool results
-          If this pull request and all of it's parent pull requests are merged, a new release will be created.
-          The next version of the project will be: ${{ steps.deployment.outputs.new_release_version }}
+          🚢 If this pull request and all of it's parent pull requests are merged using the 🟩 **${{ inputs.simulated_merge_type }}** 🟩 merge method, a new release will be created.
+
+          The next version of the project will be: **${{ steps.deployment.outputs.new_release_version }}**
         edit-mode: replace
 
     - name: Pull request comment if there will not be a release
@@ -109,8 +110,8 @@ runs:
         comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          <!-- new-deployment-tool-deploy-run-output -->
+          <!-- new-deployment-tool-deploy-run-output-${{ inputs.simulated_merge_type }} -->
           ## New deployment tool results
-          This pull request and all of it's parent pull requests do not have any changes that would trigger a new release.          
+          🌴 Merging this pull request and all of it's parent pull requests using the 🟩 **${{ inputs.simulated_merge_type }}** 🟩 merge method will not trigger a new release. This code would be shipped in a future release.
         edit-mode: replace
 

@@ -51,11 +51,12 @@ jobs:
       pull-requests: write # allow commenting on PRs
     steps:
     - uses: actions/checkout@v4
-    - name: Run deployment tool in dry-run mode
+    - name: Run deployment tool using *merge* method 
       uses: ./      
       with: 
         version: ${{ github.sha }}
         github_token: ${{ secrets.github_token }}
+        simulated_merge_type: merge
         # Test that the config is read by the tool and pre-release versions are working. 
         analyze_commits_config: |
           {
@@ -66,3 +67,39 @@ jobs:
               { "branch_name": "alpha", "prerelease": true }
             ]
           }
+
+    - uses: actions/checkout@v4
+    - name: Run deployment tool using *squash* method 
+      uses: ./      
+      with: 
+        version: ${{ github.sha }}
+        github_token: ${{ secrets.github_token }}
+        simulated_merge_type: squash
+        # Test that the config is read by the tool and pre-release versions are working. 
+        analyze_commits_config: |
+          {
+            "branches": [
+              { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" },
+              { "branch_name": "main", "prerelease": false },
+              { "branch_name": "beta", "prerelease": true },
+              { "branch_name": "alpha", "prerelease": true }
+            ]
+          }  
+
+    - uses: actions/checkout@v4
+    - name: Run deployment tool using *rebase* method 
+      uses: ./      
+      with: 
+        version: ${{ github.sha }}
+        github_token: ${{ secrets.github_token }}
+        simulated_merge_type: rebase
+        # Test that the config is read by the tool and pre-release versions are working. 
+        analyze_commits_config: |
+          {
+            "branches": [
+              { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" },
+              { "branch_name": "main", "prerelease": false },
+              { "branch_name": "beta", "prerelease": true },
+              { "branch_name": "alpha", "prerelease": true }
+            ]
+          }            
