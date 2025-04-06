@@ -284,15 +284,19 @@ const createLocalBranchFromRemote = async (
     input: undefined,
   })
 
-  // Create a local branch that tracks the remote branch.
+  // an error is thrown if the local branch already exists.
+  // in another step, we make sure that the branch tracks origin and is up to date.
+  const doesLocalBranchAlreadyExist = await doesLocalBranchExist({ exec, branch })
+
+  // Checkout (and create if does not yet exist) the branch so we can pull it.
   await exec.run({
-    command: `git branch --track ${branch} origin/${branch}`,
+    command: `git checkout ${doesLocalBranchAlreadyExist ? branch : `-b ${branch} origin/${branch}`}`,
     input: undefined,
   })
 
-  // Checkout the branch so we can pull it.
+  // Configure the branch to track the remote branch.
   await exec.run({
-    command: `git checkout ${branch}`,
+    command: `git branch --set-upstream-to=origin/${branch}`,
     input: undefined,
   })
 

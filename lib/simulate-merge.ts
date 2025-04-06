@@ -77,7 +77,13 @@ export class SimulateMergeImpl implements SimulateMerge {
 
     await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage })
 
-    return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
+    const commits = await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
+
+    // since we made modifications to the target branch, delete it to clean up the repo.
+    await this.git.checkoutBranch({ exec: this.exec, branch: baseBranch, createBranchIfNotExist: false })
+    await this.git.deleteBranch({ exec: this.exec, branch: targetBranch, dryRun: false })
+
+    return commits
   }
 
   async squash(
@@ -106,7 +112,13 @@ export class SimulateMergeImpl implements SimulateMerge {
     await this.git.checkoutBranch({ exec: this.exec, branch: targetBranch, createBranchIfNotExist: false })
     await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage, fastForwardOnly: true })
 
-    return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
+    const commits = await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
+
+    // since we made modifications to the target branch, delete it to clean up the repo.
+    await this.git.checkoutBranch({ exec: this.exec, branch: baseBranch, createBranchIfNotExist: false })
+    await this.git.deleteBranch({ exec: this.exec, branch: targetBranch, dryRun: false })
+
+    return commits
   }
 
   // Perform a rebase without creating a merge commit
@@ -127,7 +139,13 @@ export class SimulateMergeImpl implements SimulateMerge {
     await this.git.checkoutBranch({ exec: this.exec, branch: targetBranch, createBranchIfNotExist: false })
     await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage, fastForwardOnly: true })
 
-    return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
+    const commits = await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
+
+    // since we made modifications to the target branch, delete it to clean up the repo.
+    await this.git.checkoutBranch({ exec: this.exec, branch: baseBranch, createBranchIfNotExist: false })
+    await this.git.deleteBranch({ exec: this.exec, branch: targetBranch, dryRun: false })
+
+    return commits
   }
 
   private async prepareForMerge({ baseBranch, targetBranch }: { baseBranch: string; targetBranch: string }) {
