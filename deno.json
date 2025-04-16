@@ -16,5 +16,12 @@
     "semiColons": false,
     "include": ["**/*.ts"],
     "exclude": ["**/*.json", "**/*.md", "**/*.yml", "**/*.yml", "**/*.lock"]
+  },
+  "lint": {
+    "rules": {
+      "rules": {
+        "exclude": ["require-await"]
+      }      
+    }
   }
 }
