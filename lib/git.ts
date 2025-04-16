@@ -46,7 +46,7 @@ export interface Git {
   rebase: (
     { exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string },
   ) => Promise<void>
-  getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitHubCommit }): Promise<GitHubCommit[]>
+  getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitHubCommit | null }): Promise<GitHubCommit[]>
   getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitHubCommit>
   createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
 }
@@ -235,10 +235,10 @@ const rebase = async (
 }
 
 const getLatestCommitsSince = async (
-  { exec, commit }: { exec: Exec; commit: GitHubCommit },
+  { exec, commit }: { exec: Exec; commit: GitHubCommit | null },
 ): Promise<GitHubCommit[]> => {
   const { stdout } = await exec.run({
-    command: `git log --pretty=format:"%H|%s|%ci" ${commit.sha}..HEAD`,
+    command: `git log --pretty=format:"%H|%s|%ci" ${commit ? `${commit.sha}..HEAD` : ""}`,
     input: undefined,
   })
 

@@ -6,9 +6,7 @@ import { DetermineNextReleaseStep } from "./lib/steps/determine-next-release.ts"
 import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts"
 import { DeployEnvironment, GetNextReleaseVersionEnvironment } from "./lib/types/environment.ts"
 import { GitHubActions } from "./lib/github-actions.ts"
-import { SimulateMerge } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
-import { GitHubCommit } from "./lib/github-api.ts"
 
 export const run = async ({
   prepareEnvironmentForTestMode,
@@ -62,7 +60,6 @@ export const run = async ({
   )
 
   const runInTestMode = (await githubActions.isRunningInPullRequest()) !== undefined
-  let commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
   if (runInTestMode) {
     log.notice(
       `🧪 I see that I got triggered to run from a pull request event. In pull requests, I run in test mode which means that I will run the deployment process but I will not actually deploy anything.`,
@@ -79,7 +76,6 @@ export const run = async ({
 
     const pullRequestBranchBeforeSimulatedMerges = currentBranch
     currentBranch = prepareEnvironmentForTestModeResults?.currentGitBranch || currentBranch
-    commitsCreatedDuringSimulatedMerges = prepareEnvironmentForTestModeResults?.commitsCreatedDuringSimulatedMerges || []
 
     log.notice(
       `🧪 Simulated merges complete. You will notice that for the remainder of the deployment process, the current branch will be ${currentBranch} instead of the pull request branch ${pullRequestBranchBeforeSimulatedMerges}.`,
@@ -119,15 +115,8 @@ export const run = async ({
 
   const listOfCommits = await getCommitsSinceLatestReleaseStep
     .getAllCommitsSinceGivenCommit({
-      owner,
-      repo,
-      branch: currentBranch,
       latestRelease: lastRelease,
     })
-
-  // if we are running in test mode and ran simulated merges, add those created commits to list of commits to have analyzed.
-  // add commits to beginning of list as newest commits should be first in list, like `git log`
-  listOfCommits.unshift(...commitsCreatedDuringSimulatedMerges)
 
   if (listOfCommits.length === 0) {
     log.warning(

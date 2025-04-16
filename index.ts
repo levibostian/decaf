@@ -23,9 +23,7 @@ const githubActions = new GitHubActionsImpl()
 await run({
   prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, githubActions, new SimulateMergeImpl(git, exec), git, exec),
   getLatestReleaseStep: new GetLatestReleaseStepImpl(githubApi),
-  getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(
-    githubApi,
-  ),
+  getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec),
   determineNextReleaseStep: new DetermineNextReleaseStepImpl(),
   deployStep: new DeployStepImpl(exec, git),
   createNewReleaseStep: new CreateNewReleaseStepImpl(githubApi),
