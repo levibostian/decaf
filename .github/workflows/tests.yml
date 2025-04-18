@@ -55,6 +55,9 @@ jobs:
       uses: ./      
       with: 
         version: ${{ github.sha }}
+        enable_test_mode_squash_method: 'true'
+        enable_test_mode_merge_method: 'true'
+        enable_test_mode_rebase_method: 'true'
         github_token: ${{ secrets.github_token }}
         # Test that the config is read by the tool and pre-release versions are working. 
         analyze_commits_config: |

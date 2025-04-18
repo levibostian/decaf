@@ -15,9 +15,15 @@ inputs:
   analyze_commits_config:
     description: 'Configure the behavior when analyzing commits.'
     default: ''
-  simulated_merge_type:
-    description: 'When running in a pull request, what type of merge to simulate to run the tool in test mode. Note: This input option is planned to go away in favor of reading github repo settings. Options: merge, squash, rebase.'
-    default: 'merge' # options: merge, squash, rebase
+  enable_test_mode_squash_method:
+    description: 'When running in a pull request, enables test mode to make sure that tool is setup correctly and tells you what version will be deployed if pull request is merged using the *Squash and merge* button. Value is string values "true" or "false".'
+    default: 'false'
+  enable_test_mode_rebase_method:
+    description: 'When running in a pull request, enables test mode to make sure that tool is setup correctly and tells you what version will be deployed if pull request is merged using the *Rebase and merge* button. Value is string values "true" or "false".'
+    default: 'false'  
+  enable_test_mode_merge_method:
+    description: 'When running in a pull request, enables test mode to make sure that tool is setup correctly and tells you what version will be deployed if pull request is merged using the *Merge pull request* button. Value is string values "true" or "false".'
+    default: 'true'
   make_pull_request_comment:
     description: 'If a pull request comment should be made. Value is string values "true" or "false".'
     default: 'true'
@@ -61,56 +67,177 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         body: |
           <!-- new-deployment-tool-deploy-run-output -->
-          ## New deployment tool results
-          Running deployment...refresh webpage to see results when done. 
+          ## New deployment tool
+          Running deployments in test mode. Results will appear below. 
+
+          If this pull request and all of it's parent pull requests are merged using the...
         edit-mode: replace
 
+    #######################
+    # Run the tool. 
+    #######################
+
+    # Here we run it, if in production. 
     - name: Run deployment tool 
       # Deno's runtime permissions are a great feature. It would be nice to take advantage of it, however, it may not be possible with future features like running plugins. 
       #
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
       run: ./deployer
       id: deployment
+      if: ${{ github.event_name != 'pull_request' }}
       shell: bash 
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
+        INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}    
+
+    #######################
+    # Run tool in test mode. Every simulated merge type. 
+    #######################
+
+    # Merge simulated merge    
+
+    - name: Run deployment tool in test mode with 'merge' simulated merge 
+      run: ./deployer
+      id: deployment-merge
+      if: ${{ github.event_name == 'pull_request' && inputs.enable_test_mode_merge_method == 'true' }}
+      shell: bash 
+      env:
+        INPUT_SIMULATED_MERGE_TYPE: 'merge'
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
         INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
 
-    - name: Pull request comment if the deployment failed 
+    - name: Comment merge method results 
       uses: peter-evans/create-or-update-comment@v4
-      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome != 'success' }}
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-merge.outcome == 'success' && steps.deployment-merge.outputs.new_release_version != '' }}
       with:
         comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          <!-- new-deployment-tool-deploy-run-output -->
-          ## New deployment tool results 
-          There was a failure when running the deployment. Check [the logs](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}) to see what went wrong.
-        edit-mode: replace
+          - ...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **${{ steps.deployment-merge.outputs.new_release_version }}**
+        edit-mode: append
 
-    - name: Pull request comment if there will be a release
+    - name: Comment merge method results 
       uses: peter-evans/create-or-update-comment@v4
-      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome == 'success' && steps.deployment.outputs.new_release_version != '' }}
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-merge.outputs.test_mode_on == 'true' && steps.deployment-merge.outcome == 'success' && steps.deployment-merge.outputs.new_release_version == '' }}
       with:
         comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          <!-- new-deployment-tool-deploy-run-output -->
-          ## New deployment tool results
-          If this pull request and all of it's parent pull requests are merged, a new release will be created.
-          The next version of the project will be: ${{ steps.deployment.outputs.new_release_version }}
-        edit-mode: replace
+          - ...🟩 **merge** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed. 
+        edit-mode: append
 
-    - name: Pull request comment if there will not be a release
+    - name: Comment merge method results 
       uses: peter-evans/create-or-update-comment@v4
-      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome == 'success' && steps.deployment.outputs.new_release_version == '' }}
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-merge.outputs.test_mode_on == 'true' && steps.deployment-merge.outcome != 'success' }}
       with:
         comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          <!-- new-deployment-tool-deploy-run-output -->
-          ## New deployment tool results
-          This pull request and all of it's parent pull requests do not have any changes that would trigger a new release.          
-        edit-mode: replace
+          - ...🟩 **merge** 🟩 merge method... ⚠️ There was an error during deployment run. [See logs to learn more and fix the issue](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}). 
+        edit-mode: append
+
+    # Squash simulated merge
+
+    - name: Reset the repo to cleanup from last simulated merge
+      uses: actions/checkout@v4
+
+    - name: Compile the CLI
+      run: deno task compile
+      shell: bash
+
+    - name: Run deployment tool in test mode with 'squash' simulated merge 
+      run: ./deployer
+      id: deployment-squash
+      if: ${{ github.event_name == 'pull_request' && inputs.enable_test_mode_squash_method == 'true' }}
+      shell: bash 
+      env:
+        INPUT_SIMULATED_MERGE_TYPE: 'squash'
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
+        INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
+
+    - name: Comment squash method results 
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-squash.outcome == 'success' && steps.deployment-squash.outputs.new_release_version != '' }}
+      with:
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          - ...🟩 **squash** 🟩 merge method... 🚢 The next version of the project will be: **${{ steps.deployment-merge.outputs.new_release_version }}**
+        edit-mode: append
+
+    - name: Comment squash method results 
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-squash.outputs.test_mode_on == 'true' && steps.deployment-squash.outcome == 'success' && steps.deployment-squash.outputs.new_release_version == '' }}
+      with:
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          - ...🟩 **squash** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed. 
+        edit-mode: append
+
+    - name: Comment squash method results 
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-squash.outputs.test_mode_on == 'true' && steps.deployment-squash.outcome != 'success' }}
+      with:
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          - ...🟩 **squash** 🟩 merge method... ⚠️ There was an error during deployment run. [See logs to learn more and fix the issue](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}). 
+        edit-mode: append
+
+    # Rebase simulated merge
+
+    - name: Reset the repo to cleanup from last simulated merge
+      uses: actions/checkout@v4
+
+    - name: Compile the CLI
+      run: deno task compile
+      shell: bash
+
+    - name: Run deployment tool in test mode with 'rebase' simulated merge 
+      run: ./deployer
+      id: deployment-rebase
+      if: ${{ github.event_name == 'pull_request' && inputs.enable_test_mode_rebase_method == 'true' }}
+      shell: bash 
+      env:
+        INPUT_SIMULATED_MERGE_TYPE: 'rebase'
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
+        INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
+
+    - name: Comment rebase method results 
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-rebase.outcome == 'success' && steps.deployment-rebase.outputs.new_release_version != '' }}
+      with:
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          - ...🟩 **rebase** 🟩 merge method... 🚢 The next version of the project will be: **${{ steps.deployment-merge.outputs.new_release_version }}**
+        edit-mode: append
+
+    - name: Comment rebase method results 
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-rebase.outputs.test_mode_on == 'true' && steps.deployment-rebase.outcome == 'success' && steps.deployment-rebase.outputs.new_release_version == '' }}
+      with:
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          - ...🟩 **rebase** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed. 
+        edit-mode: append
+
+    - name: Comment rebase method results 
+      uses: peter-evans/create-or-update-comment@v4
+      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment-rebase.outputs.test_mode_on == 'true' && steps.deployment-rebase.outcome != 'success' }}
+      with:
+        comment-id: ${{ steps.create-or-update-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          - ...🟩 **rebase** 🟩 merge method... ⚠️ There was an error during deployment run. [See logs to learn more and fix the issue](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}). 
+        edit-mode: append
+
+    #######################
+
 
