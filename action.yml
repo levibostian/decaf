@@ -76,6 +76,7 @@ runs:
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
         INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
+        INPUT_SIMULATED_MERGE_TYPE: ${{ inputs.simulated_merge_type }}
 
     - name: Pull request comment if the deployment failed 
       uses: peter-evans/create-or-update-comment@v4

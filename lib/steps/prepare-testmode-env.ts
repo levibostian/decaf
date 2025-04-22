@@ -2,6 +2,7 @@ import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
 import { GitHubActions } from "../github-actions.ts"
 import { GitHubApi, GitHubCommit } from "../github-api.ts"
+import { logger } from "../log.ts"
 import { SimulateMerge } from "../simulate-merge.ts"
 
 export interface PrepareTestModeEnvStep {
@@ -33,6 +34,7 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     if (!runInTestMode) return undefined
 
     const simulateMergeType = this.githubActions.getSimulatedMergeType()
+    logger.debug(`Simulated merge type: ${simulateMergeType}`)
 
     const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingBranch })
     const commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
