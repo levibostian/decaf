@@ -54,7 +54,6 @@ jobs:
     - name: Run deployment, merge method
       uses: ./      
       with: 
-        version: ${{ github.sha }}
         simulated_merge_type: 'merge'
         github_token: ${{ secrets.github_token }}
         # Test that the config is read by the tool and pre-release versions are working. 
@@ -72,7 +71,6 @@ jobs:
     - name: Run deployment, squash method
       uses: ./      
       with: 
-        version: ${{ github.sha }}
         simulated_merge_type: 'squash'
         github_token: ${{ secrets.github_token }}
         # Test that the config is read by the tool and pre-release versions are working. 
@@ -90,7 +88,6 @@ jobs:
     - name: Run deployment, rebase method
       uses: ./      
       with: 
-        version: ${{ github.sha }}
         simulated_merge_type: 'rebase'
         github_token: ${{ secrets.github_token }}
         # Test that the config is read by the tool and pre-release versions are working. 

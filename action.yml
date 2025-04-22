@@ -5,9 +5,6 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN or a repo scoped PAT.'
     default: ${{ github.token }}
-  version:
-    description: 'Version of the CLI to use.'
-    default: 'alpha' # using branch name for now for easier deployments 
   deploy_commands:
     description: 'List of commands to run to deploy your project.'
     required: true
