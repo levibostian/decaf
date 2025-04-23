@@ -42,6 +42,13 @@ const run = async (
 ): Promise<
   { exitCode: number; stdout: string; output: DeployCommandOutput | undefined }
 > => {
+  // If command actually contains 2 commands (using &&), throw an error. The API of this function simply doesn't support that.
+  if (command.includes("&&")) {
+    throw new Error(
+      `The command "${command}" contains multiple commands (uses &&). This is not supported. Please run each command separately.`,
+    )
+  }
+
   if (displayLogs) {
     log.message(` $> ${command}`)
   } else {
