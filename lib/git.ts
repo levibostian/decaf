@@ -220,7 +220,11 @@ const squash = async (
 
   // Now that we know how many commits are ahead, we can squash all of those commits into 1 commit.
   await exec.run({
-    command: `git reset --soft HEAD~${numberOfCommitsAheadOfBranchMergingInto} && git commit -m "${commitTitle}" -m "${commitMessage}"`,
+    command: `git reset --soft HEAD~${numberOfCommitsAheadOfBranchMergingInto}`,
+    input: undefined,
+  })
+  await exec.run({
+    command: `git commit -m "${commitTitle}" -m "${commitMessage}"`,
     input: undefined,
   })
 }
