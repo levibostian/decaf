@@ -5,11 +5,12 @@ import { GitHubCommit } from "./github-api.ts"
 export interface SimulateMerge {
   performSimulation(
     type: "merge" | "rebase" | "squash",
-    { baseBranch, targetBranch, commitTitle, commitMessage }: {
+    { baseBranch, targetBranch, pullRequestNumber, pullRequestTitle, pullRequestDescription }: {
       baseBranch: string
       targetBranch: string
-      commitTitle: string
-      commitMessage: string
+      pullRequestNumber: number
+      pullRequestTitle: string
+      pullRequestDescription: string
     },
   ): Promise<GitHubCommit[]>
   merge: (
@@ -43,20 +44,21 @@ export class SimulateMergeImpl implements SimulateMerge {
 
   performSimulation(
     simulateMergeType: "merge" | "rebase" | "squash",
-    { baseBranch, targetBranch, commitTitle, commitMessage }: {
+    { baseBranch, targetBranch, pullRequestNumber, pullRequestTitle, pullRequestDescription }: {
       baseBranch: string
       targetBranch: string
-      commitTitle: string
-      commitMessage: string
+      pullRequestNumber: number
+      pullRequestTitle: string
+      pullRequestDescription: string
     },
   ) {
     switch (simulateMergeType) {
       case "merge":
-        return this.merge({ baseBranch, targetBranch, commitTitle, commitMessage })
+        return this.merge({ baseBranch, targetBranch, commitTitle: `Merge pull request #${pullRequestNumber} from ${baseBranch}`, commitMessage: "" })
       case "rebase":
-        return this.rebase({ baseBranch, targetBranch, commitTitle, commitMessage })
+        return this.rebase({ baseBranch, targetBranch, commitTitle: pullRequestTitle, commitMessage: pullRequestDescription })
       case "squash":
-        return this.squash({ baseBranch, targetBranch, commitTitle, commitMessage })
+        return this.squash({ baseBranch, targetBranch, commitTitle: pullRequestTitle, commitMessage: pullRequestDescription })
     }
   }
 

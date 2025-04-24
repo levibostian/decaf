@@ -47,8 +47,9 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
       const commitsCreated = await this.simulateMerge.performSimulation(simulateMergeType, {
         baseBranch: pr.sourceBranchName,
         targetBranch: pr.targetBranchName,
-        commitTitle: pr.title,
-        commitMessage: pr.description,
+        pullRequestNumber: pr.prNumber,
+        pullRequestTitle: pr.title,
+        pullRequestDescription: pr.description,
       })
 
       commitsCreatedDuringSimulatedMerges.unshift(...commitsCreated)

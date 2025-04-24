@@ -31,8 +31,9 @@ describe("snapshot test all of the merge options", () => {
     await simulateMerge.performSimulation("merge", {
       baseBranch: "feature",
       targetBranch: "main",
-      commitTitle: "title-here",
-      commitMessage: "message-here",
+      pullRequestNumber: 123,
+      pullRequestTitle: "title-here",
+      pullRequestDescription: "message-here",
     })
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command))
@@ -44,8 +45,9 @@ describe("snapshot test all of the merge options", () => {
     await simulateMerge.performSimulation("squash", {
       baseBranch: "feature",
       targetBranch: "main",
-      commitTitle: "title-here",
-      commitMessage: "message-here",
+      pullRequestNumber: 123,
+      pullRequestTitle: "title-here",
+      pullRequestDescription: "message-here",
     })
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command))
@@ -57,8 +59,9 @@ describe("snapshot test all of the merge options", () => {
     await simulateMerge.performSimulation("rebase", {
       baseBranch: "feature",
       targetBranch: "main",
-      commitTitle: "title-here",
-      commitMessage: "message-here",
+      pullRequestNumber: 123,
+      pullRequestTitle: "title-here",
+      pullRequestDescription: "message-here",
     })
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command))
