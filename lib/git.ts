@@ -22,12 +22,12 @@ export interface Git {
     { exec, branch }: { exec: Exec; branch: string },
   ) => Promise<boolean>
   merge: (
-    { exec, branchToMergeIn, commitTitle, commitMessage, fastForwardOnly }: {
+    { exec, branchToMergeIn, commitTitle, commitMessage, fastForward }: {
       exec: Exec
       branchToMergeIn: string
       commitTitle: string
       commitMessage: string
-      fastForwardOnly?: boolean
+      fastForward?: "--no-ff" | "--ff-only"
     },
   ) => Promise<void>
   pull: ({ exec }: { exec: Exec }) => Promise<void>
@@ -160,16 +160,16 @@ const doesLocalBranchExist = async (
 }
 
 const merge = async (
-  { exec, branchToMergeIn, commitTitle, commitMessage, fastForwardOnly }: {
+  { exec, branchToMergeIn, commitTitle, commitMessage, fastForward }: {
     exec: Exec
     branchToMergeIn: string
     commitTitle: string
     commitMessage: string
-    fastForwardOnly?: boolean
+    fastForward?: "--no-ff" | "--ff-only"
   },
 ): Promise<void> => {
   await exec.run({
-    command: `git merge ${branchToMergeIn} -m "${commitTitle}" -m "${commitMessage}"${fastForwardOnly ? " --ff-only" : ""}`,
+    command: `git merge ${branchToMergeIn} -m "${commitTitle}" -m "${commitMessage}" ${fastForward || ""}`,
     input: undefined,
   })
 }

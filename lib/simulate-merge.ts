@@ -75,7 +75,7 @@ export class SimulateMergeImpl implements SimulateMerge {
 
     await this.git.checkoutBranch({ exec: this.exec, branch: targetBranch, createBranchIfNotExist: false })
 
-    await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage })
+    await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage, fastForward: "--no-ff" })
 
     return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
   }
@@ -104,7 +104,7 @@ export class SimulateMergeImpl implements SimulateMerge {
 
     // we want to merge the squashed commit into the target branch.
     await this.git.checkoutBranch({ exec: this.exec, branch: targetBranch, createBranchIfNotExist: false })
-    await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage, fastForwardOnly: true })
+    await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage, fastForward: "--ff-only" })
 
     return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
   }
@@ -125,7 +125,7 @@ export class SimulateMergeImpl implements SimulateMerge {
     await this.git.checkoutBranch({ exec: this.exec, branch: baseBranch, createBranchIfNotExist: false })
     await this.git.rebase({ exec: this.exec, branchToRebaseOnto: targetBranch })
     await this.git.checkoutBranch({ exec: this.exec, branch: targetBranch, createBranchIfNotExist: false })
-    await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage, fastForwardOnly: true })
+    await this.git.merge({ exec: this.exec, branchToMergeIn: baseBranch, commitTitle, commitMessage, fastForward: "--ff-only" })
 
     return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
   }
