@@ -118,15 +118,17 @@ describe("prepareEnvironmentForTestMode", () => {
     assertEquals(performSimulatedMergeMock.calls[0].args[1], {
       baseBranch: givenTopPullRequestInPRStack.sourceBranchName,
       targetBranch: givenTopPullRequestInPRStack.targetBranchName,
-      commitTitle: givenTopPullRequestInPRStack.title,
-      commitMessage: givenTopPullRequestInPRStack.description,
+      pullRequestNumber: givenTopPullRequestInPRStack.prNumber,
+      pullRequestTitle: givenTopPullRequestInPRStack.title,
+      pullRequestDescription: givenTopPullRequestInPRStack.description,
     })
 
     assertEquals(performSimulatedMergeMock.calls[1].args[1], {
       baseBranch: givenSecondPullRequestInPRStack.sourceBranchName,
       targetBranch: givenSecondPullRequestInPRStack.targetBranchName,
-      commitTitle: givenSecondPullRequestInPRStack.title,
-      commitMessage: givenSecondPullRequestInPRStack.description,
+      pullRequestNumber: givenSecondPullRequestInPRStack.prNumber,
+      pullRequestTitle: givenSecondPullRequestInPRStack.title,
+      pullRequestDescription: givenSecondPullRequestInPRStack.description,
     })
 
     assertEquals(result, {
