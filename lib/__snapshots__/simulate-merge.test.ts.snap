@@ -10,7 +10,7 @@ snapshot[`snapshot test all of the merge options > merge, should generate the co
   'git config user.name "Deployment Test"',
   'git config user.email "test@test.com"',
   "git checkout main",
-  'git merge feature -m "title-here" -m "message-here"',
+  'git merge feature -m "title-here" -m "message-here" --no-ff',
   'git log --pretty=format:"%H|%s|%ci" success..HEAD',
 ]
 `;
