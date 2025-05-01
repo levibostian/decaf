@@ -33,7 +33,7 @@ runs:
     - name: Install Deno runtime to run the CLI
       uses: denoland/setup-deno@v1
       with:
-        deno-version: v2.x
+        deno-version: v2.2
 
     - name: Compile the CLI
       run: deno task compile
