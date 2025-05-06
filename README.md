@@ -229,6 +229,34 @@ Create conventional commits as you are already used to doing and push those comm
 
 > Note: Make sure that your `prerelease` branches are kept up-to-date with your production branch. If you don't the pre-production version that is created will be incorrect and could confuse your app's users. 
 
+### Test mode for multiple different merge types 
+
+Test mode allows you to test your deployment in a pull request before you merge. It will tell you what will happen if you do decide to merge. To run in test mode, you must tell the tool what type of merge you plan on doing (merge, squash, rebase). But what if your team uses multiple different merge types? You can run the tool multiple times in test mode to test each merge type.
+
+To do this, it's as easy at running the tool multiple times in the same workflow file. Here is an example of how to do this: 
+
+```yml
+    steps:
+    # You must run checkout before running the tool each time. It resets the git history for the tool to run accurately.
+    - uses: actions/checkout@v4
+    - uses: levibostian/new-deployment-tool@main
+      with: 
+        simulated_merge_type: 'merge'
+        # ... Put rest of your config here. 
+
+    - uses: actions/checkout@v4
+    - uses: levibostian/new-deployment-tool@main
+      with: 
+        simulated_merge_type: 'squash'
+        # ... Put rest of your config here. 
+
+    - uses: actions/checkout@v4
+    - uses: levibostian/new-deployment-tool@main
+      with: 
+        simulated_merge_type: 'rebase'
+        # ... Put rest of your config here.  
+```
+
 # Why create this tool?
 
 I love tools such as
