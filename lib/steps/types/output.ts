@@ -13,3 +13,21 @@ export const isDeployCommandOutput = (obj: any): obj is DeployCommandOutput => {
         obj.filesToCommit.every((item: any) => typeof item === "string")))
   )
 }
+
+export interface GetLatestReleaseStepOutput {
+  versionName: string
+  commitSha: string
+}
+
+export const isGetLatestReleaseStepOutput = (
+  obj: unknown,
+): obj is GetLatestReleaseStepOutput => {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "versionName" in obj &&
+    typeof (obj as Record<string, unknown>).versionName === "string" &&
+    "commitSha" in obj &&
+    typeof (obj as Record<string, unknown>).commitSha === "string"
+  )
+}

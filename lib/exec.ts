@@ -1,19 +1,18 @@
-import { DeployCommandOutput, isDeployCommandOutput } from "./steps/types/deploy.ts"
 import * as log from "./log.ts"
 import * as shellQuote from "shell-quote"
-import { DeployEnvironment } from "./types/environment.ts"
+import { AnyStepInput } from "./types/environment.ts"
 
 export interface RunResult {
   exitCode: number
   stdout: string
-  output: DeployCommandOutput | undefined
+  output: Record<string, unknown> | undefined
 }
 
 export interface Exec {
   run: (
     { command, input, displayLogs }: {
       command: string
-      input: DeployEnvironment | undefined
+      input: AnyStepInput | undefined
       displayLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
@@ -34,14 +33,12 @@ To make this function testable, we not only have the stdout and stderr be piped 
 const run = async (
   { command, input, displayLogs, envVars, throwOnNonZeroExitCode }: {
     command: string
-    input: DeployEnvironment | undefined
+    input: AnyStepInput | undefined
     displayLogs?: boolean
     envVars?: { [key: string]: string }
     throwOnNonZeroExitCode?: boolean
   },
-): Promise<
-  { exitCode: number; stdout: string; output: DeployCommandOutput | undefined }
-> => {
+): Promise<RunResult> => {
   // If command actually contains 2 commands (using &&), throw an error. The API of this function simply doesn't support that.
   if (command.includes("&&")) {
     throw new Error(
@@ -131,17 +128,19 @@ const run = async (
   if (capturedStdout) log.debug(capturedStdout)
   if (capturedStderr) log.debug(capturedStderr)
 
-  let commandOutput: DeployCommandOutput | undefined
+  let commandOutput: Record<string, unknown> | undefined = undefined
 
   if (tempFilePathToCommunicateWithCommand) {
     const outputDataFileContents = await Deno.readTextFile(
       tempFilePathToCommunicateWithCommand,
     )
     const commandOutputUntyped = JSON.parse(outputDataFileContents)
-    // As long as the command wrote something to the file and the type is correct, we will use it.
+    // As long as the command wrote something to the file, we will use it.
     if (
-      isDeployCommandOutput(commandOutputUntyped) &&
-      outputDataFileContents !== inputDataFileContents
+      outputDataFileContents !== inputDataFileContents &&
+      typeof commandOutputUntyped === "object" &&
+      commandOutputUntyped !== null &&
+      !Array.isArray(commandOutputUntyped)
     ) { // there is a chance that the command did not write to the file or they have a bug.
       commandOutput = commandOutputUntyped
     }

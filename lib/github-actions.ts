@@ -1,6 +1,7 @@
 import { DetermineNextReleaseStepConfig } from "./steps/determine-next-release.ts"
 import * as log from "./log.ts"
 import * as githubActions from "@actions/core"
+import { AnyStepName } from "./steps/types/any-step.ts"
 
 export interface GitHubActions {
   getNameOfCurrentBranch(): string
@@ -8,6 +9,7 @@ export interface GitHubActions {
   getSimulatedMergeType(): "merge" | "rebase" | "squash"
   getEventThatTriggeredThisRun(): "push" | "pull_request" | unknown
   isRunningInPullRequest(): Promise<{ baseBranch: string; targetBranch: string; prTitle: string; prDescription: string } | undefined>
+  getCommandForStep({ stepName }: { stepName: AnyStepName }): string | undefined
   setOutput({ key, value }: { key: string; value: string }): void
 }
 
@@ -100,6 +102,12 @@ export class GitHubActionsImpl implements GitHubActions {
 
   setOutput({ key, value }: { key: string; value: string }): void {
     githubActions.setOutput(key, value)
+  }
+
+  getCommandForStep({ stepName }: { stepName: string }): string | undefined {
+    const command = this.getInput(stepName)
+    if (!command) return undefined
+    return command
   }
 
   private async getFullRunContext(): Promise<any | undefined> {

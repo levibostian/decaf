@@ -3,7 +3,7 @@ import { afterEach, describe, it } from "@std/testing/bdd"
 import { restore, stub } from "@std/testing/mock"
 import { GitHubApiImpl } from "../github-api.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./get-commits-since-latest-release.ts"
-import { GitHubReleaseFake } from "../github-api.test.ts"
+import { GetLatestReleaseStepOutputFake } from "./types/output.test.ts"
 
 describe("getAllCommitsSinceGivenCommit", () => {
   afterEach(() => {
@@ -21,7 +21,7 @@ describe("getAllCommitsSinceGivenCommit", () => {
           owner: "owner",
           repo: "repo",
           branch: "branch",
-          latestRelease: GitHubReleaseFake,
+          latestRelease: GetLatestReleaseStepOutputFake,
         }),
       [],
     )
@@ -55,8 +55,8 @@ describe("getAllCommitsSinceGivenCommit", () => {
           repo: "repo",
           branch: "branch",
           latestRelease: {
-            ...GitHubReleaseFake,
-            tag: { name: "", commit: { sha: givenLastTagSha } },
+            ...GetLatestReleaseStepOutputFake,
+            commitSha: givenLastTagSha,
           },
         }),
       [

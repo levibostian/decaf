@@ -1,6 +1,7 @@
 {
   "imports": {
     "@actions/core": "npm:@actions/core@^1.11.1",
+    "@deno-library/template": "jsr:@deno-library/template@^0.2.1",
     "@std/semver": "jsr:@std/semver@^1.0.4",
     "@std/testing": "jsr:@std/testing@^1.0.10",
     "@std/assert": "jsr:@std/assert@^1.0.12",
@@ -10,6 +11,7 @@
   "tasks": {
     "compile": "deno compile --output deployer --frozen --allow-env=GITHUB_OUTPUT,GITHUB_EVENT_PATH,GITHUB_REF,GITHUB_HEAD_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG,INPUT_SIMULATED_MERGE_TYPE --allow-net=\"api.github.com\" --allow-run --allow-read=\"/tmp,/var/folders,/home/runner/work/_temp\" --allow-write=\"/tmp,/var/folders,/home/runner/work/_temp\" index.ts",
     "test": "deno test --allow-env --allow-run --allow-read --allow-write --junit-path reports/junit.xml --coverage=reports/coverage/",
+    "coverage": "deno coverage --lcov --output=reports/coverage.lcov reports/coverage/",
     "test-update": "deno task test -- --update"
   },
   "fmt": {

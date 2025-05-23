@@ -1,8 +1,8 @@
 import { exec } from "./exec.ts"
 import { assertEquals } from "@std/assert"
-import { DeployEnvironment } from "./types/environment.ts"
+import { DeployStepInput } from "./types/environment.ts"
 
-const givenPluginInput: DeployEnvironment = {
+const givenPluginInput: DeployStepInput = {
   gitCurrentBranch: "main",
   gitRepoOwner: "owner",
   gitRepoName: "repo",

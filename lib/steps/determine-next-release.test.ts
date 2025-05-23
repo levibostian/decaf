@@ -1,11 +1,12 @@
 import { assertEquals } from "@std/assert"
-import { GitHubCommit, GitHubRelease } from "../github-api.ts"
+import { GitHubCommit } from "../github-api.ts"
 import { DetermineNextReleaseStepImpl } from "./determine-next-release.ts"
-import { GitHubCommitFake, GitHubReleaseFake } from "../github-api.test.ts"
-import { before, beforeEach, describe, it } from "@std/testing/bdd"
-import { Logger } from "../log.ts"
+import { GitHubCommitFake } from "../github-api.test.ts"
+import { beforeEach, describe, it } from "@std/testing/bdd"
 import { getLogMock, LogMock } from "../log.test.ts"
 import { assertSnapshot } from "@std/testing/snapshot"
+import { GetLatestReleaseStepOutputFake } from "./types/output.test.ts"
+import { GetCommitsSinceLatestReleaseStepImpl } from "./get-commits-since-latest-release.ts"
 
 const defaultEnvironment = {
   gitCurrentBranch: "main",
@@ -60,8 +61,8 @@ Deno.test("given introducing a breaking change, expect bumps major version", asy
       environment: defaultEnvironment,
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.2.3" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.2.3",
       },
     },
   )
@@ -79,8 +80,8 @@ Deno.test("given a feature commit, expect bumps minor version", async () => {
       environment: defaultEnvironment,
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.2.3" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.2.3",
       },
     },
   )
@@ -98,8 +99,8 @@ Deno.test("given a fix commit, expect bumps patch version", async () => {
       environment: defaultEnvironment,
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.2.3" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.2.3",
       },
     },
   )
@@ -117,8 +118,8 @@ Deno.test("given a chore commit, expect no next version", async () => {
       environment: defaultEnvironment,
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.2.3" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.2.3",
       },
     },
   )
@@ -137,8 +138,8 @@ Deno.test("given latest release is not prerelease and next release is prerelease
       environment: { ...defaultEnvironment, gitCurrentBranch: "beta" },
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.2.3" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.2.3",
       },
     },
   )
@@ -157,8 +158,8 @@ Deno.test("given latest release is prerelease, next release is prerelease, next 
       environment: { ...defaultEnvironment, gitCurrentBranch: "beta" },
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.2.3-beta.1" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.2.3-beta.1",
       },
     },
   )
@@ -177,8 +178,8 @@ Deno.test("given latest version is prerelease and next release is prerelease, ex
       environment: { ...defaultEnvironment, gitCurrentBranch: "beta" },
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.3.0-beta.1" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.3.0-beta.1",
       },
     },
   )
@@ -197,8 +198,8 @@ Deno.test("given latest version is prerelease and next release is not prerelease
       environment: { ...defaultEnvironment, gitCurrentBranch: "main" },
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.3.0-beta.1" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.3.0-beta.1",
       },
     },
   )
@@ -217,8 +218,8 @@ Deno.test("given latest version is prerelease and next release is prerelease but
       environment: { ...defaultEnvironment, gitCurrentBranch: "beta" },
       commits,
       latestRelease: {
-        ...GitHubReleaseFake,
-        tag: { ...GitHubReleaseFake.tag, name: "1.3.0-alpha.3" },
+        ...GetLatestReleaseStepOutputFake,
+        versionName: "1.3.0-alpha.3",
       },
     },
   )
