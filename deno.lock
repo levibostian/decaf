@@ -1,6 +1,7 @@
 {
   "version": "4",
   "specifiers": {
+    "jsr:@deno-library/template@~0.2.1": "0.2.1",
     "jsr:@std/assert@1": "1.0.12",
     "jsr:@std/assert@^1.0.12": "1.0.12",
     "jsr:@std/async@^1.0.12": "1.0.12",
@@ -19,6 +20,9 @@
     "npm:shell-quote@^1.8.2": "1.8.2"
   },
   "jsr": {
+    "@deno-library/template@0.2.1": {
+      "integrity": "d79da4da0afb9fb4d93838b4debcc8650706f657037ba1d927c0aac2a364bd1a"
+    },
     "@std/assert@1.0.12": {
       "integrity": "08009f0926dda9cbd8bef3a35d3b6a4b964b0ab5c3e140a4e0351fbf34af5b9a",
       "dependencies": [
@@ -118,6 +122,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@deno-library/template@~0.2.1",
       "jsr:@std/assert@^1.0.12",
       "jsr:@std/semver@^1.0.4",
       "jsr:@std/testing@^1.0.10",

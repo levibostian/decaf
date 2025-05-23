@@ -2,7 +2,8 @@ import { Exec, exec } from "../exec.ts"
 import { GitHubCommit } from "../github-api.ts"
 import * as log from "../log.ts"
 import { Git } from "../git.ts"
-import { DeployEnvironment } from "../types/environment.ts"
+import { DeployStepInput } from "../types/environment.ts"
+import { DeployCommandOutput, isDeployCommandOutput } from "./types/output.ts"
 
 /**
  * Run the deployment commands that the user has provided in the github action workflow yaml file.
@@ -20,7 +21,7 @@ import { DeployEnvironment } from "../types/environment.ts"
  */
 export interface DeployStep {
   runDeploymentCommands({ environment }: {
-    environment: DeployEnvironment
+    environment: DeployStepInput
   }): Promise<GitHubCommit | null>
 }
 
@@ -28,7 +29,7 @@ export class DeployStepImpl implements DeployStep {
   constructor(private exec: Exec, private git: Git) {}
 
   async runDeploymentCommands({ environment }: {
-    environment: DeployEnvironment
+    environment: DeployStepInput
   }): Promise<GitHubCommit | null> {
     // You can provide a list of commands in the github action workflow yaml file where the separator is a new line.
     // with:
@@ -39,7 +40,13 @@ export class DeployStepImpl implements DeployStep {
       []
 
     for (const command of deployCommands) {
-      const { exitCode, output } = await this.exec.run({ command, input: environment, displayLogs: true, throwOnNonZeroExitCode: false })
+      const { exitCode, output: outputRecord } = await this.exec.run({
+        command,
+        input: environment,
+        displayLogs: true,
+        throwOnNonZeroExitCode: false,
+      })
+      const output: DeployCommandOutput | undefined = isDeployCommandOutput(outputRecord) ? outputRecord : undefined
 
       if (exitCode !== 0) {
         log.error(

@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert"
-import { afterEach, beforeEach, describe, it } from "@std/testing/bdd"
+import { describe, it } from "@std/testing/bdd"
 import { GitHubApiImpl, GitHubCommit, GitHubRelease } from "./github-api.ts"
 
 export const GitHubReleaseFake: GitHubRelease = {

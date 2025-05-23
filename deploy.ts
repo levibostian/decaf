@@ -1,18 +1,17 @@
-import { GetLatestReleaseStep } from "./lib/steps/get-latest-release.ts"
 import { Logger } from "./lib/log.ts"
 import { DeployStep } from "./lib/steps/deploy.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
 import { DetermineNextReleaseStep } from "./lib/steps/determine-next-release.ts"
 import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts"
-import { DeployEnvironment, GetNextReleaseVersionEnvironment } from "./lib/types/environment.ts"
+import { DeployStepInput, GetNextReleaseVersionStepInput } from "./lib/types/environment.ts"
 import { GitHubActions } from "./lib/github-actions.ts"
-import { SimulateMerge } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
 import { GitHubCommit } from "./lib/github-api.ts"
+import { StepRunner } from "./lib/step-runner.ts"
 
 export const run = async ({
+  stepRunner,
   prepareEnvironmentForTestMode,
-  getLatestReleaseStep,
   getCommitsSinceLatestReleaseStep,
   determineNextReleaseStep,
   deployStep,
@@ -20,8 +19,8 @@ export const run = async ({
   githubActions,
   log,
 }: {
+  stepRunner: StepRunner
   prepareEnvironmentForTestMode: PrepareTestModeEnvStep
-  getLatestReleaseStep: GetLatestReleaseStep
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep
   determineNextReleaseStep: DetermineNextReleaseStep
   deployStep: DeployStep
@@ -96,25 +95,29 @@ export const run = async ({
     `🔍 First, I need to get the latest release that was created on the git branch ${currentBranch}. I'll look for it now...`,
   )
 
-  const lastRelease = await getLatestReleaseStep.getLatestReleaseForBranch({
-    owner,
-    repo,
-    branch: currentBranch,
+  const lastRelease = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
+    gitCurrentBranch: currentBranch,
+    gitRepoOwner: owner,
+    gitRepoName: repo,
+    testMode: runInTestMode,
   })
-  log.debug(`Last release found on github releases: ${lastRelease?.tag.name}`)
+
+  log.debug(`Latest release on branch ${currentBranch} is: ${JSON.stringify(lastRelease)}`)
 
   if (!lastRelease) {
     log.message(
-      `Looks like the branch ${currentBranch} has never been released before. This will be the first release. Exciting!`,
+      `I have been told that the git branch, ${currentBranch}, has never been released before. This will be the first release. Exciting!`,
     )
   } else {
     log.message(
-      `Looks like the latest release on the git branch ${currentBranch} is: ${lastRelease.tag.name}`,
+      `I have been told that the latest release on the git branch ${currentBranch} is: ${lastRelease.versionName}`,
     )
   }
 
   log.notice(
-    `📜 Next, I need to know all of the changes (git commits) that have been done on git branch ${currentBranch} since the latest release of ${lastRelease?.tag.name}. I'll look for them now...`,
+    `📜 Next, I need to know all of the changes (git commits) that have been done on git branch ${currentBranch} since the latest release: ${lastRelease?.versionName}, commit: ${
+      lastRelease?.commitSha.slice(0, 10)
+    }. I'll look for them now...`,
   )
 
   const listOfCommits = await getCommitsSinceLatestReleaseStep
@@ -143,7 +146,7 @@ export const run = async ({
 
   log.message(
     `I found ${listOfCommits.length} git commits created since ${
-      lastRelease ? `the latest release of ${lastRelease.tag.name}` : `the git branch ${currentBranch} was created`
+      lastRelease ? `the latest release of ${lastRelease.versionName}` : `the git branch ${currentBranch} was created`
     }.`,
   )
 
@@ -151,7 +154,7 @@ export const run = async ({
     `📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...`,
   )
 
-  const determineNextReleaseVersionEnvironment: GetNextReleaseVersionEnvironment = {
+  const determineNextReleaseVersionEnvironment: GetNextReleaseVersionStepInput = {
     gitCurrentBranch: currentBranch,
     gitRepoOwner: owner,
     gitRepoName: repo,
@@ -182,7 +185,7 @@ export const run = async ({
     `🚢 It's time to ship ${nextReleaseVersion}! I will now run all of the deployment commands provided in your project's configuration file...`,
   )
 
-  const deployEnvironment: DeployEnvironment = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
+  const deployEnvironment: DeployStepInput = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
 
   const gitCommitCreated = await deployStep.runDeploymentCommands({
     environment: deployEnvironment,

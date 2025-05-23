@@ -5,9 +5,9 @@ import { exec } from "../exec.ts"
 import { DeployStep, DeployStepImpl } from "./deploy.ts"
 import { git } from "../git.ts"
 import { GitHubCommit } from "../github-api.ts"
-import { DeployEnvironment } from "../types/environment.ts"
+import { DeployStepInput } from "../types/environment.ts"
 
-const defaultEnvironment: DeployEnvironment = {
+const defaultEnvironment: DeployStepInput = {
   gitCurrentBranch: "main",
   gitRepoOwner: "owner",
   gitRepoName: "repo",

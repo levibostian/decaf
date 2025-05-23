@@ -2,7 +2,8 @@ import { GitHubCommit, GitHubRelease } from "../github-api.ts"
 import * as semver from "@std/semver"
 import { versionBumpForCommitBasedOnConventionalCommit } from "../conventional-commits.ts"
 import { Logger, logger } from "../log.ts"
-import { GetNextReleaseVersionEnvironment } from "../types/environment.ts"
+import { GetNextReleaseVersionStepInput } from "../types/environment.ts"
+import { GetLatestReleaseStepOutput } from "./types/output.ts"
 
 export interface DetermineNextReleaseStepConfig {
   branches?: {
@@ -15,9 +16,9 @@ export interface DetermineNextReleaseStepConfig {
 export interface DetermineNextReleaseStep {
   getNextReleaseVersion({ config, environment, commits, latestRelease }: {
     config?: DetermineNextReleaseStepConfig
-    environment: GetNextReleaseVersionEnvironment
+    environment: GetNextReleaseVersionStepInput
     commits: GitHubCommit[]
-    latestRelease: GitHubRelease | null
+    latestRelease: GetLatestReleaseStepOutput | null
   }): Promise<string | null>
 }
 
@@ -30,9 +31,9 @@ export class DetermineNextReleaseStepImpl implements DetermineNextReleaseStep {
 
   async getNextReleaseVersion({ config, environment, commits, latestRelease }: {
     config?: DetermineNextReleaseStepConfig
-    environment: GetNextReleaseVersionEnvironment
+    environment: GetNextReleaseVersionStepInput
     commits: GitHubCommit[]
-    latestRelease: GitHubRelease | null
+    latestRelease: GetLatestReleaseStepOutput | null
   }): Promise<string | null> {
     // First, parse all commits to determine the version bump for each commit.
     const versionBumpsForEachCommit = commits.map((commit) => {
@@ -70,7 +71,7 @@ export class DetermineNextReleaseStepImpl implements DetermineNextReleaseStep {
       return null
     }
 
-    const lastReleaseVersion = latestRelease?.tag.name
+    const lastReleaseVersion = latestRelease?.versionName
     const isNextReleasePrerelease = config?.branches?.find((branch) => branch.branch_name === environment.gitCurrentBranch)?.prerelease
     const prereleaseVersionSuffix = config?.branches?.find((branch) => branch.branch_name === environment.gitCurrentBranch)?.version_suffix ||
       environment.gitCurrentBranch
