@@ -9,17 +9,18 @@ import { AnyStepInput, GetLatestReleaseStepInput } from "./types/environment.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
 import { GetLatestReleaseStepOutput, isGetLatestReleaseStepOutput } from "./steps/types/output.ts"
 import "./utils.ts"
+import { Logger } from "./log.ts"
 
 export interface StepRunner {
   runGetLatestOnCurrentBranchReleaseStep: (input: GetLatestReleaseStepInput) => Promise<GetLatestReleaseStepOutput | null>
 }
 
 export class StepRunnerImpl implements StepRunner {
-  constructor(private githubActions: GitHubActions, private exec: Exec) {}
+  constructor(private githubActions: GitHubActions, private exec: Exec, private logger: Logger) {}
 
   async runGetLatestOnCurrentBranchReleaseStep(input: GetLatestReleaseStepInput): Promise<GetLatestReleaseStepOutput | null> {
     const commandExecutionResult = await this.getCommandFromUserAndRun({ step: "get_latest_release_current_branch", input })
-    if (!commandExecutionResult) return null
+    if (commandExecutionResult == null) return null
 
     if (isGetLatestReleaseStepOutput(commandExecutionResult.output)) {
       return commandExecutionResult.output
@@ -33,14 +34,18 @@ export class StepRunnerImpl implements StepRunner {
     return null
   }
 
-  async getCommandFromUserAndRun({ step, input }: { step: AnyStepName; input: AnyStepInput }): Promise<RunResult | undefined> {
+  async getCommandFromUserAndRun({ step, input }: { step: AnyStepName; input: AnyStepInput }): Promise<RunResult | null> {
     const commandToRun = pipe(
       this.githubActions.getCommandForStep({ stepName: step }),
       (command) => command ? stringTemplating.render(command, input as unknown as Record<string, unknown>) : command,
     )
 
-    if (!commandToRun) return undefined
+    if (!commandToRun) return null
 
-    return this.exec.run({ command: commandToRun, input: input })
+    this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
+    const runResult = await this.exec.run({ command: commandToRun, input: input })
+    this.logger.debug(`Step ${step} completed. Result: ${JSON.stringify(runResult)}`)
+
+    return runResult
   }
 }

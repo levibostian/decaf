@@ -56,6 +56,7 @@ jobs:
       with: 
         simulated_merge_type: 'merge'
         github_token: ${{ secrets.github_token }}
+        get_latest_release_current_branch: 'deno run --allow-all steps/get-latest-release/get-latest-release.ts'
         # Test that the config is read by the tool and pre-release versions are working. 
         analyze_commits_config: |
           {
@@ -73,6 +74,7 @@ jobs:
       with: 
         simulated_merge_type: 'squash'
         github_token: ${{ secrets.github_token }}
+        get_latest_release_current_branch: 'deno run --allow-all steps/get-latest-release/get-latest-release.ts'
         # Test that the config is read by the tool and pre-release versions are working. 
         analyze_commits_config: |
           {
@@ -90,6 +92,7 @@ jobs:
       with: 
         simulated_merge_type: 'rebase'
         github_token: ${{ secrets.github_token }}
+        get_latest_release_current_branch: 'deno run --allow-all steps/get-latest-release/get-latest-release.ts'
         # Test that the config is read by the tool and pre-release versions are working. 
         analyze_commits_config: |
           {
