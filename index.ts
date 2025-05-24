@@ -21,7 +21,7 @@ const githubApi = GitHubApiImpl
 const githubActions = new GitHubActionsImpl()
 
 await run({
-  stepRunner: new StepRunnerImpl(githubActions, exec),
+  stepRunner: new StepRunnerImpl(githubActions, exec, logger),
   prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, githubActions, new SimulateMergeImpl(git, exec), git, exec),
   getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(
     githubApi,

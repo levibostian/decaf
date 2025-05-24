@@ -12,6 +12,9 @@ inputs:
   analyze_commits_config:
     description: 'Configure the behavior when analyzing commits.'
     default: ''
+  get_latest_release_current_branch:
+    description: 'Command to run to get the latest release version for the current branch.'
+    default: ''
   simulated_merge_type:
     description: 'When running in a pull request, what type of merge to simulate to run the tool in test mode. Note: This input option is planned to go away in favor of reading github repo settings. Options: merge, squash, rebase.'
     default: 'merge' # options: merge, squash, rebase
@@ -98,6 +101,7 @@ runs:
         INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
         INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
         INPUT_SIMULATED_MERGE_TYPE: ${{ inputs.simulated_merge_type }}
+        INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH: ${{ inputs.get_latest_release_current_branch }}
 
     - name: Pull request comment if the deployment failed 
       uses: peter-evans/create-or-update-comment@v4
