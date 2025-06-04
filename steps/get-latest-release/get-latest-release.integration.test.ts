@@ -20,16 +20,50 @@ async function runGetLatestReleaseScript(input: Record<string, unknown>) {
 
   const child = process.spawn()
   const code = (await child.status).code
-  const outputFileContents = await Deno.readTextFile(tempFile)
+  let outputFileContents = await Deno.readTextFile(tempFile)
+  if (outputFileContents == inputFileContents) {
+    outputFileContents = ""
+  }
+
   return { code, outputFileContents, inputFileContents }
 }
 
 Deno.test("finds the latest release for a real public repo branch", async () => {
-  // Using an archived repo to avoid the version name ever changing.
   const input = {
-    gitCurrentBranch: "master",
-    gitRepoOwner: "levibostian",
-    gitRepoName: "semantic-release-android-jcenter",
+    sampleData: {
+      getCommitsForBranch: [
+        {
+          sha: "d4e5f6a7b8c9d0e1f2g3h4i5j6k7l8m9n0o1p2q3",
+          message: "commit 1",
+          date: new Date("2023-09-15T00:00:00Z"),
+        },
+        {
+          sha: "cbfc0822045e9f1d07838a6db9e71a46d50ca2da",
+          message: "commit 2",
+          date: new Date("2023-10-01T00:00:00Z"),
+        },
+        {
+          sha: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+          message: "commit 3",
+          date: new Date("2023-11-20T00:00:00Z"),
+        },
+      ],
+      getTagsWithGitHubReleases: [
+        {
+          tag: {
+            name: "v1.0.0",
+            commit: {
+              sha: "cbfc0822045e9f1d07838a6db9e71a46d50ca2da",
+            },
+          },
+          name: "v1.0.0",
+          created_at: new Date("2023-10-01T00:00:00Z"),
+        },
+      ],
+    },
+    gitCurrentBranch: "main",
+    gitRepoOwner: "foo",
+    gitRepoName: "repo-name",
     testMode: false,
   }
 
@@ -42,14 +76,43 @@ Deno.test("finds the latest release for a real public repo branch", async () => 
 Deno.test("given branch with no commits, expect null", async () => {
   // Using an archived repo to avoid the version name ever changing.
   const input = {
-    gitCurrentBranch: "master",
-    gitRepoOwner: "levibostian",
-    gitRepoName: "ExpressjsBlanky",
+    sampleData: {
+      getCommitsForBranch: [],
+      getTagsWithGitHubReleases: [],
+    },
+    gitCurrentBranch: "main",
+    gitRepoOwner: "foo",
+    gitRepoName: "repo-name",
     testMode: false,
   }
 
-  const { code, outputFileContents, inputFileContents } = await runGetLatestReleaseScript(input)
+  const { code, outputFileContents } = await runGetLatestReleaseScript(input)
 
   assertEquals(code, 0)
-  assertEquals(outputFileContents, inputFileContents)
+  assertEquals(outputFileContents, "")
+})
+
+Deno.test("given branch with no release, expect null", async () => {
+  // Using an archived repo to avoid the version name ever changing.
+  const input = {
+    sampleData: {
+      getCommitsForBranch: [
+        {
+          sha: "cbfc0822045e9f1d07838a6db9e71a46d50ca2da",
+          message: "chore: does not trigger a release",
+          date: new Date("2023-10-01T00:00:00Z"),
+        },
+      ],
+      getTagsWithGitHubReleases: [],
+    },
+    gitCurrentBranch: "main",
+    gitRepoOwner: "foo",
+    gitRepoName: "repo-name",
+    testMode: false,
+  }
+
+  const { code, outputFileContents } = await runGetLatestReleaseScript(input)
+
+  assertEquals(code, 0)
+  assertEquals(outputFileContents, "")
 })

@@ -119,7 +119,8 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
 // The github rest api does not return the git tag (and commit sha) for a release. You would need to also call the tags endpoint and match the tag name to the release name (painful).
 // But I found you can use the github graphql api to get this information in 1 call.
 const getTagsWithGitHubReleases = async (
-  { owner, repo, processReleases, numberOfResults }: {
+  { sampleData, owner, repo, processReleases, numberOfResults }: {
+    sampleData?: GitHubRelease[]
     owner: string
     repo: string
     processReleases: (data: GitHubRelease[]) => Promise<boolean>
@@ -155,6 +156,11 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
   }
 }
 `
+
+  if (sampleData) {
+    await processReleases(sampleData)
+    return
+  }
 
   await githubGraphqlRequestPaging<{
     data: {
@@ -203,13 +209,19 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
 }
 
 const getCommitsForBranch = async <T>(
-  { owner, repo, branch, processCommits }: {
+  { sampleData, owner, repo, branch, processCommits }: {
+    sampleData?: GitHubCommit[]
     owner: string
     repo: string
     branch: string
     processCommits: (data: GitHubCommit[]) => Promise<boolean>
   },
 ) => {
+  if (sampleData) {
+    await processCommits(sampleData)
+    return
+  }
+
   return await githubApiRequestPaging<GitHubCommitApiResponse[]>(
     `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&per_page=100`,
     async (apiResponse) => {
