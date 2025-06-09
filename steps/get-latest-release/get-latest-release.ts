@@ -3,7 +3,7 @@ import { GetLatestReleaseStepInput } from "../../lib/types/environment.ts"
 import { GetLatestReleaseStepOutput } from "../../lib/steps/types/output.ts"
 import { GitHubCommit, GitHubRelease } from "../../lib/github-api.ts"
 
-const input: GetLatestReleaseStepInput & { sampleData: { getCommitsForBranch: GitHubCommit[]; getTagsWithGitHubReleases: GitHubRelease[] } } = JSON
+const input: GetLatestReleaseStepInput & { sampleData?: { getCommitsForBranch: GitHubCommit[]; getTagsWithGitHubReleases: GitHubRelease[] } } = JSON
   .parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
 
 const githubApi = GitHubApiImpl
@@ -12,7 +12,7 @@ let latestRelease: GetLatestReleaseStepOutput | null = null
 let githubReleases: GitHubRelease[] = []
 
 await githubApi.getTagsWithGitHubReleases({
-  sampleData: input.sampleData.getTagsWithGitHubReleases,
+  sampleData: input.sampleData?.getTagsWithGitHubReleases,
   owner: input.gitRepoOwner,
   repo: input.gitRepoName,
   processReleases: async (releases: GitHubRelease[]) => {
@@ -22,7 +22,7 @@ await githubApi.getTagsWithGitHubReleases({
 })
 
 await githubApi.getCommitsForBranch({
-  sampleData: input.sampleData.getCommitsForBranch,
+  sampleData: input.sampleData?.getCommitsForBranch,
   owner: input.gitRepoOwner,
   repo: input.gitRepoName,
   branch: input.gitCurrentBranch,

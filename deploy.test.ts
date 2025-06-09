@@ -6,7 +6,6 @@ import { run } from "./deploy.ts"
 import { GitHubCommit } from "./lib/github-api.ts"
 import { GitHubCommitFake } from "./lib/github-api.test.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
-import { DetermineNextReleaseStep, DetermineNextReleaseStepConfig } from "./lib/steps/determine-next-release.ts"
 import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts"
 import { DeployStep } from "./lib/steps/deploy.ts"
 import { getLogMock } from "./lib/log.test.ts"
@@ -81,12 +80,12 @@ describe("run the tool in different scenarios", () => {
   })
 
   it("given no commits created since last deployment, expect to not run a new deployment", async () => {
-    const { determineNextReleaseStepMock } = await setupTestEnvironmentAndRun({
+    const { determineNextReleaseVersionStepMock } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [],
     })
 
     // Exit early, before running the next step after getting list of commits since last deployment
-    assertEquals(determineNextReleaseStepMock.calls.length, 0)
+    assertEquals(determineNextReleaseVersionStepMock.calls.length, 0)
   })
 
   it("given no commits trigger a release, expect to not run a new deployment", async () => {
@@ -134,13 +133,6 @@ describe("test github actions output", () => {
         }),
       ],
       nextReleaseVersion: "1.0.0-beta.1",
-      determineNextReleaseStepConfig: {
-        branches: [{
-          branch_name: "main",
-          prerelease: true,
-          version_suffix: "beta",
-        }],
-      },
     })
 
     assertEquals(
@@ -189,7 +181,7 @@ describe("test github actions output", () => {
       givenLatestCommitOnBranch,
     ]
 
-    const { determineNextReleaseStepMock } = await setupTestEnvironmentAndRun({
+    const { determineNextReleaseVersionStepMock } = await setupTestEnvironmentAndRun({
       pullRequestTargetBranchName: "main",
       currentBranchName: "sweet-feature",
       githubActionEventThatTriggeredTool: "pull_request",
@@ -199,7 +191,7 @@ describe("test github actions output", () => {
       commitsCreatedBySimulatedMerge: givenCommitsCreatedBySimulatedMerge,
     })
 
-    assertEquals(determineNextReleaseStepMock.calls[0].args[0].commits, expectedCommitsAnalyzed)
+    assertEquals(determineNextReleaseVersionStepMock.calls[0].args[0].gitCommitsSinceLastRelease, expectedCommitsAnalyzed)
   })
 
   // Test a bug found where you are in test mode > simulate merge > new commits are made > tool says "zero commits created" > exits early.
@@ -380,7 +372,6 @@ const setupTestEnvironmentAndRun = async ({
   commitsSinceLatestRelease,
   nextReleaseVersion,
   gitCommitCreatedDuringDeploy,
-  determineNextReleaseStepConfig,
   githubActionEventThatTriggeredTool,
   pullRequestTargetBranchName,
   currentBranchName,
@@ -390,7 +381,6 @@ const setupTestEnvironmentAndRun = async ({
   commitsSinceLatestRelease?: GitHubCommit[]
   nextReleaseVersion?: string
   gitCommitCreatedDuringDeploy?: GitHubCommit
-  determineNextReleaseStepConfig?: DetermineNextReleaseStepConfig
   githubActionEventThatTriggeredTool?: string
   pullRequestTargetBranchName?: string
   currentBranchName?: string
@@ -414,6 +404,14 @@ const setupTestEnvironmentAndRun = async ({
       return latestRelease
     },
   )
+  const determineNextReleaseVersionStepMock = stub(
+    stepRunner,
+    "determineNextReleaseVersionStep",
+    async () => {
+      if (nextReleaseVersion) return { version: nextReleaseVersion }
+      return null
+    },
+  )
 
   const getCommitsSinceLatestReleaseStep = {} as GetCommitsSinceLatestReleaseStep
   const getCommitsSinceLatestReleaseStepMock = stub(
@@ -421,15 +419,6 @@ const setupTestEnvironmentAndRun = async ({
     "getAllCommitsSinceGivenCommit",
     async () => {
       return commitsSinceLatestRelease || []
-    },
-  )
-
-  const determineNextReleaseStep = {} as DetermineNextReleaseStep
-  const determineNextReleaseStepMock = stub(
-    determineNextReleaseStep,
-    "getNextReleaseVersion",
-    async () => {
-      return nextReleaseVersion || null
     },
   )
 
@@ -450,13 +439,6 @@ const setupTestEnvironmentAndRun = async ({
   const logMock = getLogMock()
 
   const githubActions = {} as GitHubActions
-  const githubActionsGetDetermineNextReleaseStepConfigMock = stub(
-    githubActions,
-    "getDetermineNextReleaseStepConfig",
-    () => {
-      return determineNextReleaseStepConfig
-    },
-  )
   const githubActionsSetOutputMock = stub(
     githubActions,
     "setOutput",
@@ -498,7 +480,6 @@ const setupTestEnvironmentAndRun = async ({
     stepRunner,
     prepareEnvironmentForTestMode,
     getCommitsSinceLatestReleaseStep,
-    determineNextReleaseStep,
     deployStep,
     createNewReleaseStep,
     log: logMock,
@@ -508,11 +489,10 @@ const setupTestEnvironmentAndRun = async ({
   return {
     runGetLatestOnCurrentBranchReleaseStepMock,
     getCommitsSinceLatestReleaseStepMock,
-    determineNextReleaseStepMock,
     deployStepMock,
     createNewReleaseStepMock,
+    determineNextReleaseVersionStepMock,
     logMock,
-    githubActionsGetDetermineNextReleaseStepConfigMock,
     githubActionsSetOutputMock,
     githubActionsIsRunningInPullRequestMock,
     prepareEnvironmentForTestModeMock,
