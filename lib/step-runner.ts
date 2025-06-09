@@ -5,36 +5,36 @@ const stringTemplating = new Template({
 })
 import { GitHubActions } from "./github-actions.ts"
 import { Exec, RunResult } from "./exec.ts"
-import { AnyStepInput, GetLatestReleaseStepInput } from "./types/environment.ts"
+import { AnyStepInput, GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "./types/environment.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
-import { GetLatestReleaseStepOutput, isGetLatestReleaseStepOutput } from "./steps/types/output.ts"
+import {
+  GetLatestReleaseStepOutput,
+  GetNextReleaseVersionStepOutput,
+  isGetLatestReleaseStepOutput,
+  isGetNextReleaseVersionStepOutput,
+} from "./steps/types/output.ts"
 import "./utils.ts"
 import { Logger } from "./log.ts"
 
 export interface StepRunner {
   runGetLatestOnCurrentBranchReleaseStep: (input: GetLatestReleaseStepInput) => Promise<GetLatestReleaseStepOutput | null>
+  determineNextReleaseVersionStep: (input: GetNextReleaseVersionStepInput) => Promise<GetNextReleaseVersionStepOutput | null>
 }
 
 export class StepRunnerImpl implements StepRunner {
   constructor(private githubActions: GitHubActions, private exec: Exec, private logger: Logger) {}
 
-  async runGetLatestOnCurrentBranchReleaseStep(input: GetLatestReleaseStepInput): Promise<GetLatestReleaseStepOutput | null> {
-    const commandExecutionResult = await this.getCommandFromUserAndRun({ step: "get_latest_release_current_branch", input })
-    if (commandExecutionResult == null) return null
-
-    if (isGetLatestReleaseStepOutput(commandExecutionResult.output)) {
-      return commandExecutionResult.output
-    }
-
-    const stdoutAsParsedJSON = jsonParse(commandExecutionResult.stdout)
-    if (isGetLatestReleaseStepOutput(stdoutAsParsedJSON)) {
-      return stdoutAsParsedJSON
-    }
-
-    return null
+  runGetLatestOnCurrentBranchReleaseStep(input: GetLatestReleaseStepInput): Promise<GetLatestReleaseStepOutput | null> {
+    return this.getCommandFromUserAndRun({ step: "get_latest_release_current_branch", input, outputCheck: isGetLatestReleaseStepOutput })
   }
 
-  async getCommandFromUserAndRun({ step, input }: { step: AnyStepName; input: AnyStepInput }): Promise<RunResult | null> {
+  determineNextReleaseVersionStep(input: GetNextReleaseVersionStepInput): Promise<GetNextReleaseVersionStepOutput | null> {
+    return this.getCommandFromUserAndRun({ step: "get_next_release_version", input, outputCheck: isGetNextReleaseVersionStepOutput })
+  }
+
+  async getCommandFromUserAndRun<Output>(
+    { step, input, outputCheck }: { step: AnyStepName; input: AnyStepInput; outputCheck: (output: unknown) => boolean },
+  ): Promise<Output | null> {
     const commandToRun = pipe(
       this.githubActions.getCommandForStep({ stepName: step }),
       (command) => command ? stringTemplating.render(command, input as unknown as Record<string, unknown>) : command,
@@ -46,6 +46,15 @@ export class StepRunnerImpl implements StepRunner {
     const runResult = await this.exec.run({ command: commandToRun, input: input })
     this.logger.debug(`Step ${step} completed. Result: ${JSON.stringify(runResult)}`)
 
-    return runResult
+    if (outputCheck(runResult.output)) {
+      return runResult.output as Output
+    }
+
+    const stdoutAsParsedJSON = jsonParse(runResult.stdout)
+    if (outputCheck(stdoutAsParsedJSON)) {
+      return stdoutAsParsedJSON as Output
+    }
+
+    return null
   }
 }

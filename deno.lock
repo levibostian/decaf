@@ -5,6 +5,7 @@
     "jsr:@std/assert@1": "1.0.12",
     "jsr:@std/assert@^1.0.12": "1.0.12",
     "jsr:@std/async@^1.0.12": "1.0.12",
+    "jsr:@std/cli@^1.0.19": "1.0.19",
     "jsr:@std/data-structures@^1.0.6": "1.0.6",
     "jsr:@std/fs@^1.0.15": "1.0.15",
     "jsr:@std/internal@^1.0.6": "1.0.6",
@@ -31,6 +32,9 @@
     },
     "@std/async@1.0.12": {
       "integrity": "d1bfcec459e8012846fe4e38dfc4241ab23240ecda3d8d6dfcf6d81a632e803d"
+    },
+    "@std/cli@1.0.19": {
+      "integrity": "b3601a54891f89f3f738023af11960c4e6f7a45dc76cde39a6861124cba79e88"
     },
     "@std/data-structures@1.0.6": {
       "integrity": "76a7fd8080c66604c0496220a791860492ab21a04a63a969c0b9a0609bbbb760"
@@ -124,6 +128,7 @@
     "dependencies": [
       "jsr:@deno-library/template@~0.2.1",
       "jsr:@std/assert@^1.0.12",
+      "jsr:@std/cli@^1.0.19",
       "jsr:@std/semver@^1.0.4",
       "jsr:@std/testing@^1.0.10",
       "npm:@actions/core@^1.11.1",

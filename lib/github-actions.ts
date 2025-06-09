@@ -1,11 +1,9 @@
-import { DetermineNextReleaseStepConfig } from "./steps/determine-next-release.ts"
 import * as log from "./log.ts"
 import * as githubActions from "@actions/core"
 import { AnyStepName } from "./steps/types/any-step.ts"
 
 export interface GitHubActions {
   getNameOfCurrentBranch(): string
-  getDetermineNextReleaseStepConfig(): DetermineNextReleaseStepConfig | undefined
   getSimulatedMergeType(): "merge" | "rebase" | "squash"
   getEventThatTriggeredThisRun(): "push" | "pull_request" | unknown
   isRunningInPullRequest(): Promise<{ baseBranch: string; targetBranch: string; prTitle: string; prDescription: string } | undefined>
@@ -28,25 +26,6 @@ export class GitHubActionsImpl implements GitHubActions {
     }
 
     return githubRef.replace("refs/heads/", "")
-  }
-
-  getDetermineNextReleaseStepConfig(): DetermineNextReleaseStepConfig | undefined {
-    const githubActionInputKey = "analyze_commits_config"
-
-    const determineNextReleaseStepConfig = this.getInput(githubActionInputKey)
-    if (!determineNextReleaseStepConfig) {
-      return undefined
-    }
-
-    try {
-      // Because every property in the config is optional, if JSON.parse results in an object that is not a DetermineNextReleaseStepConfig, it's ok.
-      return JSON.parse(determineNextReleaseStepConfig)
-    } catch (error) {
-      log.error(`When trying to parse the GitHub Actions input value for ${githubActionInputKey}, I encountered an error: ${error}`)
-      log.error(`The value I tried to parse was: ${determineNextReleaseStepConfig}`)
-
-      throw new Error()
-    }
   }
 
   getSimulatedMergeType(): "merge" | "rebase" | "squash" {

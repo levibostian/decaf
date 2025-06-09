@@ -31,3 +31,18 @@ export const isGetLatestReleaseStepOutput = (
     typeof (obj as Record<string, unknown>).commitSha === "string"
   )
 }
+
+export interface GetNextReleaseVersionStepOutput {
+  version: string
+}
+
+export const isGetNextReleaseVersionStepOutput = (
+  obj: unknown,
+): obj is GetNextReleaseVersionStepOutput => {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "version" in obj &&
+    typeof (obj as Record<string, unknown>).version === "string"
+  )
+}

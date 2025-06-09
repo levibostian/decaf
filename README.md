@@ -195,39 +195,9 @@ This tool provides you with outputs to help you understand what happened during 
 
 Customize this tool to work as you wish. 
 
-### Create prerelease versions
+### Create pre-release versions
 
-While developing new features of a project, it can be convenient to create prerelease versions such as an alpha or beta. You can configure the tool to make these types of releases, too. To do so, follow these steps: 
-
-1. Configure what branches should create pre-production releases. 
-
-```yml
-# This block installs the tool and configures it for your project. 
-- uses: levibostian/new-deployment-tool@main
-  with:
-    # Add this new config option to your github workflow file.
-    # The format of this block is a JSON string. 
-    # For this block, provide a list of branches that releases 
-    # should occur on when you push code to those branches. 
-    # If you want a branch to create pre-production releases, set 
-    # 'prerelease' to true. 
-    analyze_commits_config: |
-      {
-        "branches": [
-          { "branch_name": "main", "prerelease": false },
-          { "branch_name": "beta", "prerelease": true },
-          { "branch_name": "alpha", "prerelease": true }
-        ]
-      } 
-```
-
-The example above will create pre-production releases when code is pushed to both the `alpha` and `beta` branches. 
-
-2. Push code to the branches that you configured. 
-
-Create conventional commits as you are already used to doing and push those commits to the branches you configured as `prerelease` branches. A deployment will occur with a pre-production semantic version. 
-
-> Note: Make sure that your `prerelease` branches are kept up-to-date with your production branch. If you don't the pre-production version that is created will be incorrect and could confuse your app's users. 
+See [get next release version](steps/get-next-release/README.md) for more information on how to create pre-release versions.
 
 ### Test mode for multiple different merge types 
 

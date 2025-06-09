@@ -1,7 +1,6 @@
 import { Logger } from "./lib/log.ts"
 import { DeployStep } from "./lib/steps/deploy.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
-import { DetermineNextReleaseStep } from "./lib/steps/determine-next-release.ts"
 import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts"
 import { DeployStepInput, GetNextReleaseVersionStepInput } from "./lib/types/environment.ts"
 import { GitHubActions } from "./lib/github-actions.ts"
@@ -13,7 +12,6 @@ export const run = async ({
   stepRunner,
   prepareEnvironmentForTestMode,
   getCommitsSinceLatestReleaseStep,
-  determineNextReleaseStep,
   deployStep,
   createNewReleaseStep,
   githubActions,
@@ -22,17 +20,11 @@ export const run = async ({
   stepRunner: StepRunner
   prepareEnvironmentForTestMode: PrepareTestModeEnvStep
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep
-  determineNextReleaseStep: DetermineNextReleaseStep
   deployStep: DeployStep
   createNewReleaseStep: CreateNewReleaseStep
   githubActions: GitHubActions
   log: Logger
 }): Promise<void> => {
-  // Parse the configuration set by the user first so we can fail early if the configuration is invalid. Fast feedback for the user.
-  // Have the function throw if the JSON parsing fails. it will then exit the function.
-  const determineNextReleaseStepConfig = githubActions.getDetermineNextReleaseStepConfig()
-  log.debug(`determine next release step config: ${JSON.stringify(determineNextReleaseStepConfig)}`)
-
   if (githubActions.getEventThatTriggeredThisRun() !== "push" && githubActions.getEventThatTriggeredThisRun() !== "pull_request") {
     log.error(
       `Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${githubActions.getEventThatTriggeredThisRun()}. Bye bye...`,
@@ -163,13 +155,7 @@ export const run = async ({
     lastRelease,
   }
 
-  const nextReleaseVersion = await determineNextReleaseStep
-    .getNextReleaseVersion({
-      config: determineNextReleaseStepConfig,
-      environment: determineNextReleaseVersionEnvironment,
-      commits: listOfCommits,
-      latestRelease: lastRelease,
-    })
+  const nextReleaseVersion = (await stepRunner.determineNextReleaseVersionStep(determineNextReleaseVersionEnvironment))?.version
 
   if (!nextReleaseVersion) {
     log.warning(
