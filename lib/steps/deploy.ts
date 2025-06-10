@@ -4,6 +4,10 @@ import * as log from "../log.ts"
 import { Git } from "../git.ts"
 import { DeployStepInput } from "../types/environment.ts"
 import { DeployCommandOutput, isDeployCommandOutput } from "./types/output.ts"
+import Template from "@deno-library/template"
+const stringTemplating = new Template({
+  isEscape: false,
+})
 
 /**
  * Run the deployment commands that the user has provided in the github action workflow yaml file.
@@ -36,8 +40,11 @@ export class DeployStepImpl implements DeployStep {
     //   deploy_commands: |
     //     echo 'hello world'
     //     echo 'hello world'
-    const deployCommands = Deno.env.get("INPUT_DEPLOY_COMMANDS")?.split("\n").filter((command) => command.trim() !== "") ??
-      []
+    const deployCommands =
+      Deno.env.get("INPUT_DEPLOY_COMMANDS")?.split("\n").filter((command) => command.trim() !== "").map((command) =>
+        stringTemplating.render(command, environment as unknown as Record<string, unknown>)
+      ) ??
+        []
 
     for (const command of deployCommands) {
       const { exitCode, output: outputRecord } = await this.exec.run({

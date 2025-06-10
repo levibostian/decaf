@@ -49,6 +49,31 @@ describe("run the user given deploy commands", () => {
     assertEquals(runStub.calls.length, 3)
   })
 
+  it("given command as string template, expect execute the command with the environment data", async () => {
+    const runStub = stub(exec, "run", async (args) => {
+      return {
+        exitCode: 0,
+        stdout: "success",
+        output: undefined,
+      }
+    })
+    stub(git, "areAnyFilesStaged", async (args) => {
+      return false
+    })
+
+    const commands = [
+      "echo 'next version is {{nextVersionName}}'",
+    ]
+
+    Deno.env.set("INPUT_DEPLOY_COMMANDS", commands.join("\n"))
+
+    await new DeployStepImpl(exec, git).runDeploymentCommands({
+      environment: defaultEnvironment,
+    })
+
+    assertEquals(runStub.calls[0].args[0].command, "echo 'next version is 1.0.0'")
+  })
+
   it("given default value of empty string, expect to not run any commands", async () => {
     const runStub = stub(exec, "run", async (args) => {
       return {
