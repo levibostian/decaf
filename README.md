@@ -118,7 +118,14 @@ is_in_test_mode = input_data.get("testMode")
 
 #### 2. Perform the deployment
 
-Every project is unique in how a deployment is done. You might push to a server (Docker Hub, npm, Maven Central) or you might just need to create a git tag (go, Swift Package Manager). This tool will create a new git tag after all of your deployment scripts run successfully but besides that, all of the other deployment steps are done by your scripts. 
+Every project is unique in how a deployment is done. Here is a checklist of tasks that you need to perform in your deployment script.
+
+1. Update metadata files with the new version. Example: `package.json`, `.podspec`, `build.gradle`, etc.
+2. Push the code to a deployment server. This could be your own server or npm, Maven Central, Docker Hub, etc.
+> Tip: Be sure to check the input data to see if you're running in test mode. If you are, you should not push to the production server. Instead, you can either print out what you would do or push to a test server.
+3. Set the new latest version string of your project. If you remember, when the tool begins, it will get the latest version of your project. You must set the new latest version otherwise the tool will attempt to push this code again the next time it runs.
+
+##### Best practices for writing your deployment script
 
 When you write your script, it's *highly* recommended to follow these best practices to make your deployments stable and calm. 
 

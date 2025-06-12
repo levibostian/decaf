@@ -1,7 +1,6 @@
 import { Logger } from "./lib/log.ts"
 import { DeployStep } from "./lib/steps/deploy.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
-import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts"
 import { DeployStepInput, GetNextReleaseVersionStepInput } from "./lib/types/environment.ts"
 import { GitHubActions } from "./lib/github-actions.ts"
 import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
@@ -13,7 +12,6 @@ export const run = async ({
   prepareEnvironmentForTestMode,
   getCommitsSinceLatestReleaseStep,
   deployStep,
-  createNewReleaseStep,
   githubActions,
   log,
 }: {
@@ -21,7 +19,6 @@ export const run = async ({
   prepareEnvironmentForTestMode: PrepareTestModeEnvStep
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep
   deployStep: DeployStep
-  createNewReleaseStep: CreateNewReleaseStep
   githubActions: GitHubActions
   log: Logger
 }): Promise<void> => {
@@ -180,24 +177,12 @@ export const run = async ({
     newestCommit = gitCommitCreated
   }
 
-  log.notice(
-    `✏️ The code has been shipped. The final piece of the deployment process is creating a new release on GitHub for the new version, ${nextReleaseVersion}. Creating that now...${(runInTestMode
-      ? "(Test mode is enabled so I will not create the new release)"
-      : "")}`,
-  )
-
-  if (!runInTestMode) {
-    await createNewReleaseStep.createNewRelease({
-      owner,
-      repo,
-      tagName: nextReleaseVersion,
-      commit: newestCommit,
-    })
-
-    log.message(
-      `New release has been created on GitHub. View the release: https://github.com/${owner}/${repo}/releases/${nextReleaseVersion}`,
-    )
-  }
+  // TODO - update this log to mention that we are now verifying the latest version got set.
+  // log.notice(
+  //`✏️ The code has been deployed. The final piece of the deployment process is creating a new release on GitHub for the new version, ${nextReleaseVersion}. Creating that now...${(runInTestMode
+  //    ? "(Test mode is enabled so I will not create the new release)"
+  //    : "")}`,
+  //)
 
   log.notice(
     `🎉 Congratulations! The deployment process has completed. Bye-bye 👋!`,
