@@ -236,28 +236,6 @@ const getCommitsForBranch = async <T>(
   )
 }
 
-const createGitHubRelease = async (
-  { owner, repo, tagName, commit }: {
-    owner: string
-    repo: string
-    tagName: string
-    commit: GitHubCommit
-  },
-) => {
-  await githubApiRequest(
-    `https://api.github.com/repos/${owner}/${repo}/releases`,
-    "POST",
-    {
-      tag_name: tagName,
-      target_commitish: commit.sha,
-      name: tagName,
-      body: "",
-      draft: false,
-      prerelease: false,
-    },
-  )
-}
-
 // Make a GitHub Rest API request.
 const githubApiRequest = async <T>(
   url: string,
@@ -449,13 +427,11 @@ async function githubGraphqlRequestPaging<RESPONSE>(
 export interface GitHubApi {
   getTagsWithGitHubReleases: typeof getTagsWithGitHubReleases
   getCommitsForBranch: typeof getCommitsForBranch
-  createGitHubRelease: typeof createGitHubRelease
   getPullRequestStack: typeof getPullRequestStack
 }
 
 export const GitHubApiImpl: GitHubApi = {
   getTagsWithGitHubReleases,
   getCommitsForBranch,
-  createGitHubRelease,
   getPullRequestStack,
 }

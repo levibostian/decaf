@@ -6,7 +6,6 @@ import { run } from "./deploy.ts"
 import { GitHubCommit } from "./lib/github-api.ts"
 import { GitHubCommitFake } from "./lib/github-api.test.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
-import { CreateNewReleaseStep } from "./lib/steps/create-new-release.ts"
 import { DeployStep } from "./lib/steps/deploy.ts"
 import { getLogMock } from "./lib/log.test.ts"
 import { GitHubActions } from "./lib/github-actions.ts"
@@ -19,64 +18,6 @@ import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
 describe("run the tool in different scenarios", () => {
   afterEach(() => {
     restore()
-  })
-
-  it("given new commit created during deployment, expect create release from new commit", async () => {
-    const givenLatestCommitOnBranch = new GitHubCommitFake({
-      message: "feat: trigger a release",
-      sha: "trigger-release",
-    })
-    const givenCreatedCommitDuringDeploy = new GitHubCommitFake({
-      message: "chore: commit created during deploy",
-      sha: "commit-created-during-deploy",
-    })
-
-    const { createNewReleaseStepMock } = await setupTestEnvironmentAndRun({
-      commitsSinceLatestRelease: [givenLatestCommitOnBranch],
-      gitCommitCreatedDuringDeploy: givenCreatedCommitDuringDeploy,
-      nextReleaseVersion: "1.0.0",
-    })
-
-    assertEquals(
-      createNewReleaseStepMock.calls[0].args[0].commit.sha,
-      givenCreatedCommitDuringDeploy.sha,
-    )
-  })
-
-  it("given no new commits created during deployment, expect create release from latest commit found on github", async () => {
-    const givenLatestCommitOnBranch = new GitHubCommitFake({
-      message: "feat: trigger a release",
-      sha: "trigger-release",
-    })
-
-    const { createNewReleaseStepMock } = await setupTestEnvironmentAndRun({
-      commitsSinceLatestRelease: [givenLatestCommitOnBranch],
-      gitCommitCreatedDuringDeploy: undefined,
-      nextReleaseVersion: "1.0.0",
-    })
-
-    assertEquals(
-      createNewReleaseStepMock.calls[0].args[0].commit.sha,
-      givenLatestCommitOnBranch.sha,
-    )
-  })
-
-  it("given no release has ever been made, expect to create a new release", async () => {
-    const givenLatestCommitOnBranch = new GitHubCommitFake({
-      message: "feat: trigger a release",
-      sha: "trigger-release",
-    })
-
-    const { createNewReleaseStepMock } = await setupTestEnvironmentAndRun({
-      latestRelease: null,
-      commitsSinceLatestRelease: [givenLatestCommitOnBranch],
-      nextReleaseVersion: "1.0.0",
-    })
-
-    assertEquals(
-      createNewReleaseStepMock.calls[0].args[0].commit.sha,
-      givenLatestCommitOnBranch.sha,
-    )
   })
 
   it("given no commits created since last deployment, expect to not run a new deployment", async () => {
@@ -427,15 +368,6 @@ const setupTestEnvironmentAndRun = async ({
     return gitCommitCreatedDuringDeploy || null
   })
 
-  const createNewReleaseStep = {} as CreateNewReleaseStep
-  const createNewReleaseStepMock = stub(
-    createNewReleaseStep,
-    "createNewRelease",
-    async () => {
-      return
-    },
-  )
-
   const logMock = getLogMock()
 
   const githubActions = {} as GitHubActions
@@ -481,7 +413,6 @@ const setupTestEnvironmentAndRun = async ({
     prepareEnvironmentForTestMode,
     getCommitsSinceLatestReleaseStep,
     deployStep,
-    createNewReleaseStep,
     log: logMock,
     githubActions,
   })
@@ -490,7 +421,6 @@ const setupTestEnvironmentAndRun = async ({
     runGetLatestOnCurrentBranchReleaseStepMock,
     getCommitsSinceLatestReleaseStepMock,
     deployStepMock,
-    createNewReleaseStepMock,
     determineNextReleaseVersionStepMock,
     logMock,
     githubActionsSetOutputMock,
