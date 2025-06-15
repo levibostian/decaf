@@ -35,20 +35,16 @@ export class DeployStepImpl implements DeployStep {
   async runDeploymentCommands({ environment }: {
     environment: DeployStepInput
   }): Promise<GitHubCommit | null> {
-    // You can provide a list of commands in the github action workflow yaml file where the separator is a new line.
-    // with:
-    //   deploy_commands: |
-    //     echo 'hello world'
-    //     echo 'hello world'
-    const deployCommands =
-      Deno.env.get("INPUT_DEPLOY_COMMANDS")?.split("\n").filter((command) => command.trim() !== "").map((command) =>
-        stringTemplating.render(command, environment as unknown as Record<string, unknown>)
-      ) ??
-        []
+    const deployCommand = Deno.env.get("INPUT_DEPLOY")?.trim()
+      ? stringTemplating.render(
+        Deno.env.get("INPUT_DEPLOY") as string,
+        environment as unknown as Record<string, unknown>,
+      )
+      : undefined
 
-    for (const command of deployCommands) {
+    if (deployCommand) {
       const { exitCode, output: outputRecord } = await this.exec.run({
-        command,
+        command: deployCommand,
         input: environment,
         displayLogs: true,
         throwOnNonZeroExitCode: false,
@@ -57,18 +53,18 @@ export class DeployStepImpl implements DeployStep {
 
       if (exitCode !== 0) {
         log.error(
-          `Deploy command, ${command}, failed with error code: ${exitCode}`,
+          `Deploy command, ${deployCommand}, failed with error code: ${exitCode}`,
         )
         log.error(
           `I will stop the deployment process now. Review the logs to see if this is an issue you need to fix before you retry the deployment again. Otherwise, simply retry running the deployment again later.`,
         )
 
         throw new Error(
-          `Deploy command, ${command}, failed with error code ${exitCode}.`,
+          `Deploy command, ${deployCommand}, failed with error code ${exitCode}.`,
         )
       }
 
-      // Add files to git to prepare the stage for the commit after all deployment commands have run.
+      // Add files to git to prepare the stage for the commit after the deployment command has run.
       for (const file of output?.filesToCommit ?? []) {
         await this.git.add({ exec: this.exec, filePath: file })
       }

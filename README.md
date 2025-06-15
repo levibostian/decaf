@@ -255,7 +255,7 @@ the tool locally on your machine. It's not the most convenient way to test yet,
 but it can help in certain situations.
 
 - First, tell the tool what scripts to run for deployment:
-  `export INPUT_DEPLOY_COMMANDS="python3 ../test-new-deployment-tool/test.py"`
+  `export INPUT_DEPLOY="python3 ../test-new-deployment-tool/test.py"`
 - Second, tell the tool what github repo you want to run against:
   `export GITHUB_REF="refs/heads/main"; export GITHUB_REPOSITORY="levibostian/Wendy-iOS"`
 - Then, run the tool. Use the `deno` command from `action.yml` and modify it a
