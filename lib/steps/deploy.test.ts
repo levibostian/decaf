@@ -22,33 +22,6 @@ describe("run the user given deploy commands", () => {
     restore()
   })
 
-  it("given list of deploy commands, expect to execute them all", async () => {
-    const runStub = stub(exec, "run", async (args) => {
-      return {
-        exitCode: 0,
-        stdout: "success",
-        output: undefined,
-      }
-    })
-    stub(git, "areAnyFilesStaged", async (args) => {
-      return false
-    })
-
-    const commands = [
-      "echo 'hello world'",
-      "echo 'hello world'",
-      "echo 'hello world'",
-    ]
-
-    Deno.env.set("INPUT_DEPLOY_COMMANDS", commands.join("\n"))
-
-    await new DeployStepImpl(exec, git).runDeploymentCommands({
-      environment: defaultEnvironment,
-    })
-
-    assertEquals(runStub.calls.length, 3)
-  })
-
   it("given command as string template, expect execute the command with the environment data", async () => {
     const runStub = stub(exec, "run", async (args) => {
       return {
@@ -61,11 +34,9 @@ describe("run the user given deploy commands", () => {
       return false
     })
 
-    const commands = [
-      "echo 'next version is {{nextVersionName}}'",
-    ]
+    const command = "echo 'next version is {{nextVersionName}}'"
 
-    Deno.env.set("INPUT_DEPLOY_COMMANDS", commands.join("\n"))
+    Deno.env.set("INPUT_DEPLOY", command)
 
     await new DeployStepImpl(exec, git).runDeploymentCommands({
       environment: defaultEnvironment,
@@ -86,7 +57,7 @@ describe("run the user given deploy commands", () => {
       return false
     })
 
-    Deno.env.set("INPUT_DEPLOY_COMMANDS", "")
+    Deno.env.set("INPUT_DEPLOY", "")
 
     await new DeployStepImpl(exec, git).runDeploymentCommands({
       environment: defaultEnvironment,
@@ -104,23 +75,19 @@ describe("run the user given deploy commands", () => {
       }
     })
 
-    const commands = [
-      "echo 'hello world'",
-      "echo 'hello world'",
-      "echo 'hello world'",
-    ]
+    const command = "echo 'hello world'"
 
-    Deno.env.set("INPUT_DEPLOY_COMMANDS", commands.join("\n"))
+    Deno.env.set("INPUT_DEPLOY", command)
 
-    assertRejects(async () => {
+    await assertRejects(async () => {
       await new DeployStepImpl(exec, git).runDeploymentCommands({
         environment: defaultEnvironment,
       })
     })
   })
 
-  it("should run normally and succeed, given no deploy commands", async () => {
-    Deno.env.delete("INPUT_DEPLOY_COMMANDS")
+  it("should run normally and succeed, given no deploy command", async () => {
+    Deno.env.delete("INPUT_DEPLOY")
 
     // Fail if any git commands are run
     stub(exec, "run", async (args) => {
@@ -167,7 +134,7 @@ describe("run the user given deploy commands", () => {
 
 describe("post deploy commands git operations", () => {
   beforeEach(() => {
-    Deno.env.delete("INPUT_DEPLOY_COMMANDS") // deploy commands are not needed for these tests
+    Deno.env.delete("INPUT_DEPLOY") // deploy commands are not needed for these tests
   })
 
   afterEach(() => {
@@ -244,11 +211,7 @@ describe("function return values", () => {
 
     setupGitStub({ areAnyFilesStaged: true, doesLocalBranchExist: false, gitCommitCreated: givenCommitCreated })
 
-    const commands = [
-      "echo 'hello world'",
-    ]
-
-    Deno.env.set("INPUT_DEPLOY_COMMANDS", commands.join("\n"))
+    Deno.env.set("INPUT_DEPLOY", "echo 'hello world'")
 
     assertEquals(
       await new DeployStepImpl(exec, git).runDeploymentCommands({
@@ -267,13 +230,9 @@ describe("function return values", () => {
       }
     })
 
-    const commands = [
-      "echo 'hello world'",
-    ]
+    Deno.env.set("INPUT_DEPLOY", "echo 'hello world'")
 
-    Deno.env.set("INPUT_DEPLOY_COMMANDS", commands.join("\n"))
-
-    assertRejects(async () => {
+    await assertRejects(async () => {
       assertEquals(
         await new DeployStepImpl(exec, git).runDeploymentCommands({
           environment: defaultEnvironment,

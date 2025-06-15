@@ -5,8 +5,8 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN or a repo scoped PAT.'
     default: ${{ github.token }}
-  deploy_commands:
-    description: 'List of commands to run to deploy your project.'
+  deploy:
+    description: 'Command to run to deploy your project.'
     required: true
     default: ''
   analyze_commits_config:
@@ -116,7 +116,7 @@ runs:
       shell: bash 
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
-        INPUT_DEPLOY_COMMANDS: ${{ inputs.deploy_commands }}
+        INPUT_DEPLOY: ${{ inputs.deploy }}
         INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
         INPUT_SIMULATED_MERGE_TYPE: ${{ inputs.simulated_merge_type }}
         INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH: ${{ inputs.get_latest_release_current_branch }}
