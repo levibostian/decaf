@@ -1,6 +1,7 @@
 {
   "imports": {
     "@actions/core": "npm:@actions/core@^1.11.1",
+    "@david/dax": "jsr:@david/dax@^0.43.2",
     "@deno-library/template": "jsr:@deno-library/template@^0.2.1",
     "@std/cli": "jsr:@std/cli@^1.0.19",
     "@std/semver": "jsr:@std/semver@^1.0.4",
@@ -10,9 +11,9 @@
     "shell-quote": "npm:shell-quote@^1.8.2"
   },
   "tasks": {
-    "compile": "deno compile --output deployer --frozen --allow-env=GITHUB_OUTPUT,GITHUB_EVENT_PATH,GITHUB_REF,GITHUB_HEAD_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG,INPUT_SIMULATED_MERGE_TYPE,INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH,INPUT_GET_NEXT_RELEASE_VERSION --allow-net=\"api.github.com\" --allow-run --allow-read=\"/tmp,/var/folders,/home/runner/work/_temp\" --allow-write=\"/tmp,/var/folders,/home/runner/work/_temp\" index.ts",
     "test": "deno test --allow-all --junit-path reports/junit.xml --coverage=reports/coverage/",
-    "test-update": "deno task test -- --update"
+    "test-update": "deno task test -- --update",
+    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env=GITHUB_OUTPUT,GITHUB_EVENT_PATH,GITHUB_REF,GITHUB_HEAD_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY_COMMANDS,INPUT_ANALYZE_COMMITS_CONFIG,INPUT_SIMULATED_MERGE_TYPE,INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH,INPUT_GET_NEXT_RELEASE_VERSION --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts"
   },
   "fmt": {
     "lineWidth": 150,

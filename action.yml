@@ -24,6 +24,9 @@ inputs:
   make_pull_request_comment:
     description: 'If a pull request comment should be made. Value is string values "true" or "false".'
     default: 'true'
+  local_binary_path:
+    description: 'If you want to use a local binary instead of downloading the latest release from GitHub. Value is path to the binary.'
+    default: ''
 
 outputs:
   new_release_version:
@@ -35,14 +38,26 @@ outputs:
 
 runs:
   using: "composite"
-  steps:
-    - name: Install Deno runtime to run the CLI
-      uses: denoland/setup-deno@v1
-      with:
-        deno-version: v2.2
-
-    - name: Compile the CLI
-      run: deno task compile
+  steps:  
+    - name: Download deployment tool binary
+      if: ${{ inputs.local_binary_path == '' }}
+      id: download-binary
+      run: |
+        set -e
+        ARCH=$(uname -m)
+        OS=$(uname)
+        GH_RELEASE_VERSION="1.0.0"
+        gh release download "$GH_RELEASE_VERSION" --repo "levibostian/new-deployment-tool" --pattern "bin-$ARCH-$OS" --output new-deployment-tool
+        chmod +x new-deployment-tool
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Prepare local binary
+      if: ${{ inputs.local_binary_path != '' }}
+      run: |
+        set -e
+        cp "${{ inputs.local_binary_path }}" new-deployment-tool
+        chmod +x new-deployment-tool
       shell: bash
 
     - name: Find pull request comment previously created, if there is one. 
@@ -96,7 +111,7 @@ runs:
       # Deno's runtime permissions are a great feature. It would be nice to take advantage of it, however, it may not be possible with future features like running plugins. 
       #
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
-      run: ./deployer
+      run: ./new-deployment-tool 
       id: deployment
       shell: bash 
       env:
