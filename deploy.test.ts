@@ -365,7 +365,7 @@ const setupTestEnvironmentAndRun = async ({
 
   const deployStep = {} as DeployStep
   const deployStepMock = stub(deployStep, "runDeploymentCommands", async () => {
-    return gitCommitCreatedDuringDeploy || null
+    return
   })
 
   const logMock = getLogMock()

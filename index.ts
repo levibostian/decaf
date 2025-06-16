@@ -24,7 +24,7 @@ await run({
   getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(
     githubApi,
   ),
-  deployStep: new DeployStepImpl(exec, git),
+  deployStep: new DeployStepImpl(exec),
   log: logger,
   githubActions: githubActions,
 })
