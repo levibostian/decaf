@@ -127,8 +127,7 @@ export const run = async ({
     )
     return
   }
-  let newestCommit = listOfCommits[0]
-  log.debug(`Newest commit found: ${JSON.stringify(newestCommit)}`)
+  log.debug(`Newest commit found: ${JSON.stringify(listOfCommits[0])}`)
   log.debug(
     `Oldest commit found: ${JSON.stringify(listOfCommits[listOfCommits.length - 1])}`,
   )
@@ -170,12 +169,9 @@ export const run = async ({
 
   const deployEnvironment: DeployStepInput = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
 
-  const gitCommitCreated = await deployStep.runDeploymentCommands({
+  await deployStep.runDeploymentCommands({
     environment: deployEnvironment,
   })
-  if (gitCommitCreated) {
-    newestCommit = gitCommitCreated
-  }
 
   // TODO - update this log to mention that we are now verifying the latest version got set.
   // log.notice(
