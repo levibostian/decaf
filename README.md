@@ -21,25 +21,26 @@ Simple, calm, and flexible tool to automate your project's deployments.
 
 > [!WARNING] 
 > This tool is early on in development and some of the bullet points above have 
-> not been fully developed yet. You're feedback is always welcome throughout development! 
+> not been fully developed yet. Your feedback is always welcome throughout development! 
 
 # How does this tool work? 
 
-You might be wondering, *What do you mean you can automate a deployment?* An automated deployment means that all you need to do to deploy your code is merge a pull request and that's it. The entire deployment process will be done for you in the background while you move onto other tasks of your project. That means that this tool will...
+You might be wondering, *What do you mean you can automate a deployment?* An automated deployment means that all you need to do to deploy your code is merge a pull request and that's it. The entire deployment process will be done for you in the background while you move onto other tasks of your project. 
 
+Think of all the steps that you do to deploy your code. Some examples might be...
 * Bump the semantic version of your software to the next major, minor, or patch version. 
 * Update metadata files with the new version. 
 * Push the code to deployment server. 
 * Create git tag and GitHub Release with the new version. 
 
-You might think this is magic, but really, your git history is what drives this deployment process. When you run the tool, it will analyze your git commit history on the branch that you're running the tool on. When your git commit messages follow a specific format (such as [conventional commits](https://www.conventionalcommits.org)), the tool is able to determine the next sematic version and run your deployment scripts. 
+This tool automates all of these steps for you each time you merge your code. You just need to write the scripts that perform each step, and the tool will run them in order. 
 
 # Getting started
 
 Just follow these 3 steps. 
 
 1. [Install the tool](#install-the-tool-with-github-actions)
-2. [Write the deployment scripts](#write-your-deployment-scripts)
+2. [Write your step scripts](#write-your-step-scripts)
 3. [Push git commits to your deployment branch](#push-git-commits-with-the-correct-pr-message)
 
 ## Install the tool with Github Actions
@@ -51,135 +52,151 @@ Here is an example workflow file to install and run the tool in your project. Re
 ```yml
 # In your project, what branch do you merge code into when it's ready to ship? 
 # Replace 'main' below with the branch your project uses. 
-# When you merge a pull request or push new commits to this branch, it will run the tool to run the deployment process. 
 on: 
   push: [main] 
 
 jobs: 
   deploy:
     runs-on: ubuntu-latest
-    # To run a deployment with this tool, some permissions are required. 
-    permissions:    
-      contents: write # This tool creates GitHub releases and tags for each deployment. This permission allows that to happen. 
+    # The tool only requires read permissions to the repository. Only enable write permissions if any of your step scripts require it.
+    permissions:
+      contents: write # Example, if your deploy script needs to push a git commit or tag, enable content write permissions. 
     steps:
       - uses: actions/checkout@v4
       
       # This block installs the tool and configures it for your project. 
-      - uses: levibostian/new-deployment-tool@main
+      - uses: levibostian/new-deployment-tool@<version>
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # deploy_commands is where you provide a list of scripts that performs the deployment of your project. 
-          # In this example, the deployment script is written in python but you can use whatever language or tools you want! 
-          # Add 1+ commands below that will all be executed when a deployment occurs. 
-          # If any of the commands exit with a non-zero exit code, the deployment process will terminate and the GitHub Action will fail. 
-          deploy_commands: |
-            pip install -r requirements.txt # Installs the packages that the deploy.py script needs 
-            python scripts/deploy.py # Runs the deploy.py script that performs the deployment 
+          get_latest_release_current_branch: python scripts/get_latest_release.py
+          get_next_release_version: python scripts/get_next_release.py
+          deploy: python scripts/deploy.py
 ```
 
-> Reminder: Remember, the `deploy_commands` will only run if [git commits you push will trigger a deployment](#how-does-this-tool-work).
+> Note: Replace `<version>` with the version of the tool you want to use. You can find the latest version on the [GitHub releases page](https://github.com/levibostian/new-deployment-tool/releases).
 
-## Write your deployment scripts
+> Reminder: You must provide a script for each step. The tool will execute your scripts in order and expects them to follow the input/output contract described below.
 
-Next, it's time for you to write the code that is responsible for deploying your project. This could be updating the version number in some source code and pushing the code to a server (npm, Maven Central, CocoaPods, etc). 
+## Write your step scripts
 
-We designed this tool to be flexible and allow you to write the scripts in whatever language is most comfortable to you. No matter what language/tools you decide to use, follow these instructions to write your scripts. 
+You are responsible for writing the scripts that perform each deployment step. This includes determining the next version, updating the version number in metadata files, and pushing code to a server. You can use *any* language or tools you prefer 😍!
 
-#### 1. Get input data from the tool
+Below are instructions for each required step. The `steps/` directory in this repository contains example scripts for deploying this codebase, but you should write your own scripts for your project. Use the examples only for reference.
 
-Your deployment scripts are provided with input data that you may find useful during the deployment process. This data is provided to you via a JSON file. 
+### 1. Get latest release
 
-Here is an example piece of code to explain how to get this input data: 
+Write a script that determines the current/latest release version of your project.
 
-> Tip: The code below is python but you can use whatever language/tool you want for your deployment script. Read the comments to understand the steps your code needs to perform. 
+**Requirements:**
+- Read input from the JSON file at the path provided by the `DATA_FILE_PATH` environment variable. Input format:
+  ```json
+  {
+    "gitCurrentBranch": "main",
+    "gitRepoOwner": "your-org",
+    "gitRepoName": "your-repo",
+    "testMode": false
+  }
+  ```
+- Output the latest release version as JSON to the same file path. Output format:
+  ```json
+  {
+    "versionName": "1.2.3",
+    "commitSha": "abc123..."
+  }
+  ```
 
-```py
-import json
-import os
+**Example Node.js script:**
+```js
+// get-latest-release.js
+const fs = require('fs');
+const path = process.env.DATA_FILE_PATH;
+const input = JSON.parse(fs.readFileSync(path, 'utf8'));
 
-# The environment variable 'DATA_FILE_PATH' contains the file path to the JSON input file. 
-# Your script needs to open this file and read the file's contents into a string. 
-input_data_json_string = open(os.getenv('DATA_FILE_PATH'), 'r').read()
+// TODO: Replace with your logic to get the latest release version and commit SHA
+const latestRelease = {
+  versionName: '1.2.3', // The latest version string
+  commitSha: 'abc123...' // The commit SHA for the release
+};
 
-# Take the file string and parse the JSON into a data structure (like a dictionary or map) to be easier to use. 
-input_data = json.loads(input_data_json_string)
-
-# Your script can now get whatever data is useful, such as the new version name. 
-next_version_name = input_data.get("nextVersionName")
-
-# IMPORTANT: Test mode 
-# When running this tool in a pull request, the tool will run in "test mode".
-# When in test mode, run your deployment script as usual, but do not push code to your production server to actually deploy code.
-# Feel free to push to a test server or just print out what you would do.
-is_in_test_mode = input_data.get("testMode")
-
-# For a full list of all JSON keys available to you, see: https://github.com/levibostian/new-deployment-tool/blob/HEAD/lib/types/environment.ts
+// Write the output JSON to the same file
+fs.writeFileSync(path, JSON.stringify(latestRelease));
 ```
 
-#### 2. Perform the deployment
+### 2. Get next release version
 
-Every project is unique in how a deployment is done. Here is a checklist of tasks that you need to perform in your deployment script.
+Write a script that determines what the next release version should be (e.g., bumping major, minor, or patch).
 
-1. Update metadata files with the new version. Example: `package.json`, `.podspec`, `build.gradle`, etc.
-2. Push the code to a deployment server. This could be your own server or npm, Maven Central, Docker Hub, etc.
-> Tip: Be sure to check the input data to see if you're running in test mode. If you are, you should not push to the production server. Instead, you can either print out what you would do or push to a test server.
-3. Set the new latest version string of your project. If you remember, when the tool begins, it will get the latest version of your project. You must set the new latest version otherwise the tool will attempt to push this code again the next time it runs.
+**Requirements:**
+- Read input from the JSON file at the path provided by the `DATA_FILE_PATH` environment variable. Input format:
+  ```json
+  {
+    "gitCurrentBranch": "main",
+    "gitRepoOwner": "your-org",
+    "gitRepoName": "your-repo",
+    "testMode": false,
+    "lastRelease": { "versionName": "1.2.3", "commitSha": "abc123..." },
+    "gitCommitsSinceLastRelease": [
+      { "sha": "def456...", "message": "feat: add new feature", "date": "2024-01-01T00:00:00Z" }
+      // ...more commits
+    ]
+  }
+  ```
+- Output the next release version as JSON to the same file path. Output format:
+  ```json
+  {
+    "version": "1.2.4"
+  }
+  ```
 
-##### Best practices for writing your deployment script
+**Example Node.js script:**
+```js
+// get-next-release.js
+const fs = require('fs');
+const path = process.env.DATA_FILE_PATH;
+const input = JSON.parse(fs.readFileSync(path, 'utf8'));
 
-When you write your script, it's *highly* recommended to follow these best practices to make your deployments stable and calm. 
+// TODO: Replace with your logic to determine the next version (e.g., using commit messages)
+const nextVersion = {
+  version: '1.2.4' // The next version string
+};
 
-**Best Practice #1: Check if the code has already shipped before.** 
-
-Most servers (npm, Maven Central, CocoaPods) do not allow you to push code with the same version multiple times. We believe the best deployment script is one that's only job is make sure that a given version of code is available on a server. Therefore, instead of having your script fail when trying to push a version that has already been pushed, have your script succeed because the version already exists. If the version already exists on the deployment server, go ahead and exit your script early. 
-
-For convenience, you might find [this CLI tool handy](https://github.com/levibostian/is-it-deployed) to check popular deployment servers for a given version. 
-
-**Best Practice #2: Edit metadata files and push to server.** 
-
-Once your script has decided that you should push code to a server, now is the time to do it. Edit metadata files (example: update the version in your `package.json`, `.podspec`, `.gradle` files) and push to servers. It's highly recommended to make your script fail if there are any issues with pushing the code to the server (authentication, 500 response, network issues, etc). 
-
-**Best Practice #3: Verify the push to server was successful.**
-
-When your deployment script pushes to the deployment server, you should perform another check to be confident that the deployment was successful. A great strategy for this is to check with the server you pushed your code to and verify the new version now exists. It's recommended to have your deployment script fail if the new version does not exist on the deployment server. 
-
-Again, you might find [this CLI tool handy](https://github.com/levibostian/is-it-deployed) for performing this check.
-
-#### 3. (Optional) commit your metadata file modifications to git
-
-Some projects (go, Swift Package Manager) use git tags as the method of deploying code. It's expected that the latest commit of that git tag has the correct version in the metadata files (`Package.swift`, for example). This tool makes it easy for you to make these commits and git tags for you. 
-
-If you edited files during the deployment process that you want to have included in the git tag, see this example code snippet to explain how to do this: 
-
-> Reminder: The code below is python but you can use whatever language/tool you want for your deployment script. Read the comments to understand the steps your code needs to perform. 
-
-```py
-import json
-import os
-
-# Just like with the input data, you send data back to the tool by using a JSON file. 
-
-# First, create the JSON string. Each language is different. In Python, you create a dictionary: 
-output_data = {"filesToCommit": ["foo.txt"]} # notice the value is an array of relative or absolute paths. 
-# To understand the format of the JSON string to create, see: https://github.com/levibostian/new-deployment-tool/blob/main/lib/steps/types/deploy.ts#L13-L15
- 
-# Next, generate a JSON string and then write that string to a file.
-# The file path is given to you by the environment variable 'DATA_FILE_PATH'. 
-output_data_file_path = os.getenv("DATA_FILE_PATH")
-# In python, you can use json.dump() to write a dictionary to a file as a JSON string. 
-json.dump(output_data, open(output_data_file_path, "w"))
+// Write the output JSON to the same file
+fs.writeFileSync(path, JSON.stringify(nextVersion));
 ```
 
-> Tip: The git commit is created on the branch that the deployment process is running on. Your team may not want noisy metadata file commits to be in your `main` branch. A recommended way to get around this is to run your deployment from a different branch (commonly named `latest`). When code is pushed to `main` branch, you merge those commits into `latest` and then run the deployment on the `latest` branch. To learn how to set this up, see these workflow files [1](https://github.com/levibostian/action-hide-sensitive-inputs/blob/main/.github/workflows/trigger-deploy.yml), [2](https://github.com/levibostian/action-hide-sensitive-inputs/blob/main/.github/workflows/deploy-action.yml). 
+### 3. Deploy
 
-#### 4. Test your deployment script
+Write a script that performs the deployment.
 
-Yay! Your script is complete! It's probably a good idea at this point to test that your script works. There are multiple ways that you can do it. Here are some ideas. 
+**Requirements:**
+- Read input from the JSON file at the path provided by the `DATA_FILE_PATH` environment variable. Input format:
+  ```json
+  {
+    "gitCurrentBranch": "main",
+    "gitRepoOwner": "your-org",
+    "gitRepoName": "your-repo",
+    "testMode": false,
+    "lastRelease": { "versionName": "1.2.3", "commitSha": "abc123..." },
+    "gitCommitsSinceLastRelease": [ /* ... */ ],
+    "nextVersionName": "1.2.4"
+  }
+  ```
+- Perform your deployment logic (update metadata files, push to server, etc.).
+- There are no specific output requirements for this step. 
 
-* (Fastest method) Go ahead and run a deployment by pushing your script into your deployment branch and run the tool. This is risky as your script might have issues, but this could be the easiest way for you to test your script by simply performing a deployment. 
-* (Recommended method) Write automated tests against your script. You can easily write automated tests against your script by providing a input JSON file (send file path to script via environment variable `DATA_FILE_PATH`) and asserting the script's exit code and output JSON file contents. Example test cases: *1. Given a new version that was has been pushed before, expect script to exit successfully and not push to deployment server again.*, *2. Given server 500 response, expect script to fail.*, *3. Given version does not exist on deployment server, expect script modified `Package.swift` file and wrote output JSON file with file included.*
+**Example Node.js script:**
+```js
+// deploy.js
+const fs = require('fs');
+const path = process.env.DATA_FILE_PATH;
+const input = JSON.parse(fs.readFileSync(path, 'utf8'));
 
-## Push git commits with the correct PR message
+// TODO: Replace with your deployment logic (update files, push to server, etc.)
+```
+
+> Tip: The tool will verify that the latest release version is updated after deployment. If the deployment does not result in a new release, the workflow will fail (unless you set `fail_on_deploy_verification: false`).
+
+# Push git commits with the correct PR message
 
 Some git commits that you push to your deployment branch should be released (features, bug fixes), and some git commits should not be released (docs changes, adding new tests, refactors). You tell the tool if a deployment should be done by formatting your git commit message in a specific format called [conventional commits](https://www.conventionalcommits.org). 
 
@@ -188,8 +205,6 @@ If your team is not used to using a special format for git commit messages, you 
 🎊 Congrats! You're all setup for automated deployments! 
 
 *Tip:* We suggest checking out [how to create pre-production releases](#create-prerelease-versions) to see if this is something you're interested in. 
-
-> Note: In the future, we plan on allowing you to customize how git commits are analyzed so you can use a git commit message format your team decides. Until then, you must use conventional commits format. 
 
 # Outputs 
 
@@ -210,7 +225,7 @@ See [get next release version](steps/get-next-release/README.md) for more inform
 
 Test mode allows you to test your deployment in a pull request before you merge. It will tell you what will happen if you do decide to merge. To run in test mode, you must tell the tool what type of merge you plan on doing (merge, squash, rebase). But what if your team uses multiple different merge types? You can run the tool multiple times in test mode to test each merge type.
 
-To do this, it's as easy at running the tool multiple times in the same workflow file. Here is an example of how to do this: 
+To do this, it's as easy as running the tool multiple times in the same workflow file. Here is an example of how to do this: 
 
 ```yml
     steps:
@@ -220,7 +235,6 @@ To do this, it's as easy at running the tool multiple times in the same workflow
       with: 
         simulated_merge_type: 'merge'
         # ... Put rest of your config here. 
-
     - uses: actions/checkout@v4
     - uses: levibostian/new-deployment-tool@main
       with: 
@@ -249,24 +263,10 @@ interacting with the community, I decided to try and build something better.
 
 When developing, it's recommended to write automated tests and run them to
 verify the tool works. We also suggest running the tool on a real github
-repository that is not a production app of yours to verify that the tool works
-in a real-world scenario. Beyond these 2 methods of testing, you can also run
-the tool locally on your machine. It's not the most convenient way to test yet,
-but it can help in certain situations.
-
-- First, tell the tool what scripts to run for deployment:
-  `export INPUT_DEPLOY="python3 ../test-new-deployment-tool/test.py"`
-- Second, tell the tool what github repo you want to run against:
-  `export GITHUB_REF="refs/heads/main"; export GITHUB_REPOSITORY="levibostian/Wendy-iOS"`
-- Then, run the tool. Use the `deno` command from `action.yml` and modify it a
-  little bit to run it locally.
-
-Replace the github URL with `deploy.ts` to tell Deno to run the local file not
-the remote file. Add 2 extra environment variables...
-`GITHUB_EVENT_NAME=pull_request INPUT_GITHUB_TOKEN="XXX" deno...`
+repository that is not a production app of yours to verify that the tool works as expected.
 
 # Tests
 
-To run the automated test suite, view the `deno test` command in
-`./.github/workflows/tests.yml`. Run that on your local machine to run all
-tests.
+`deno task test` will run the test suite for this tool. 
+
+When you create a pull request, the tool will run in test mode to verify that the tool works as expected.
