@@ -8,6 +8,7 @@ export interface GitHubActions {
   getEventThatTriggeredThisRun(): "push" | "pull_request" | unknown
   isRunningInPullRequest(): Promise<{ baseBranch: string; targetBranch: string; prTitle: string; prDescription: string } | undefined>
   getCommandForStep({ stepName }: { stepName: AnyStepName }): string | undefined
+  failOnDeployVerification(): boolean
   setOutput({ key, value }: { key: string; value: string }): void
 }
 
@@ -81,6 +82,10 @@ export class GitHubActionsImpl implements GitHubActions {
 
   setOutput({ key, value }: { key: string; value: string }): void {
     githubActions.setOutput(key, value)
+  }
+
+  failOnDeployVerification(): boolean {
+    return this.getInput("fail_on_deploy_verification") === "true"
   }
 
   getCommandForStep({ stepName }: { stepName: string }): string | undefined {

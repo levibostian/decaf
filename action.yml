@@ -27,6 +27,9 @@ inputs:
   local_binary_path:
     description: 'If you want to use a local binary instead of downloading the latest release from GitHub. Value is path to the binary.'
     default: ''
+  fail_on_deploy_verification:
+    description: 'After deployment commands run, the tool will re-run get latest release command and compare returned version to version just deployed. This option determines if the tool should fail if the versions do not match compared to simply showing a warning. Value is string values "true" or "false". Default is "true". Always "false" in test mode.'
+    default: 'true'
 
 outputs:
   new_release_version:

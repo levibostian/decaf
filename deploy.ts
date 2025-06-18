@@ -173,12 +173,43 @@ export const run = async ({
     environment: deployEnvironment,
   })
 
-  // TODO - update this log to mention that we are now verifying the latest version got set.
-  // log.notice(
-  //`✏️ The code has been deployed. The final piece of the deployment process is creating a new release on GitHub for the new version, ${nextReleaseVersion}. Creating that now...${(runInTestMode
-  //    ? "(Test mode is enabled so I will not create the new release)"
-  //    : "")}`,
-  //)
+  // Re-run get-latest-release step to verify the new release
+  log.notice(
+    `🔄 Verifying that the new release was created by re-running the get-latest-release step...`,
+  )
+  const latestReleaseAfterDeploy = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
+    gitCurrentBranch: currentBranch,
+    gitRepoOwner: owner,
+    gitRepoName: repo,
+    testMode: runInTestMode,
+  })
+  log.debug(`Latest release after deploy: ${JSON.stringify(latestReleaseAfterDeploy)}`)
+
+  if (latestReleaseAfterDeploy?.versionName === nextReleaseVersion) {
+    log.notice(
+      `✅ Verification successful! The latest release is now ${latestReleaseAfterDeploy.versionName}, which matches the version that was just deployed.`,
+    )
+  } else {
+    if (runInTestMode) {
+      log.warning(
+        `⚠️ Verification failed, but that could be expected in test mode. The latest release after deployment is ${
+          latestReleaseAfterDeploy?.versionName ?? "<none>"
+        }, but expected ${nextReleaseVersion}. This could indicate a problem with the deployment process.`,
+      )
+    } else {
+      log.error(
+        `❌ Verification failed! The latest release after deployment is ${
+          latestReleaseAfterDeploy?.versionName ?? "<none>"
+        }, but expected ${nextReleaseVersion}. This could indicate a problem with the deployment process.`,
+      )
+
+      if (githubActions.failOnDeployVerification()) {
+        throw new Error(
+          `Deployment verification failed: latest release is ${latestReleaseAfterDeploy?.versionName ?? "<none>"}, expected ${nextReleaseVersion}`,
+        )
+      }
+    }
+  }
 
   log.notice(
     `🎉 Congratulations! The deployment process has completed. Bye-bye 👋!`,
