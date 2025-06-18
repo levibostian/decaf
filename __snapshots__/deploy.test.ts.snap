@@ -47,6 +47,8 @@ snapshot[`user facing logs > given new commit created during deployment, expect 
   "📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...",
   "After analyzing all of the git commits, I have determined the next release version will be: 1.0.0",
   "🚢 It's time to ship 1.0.0! I will now run all of the deployment commands provided in your project's configuration file...",
+  "🔄 Verifying that the new release was created by re-running the get-latest-release step...",
+  "✅ Verification successful! The latest release is now 1.0.0, which matches the version that was just deployed.",
   "🎉 Congratulations! The deployment process has completed. Bye-bye 👋!",
 ]
 `;
@@ -66,6 +68,8 @@ snapshot[`user facing logs > given no new commits created during deployment, exp
   "📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...",
   "After analyzing all of the git commits, I have determined the next release version will be: 1.0.0",
   "🚢 It's time to ship 1.0.0! I will now run all of the deployment commands provided in your project's configuration file...",
+  "🔄 Verifying that the new release was created by re-running the get-latest-release step...",
+  "✅ Verification successful! The latest release is now 1.0.0, which matches the version that was just deployed.",
   "🎉 Congratulations! The deployment process has completed. Bye-bye 👋!",
 ]
 `;
@@ -85,6 +89,8 @@ snapshot[`user facing logs > given no release has ever been made, expect logs to
   "📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...",
   "After analyzing all of the git commits, I have determined the next release version will be: 1.0.0",
   "🚢 It's time to ship 1.0.0! I will now run all of the deployment commands provided in your project's configuration file...",
+  "🔄 Verifying that the new release was created by re-running the get-latest-release step...",
+  "✅ Verification successful! The latest release is now 1.0.0, which matches the version that was just deployed.",
   "🎉 Congratulations! The deployment process has completed. Bye-bye 👋!",
 ]
 `;
@@ -107,6 +113,8 @@ snapshot[`user facing logs > given running in test mode, given commits that trig
   "📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...",
   "After analyzing all of the git commits, I have determined the next release version will be: 1.0.0",
   "🚢 It's time to ship 1.0.0! I will now run all of the deployment commands provided in your project's configuration file...",
+  "🔄 Verifying that the new release was created by re-running the get-latest-release step...",
+  "✅ Verification successful! The latest release is now 1.0.0, which matches the version that was just deployed.",
   "🎉 Congratulations! The deployment process has completed. Bye-bye 👋!",
 ]
 `;
