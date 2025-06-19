@@ -51,7 +51,9 @@ await compileBinary({
 await $`sed -i.bak 's/GH_RELEASE_VERSION=".*"/GH_RELEASE_VERSION="${input.nextVersionName}"/' ./action.yml && rm ./action.yml.bak`
 
 // Commit the changes to action.yml
-await $`git add action.yml && git commit -m "Bump version to ${input.nextVersionName}"`.printCommand()
+// Do not throw on error because there is a scenario where we previously made this commit but we failed and retried the deployment.
+// This should only fail if there is no change to commit, which is fine.
+await $`git add action.yml && git commit -m "Bump version to ${input.nextVersionName}"`.printCommand().noThrow()
 
 console.log(`to help with debugging, log the recently created commit including all the file changes made`)
 await $`git show HEAD`.printCommand()
@@ -75,4 +77,4 @@ if (input.testMode) {
 await $`git push`.printCommand()
 
 // Create the GitHub release with the compiled binaries
-await $`${commandToCreateGithubRelease}`.printCommand()
+await $.raw`${commandToCreateGithubRelease}`.printCommand()
