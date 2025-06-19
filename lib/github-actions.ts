@@ -9,6 +9,7 @@ export interface GitHubActions {
   isRunningInPullRequest(): Promise<{ baseBranch: string; targetBranch: string; prTitle: string; prDescription: string } | undefined>
   getCommandForStep({ stepName }: { stepName: AnyStepName }): string | undefined
   failOnDeployVerification(): boolean
+  getGitConfigInput(): { name: string; email: string } | undefined
   setOutput({ key, value }: { key: string; value: string }): void
 }
 
@@ -86,6 +87,27 @@ export class GitHubActionsImpl implements GitHubActions {
 
   failOnDeployVerification(): boolean {
     return this.getInput("fail_on_deploy_verification") === "true"
+  }
+
+  getGitConfigInput(): { name: string; email: string } | undefined {
+    const gitConfigInput = this.getInput("git_config")
+    if (!gitConfigInput || gitConfigInput.trim() === "") {
+      return undefined
+    }
+
+    // Expect format: "Name <email>"
+    const match = gitConfigInput.match(/^(.*)\s+<([^>]+)>$/)
+    if (!match) {
+      log.error(
+        `The git_config input must be in the format "name <email>". The value provided was: ${gitConfigInput}`,
+      )
+      throw new Error()
+    }
+
+    const name = match[1].trim()
+    const email = match[2].trim()
+
+    return { name, email }
   }
 
   getCommandForStep({ stepName }: { stepName: string }): string | undefined {

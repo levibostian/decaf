@@ -1,9 +1,11 @@
 import { assertEquals, assertRejects } from "@std/assert"
-import { afterEach, describe, it } from "@std/testing/bdd"
+import { afterEach, before, beforeEach, describe, it } from "@std/testing/bdd"
 import { restore, stub } from "@std/testing/mock"
 import { exec } from "../exec.ts"
 import { DeployStepImpl } from "./deploy.ts"
 import { DeployStepInput } from "../types/environment.ts"
+import { mock, when } from "../mock/mock.ts"
+import { GitHubActions } from "../github-actions.ts"
 
 const defaultEnvironment: DeployStepInput = {
   gitCurrentBranch: "main",
@@ -16,6 +18,13 @@ const defaultEnvironment: DeployStepInput = {
 }
 
 describe("run the user given deploy commands", () => {
+  let githubActionsMock = mock<GitHubActions>()
+
+  beforeEach(() => {
+    githubActionsMock = mock<GitHubActions>()
+    when(githubActionsMock, "getGitConfigInput", () => undefined)
+  })
+
   afterEach(() => {
     restore()
   })
@@ -33,7 +42,7 @@ describe("run the user given deploy commands", () => {
 
     Deno.env.set("INPUT_DEPLOY", command)
 
-    await new DeployStepImpl(exec).runDeploymentCommands({
+    await new DeployStepImpl(exec, githubActionsMock).runDeploymentCommands({
       environment: defaultEnvironment,
     })
 
@@ -51,7 +60,7 @@ describe("run the user given deploy commands", () => {
 
     Deno.env.set("INPUT_DEPLOY", "")
 
-    await new DeployStepImpl(exec).runDeploymentCommands({
+    await new DeployStepImpl(exec, githubActionsMock).runDeploymentCommands({
       environment: defaultEnvironment,
     })
 
@@ -72,7 +81,7 @@ describe("run the user given deploy commands", () => {
     Deno.env.set("INPUT_DEPLOY", command)
 
     await assertRejects(async () => {
-      await new DeployStepImpl(exec).runDeploymentCommands({
+      await new DeployStepImpl(exec, githubActionsMock).runDeploymentCommands({
         environment: defaultEnvironment,
       })
     })
@@ -90,7 +99,7 @@ describe("run the user given deploy commands", () => {
       }
     })
 
-    await new DeployStepImpl(exec).runDeploymentCommands({
+    await new DeployStepImpl(exec, githubActionsMock).runDeploymentCommands({
       environment: defaultEnvironment,
     })
   })
