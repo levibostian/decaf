@@ -3,12 +3,15 @@ name: Deploy
 on: 
   push:
     branches: [main, alpha, beta]
+  # This tool encourages you to run it on pull requests to test the deployment process.
+  pull_request:
 
-jobs: 
+jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:    
-      contents: write 
+      contents: write # required to create git tags and releases
+      pull-requests: write # allow commenting on PRs
     steps:
     - uses: actions/checkout@v4
     - name: Set up Deno
@@ -21,9 +24,47 @@ jobs:
 
     - name: Run deployment, merge method
       uses: ./
+      env:
+        # required to use 'gh' CLI in my step scripts. 
+        GH_TOKEN: ${{ github.token }}
       with: 
+        simulated_merge_type: 'merge'
         local_binary_path: compiled-binary
         github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: 'deno run --allow-all steps/get-latest-release/get-latest-release.ts'
-        get_next_release_version: 'deno run --allow-all steps/get-next-release/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
+        get_latest_release_current_branch: './steps/get-latest-release.ts'
+        get_next_release_version: './steps/get-next-release.ts'
+        deploy: './steps/deploy.ts'
+
+    - uses: actions/checkout@v4
+    - name: Compile binary 
+      run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+    - name: Run deployment, squash method
+      if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
+      uses: ./      
+      env:
+        # required to use 'gh' CLI in my step scripts. 
+        GH_TOKEN: ${{ github.token }}
+      with: 
+        simulated_merge_type: 'squash'
+        local_binary_path: compiled-binary
+        github_token: ${{ secrets.github_token }}
+        get_latest_release_current_branch: './steps/get-latest-release.ts'
+        get_next_release_version: './steps/get-next-release.ts'
+        deploy: './steps/deploy.ts'
+
+    - uses: actions/checkout@v4
+    - name: Compile binary 
+      run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+    - name: Run deployment, rebase method
+      if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
+      uses: ./      
+      env:
+        # required to use 'gh' CLI in my step scripts. 
+        GH_TOKEN: ${{ github.token }}
+      with: 
+        simulated_merge_type: 'rebase'
+        local_binary_path: compiled-binary
+        github_token: ${{ secrets.github_token }}
+        get_latest_release_current_branch: './steps/get-latest-release.ts'
+        get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
