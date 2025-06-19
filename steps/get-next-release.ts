@@ -3,7 +3,6 @@
 import { versionBumpForCommitBasedOnConventionalCommit } from "../lib/conventional-commits.ts"
 import { GetNextReleaseVersionStepInput } from "../lib/types/environment.ts"
 import * as semver from "@std/semver"
-import { parseArgs } from "@std/cli/parse-args"
 import { logger } from "../lib/log.ts"
 
 const input: GetNextReleaseVersionStepInput = JSON.parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
@@ -61,7 +60,13 @@ interface ConfigOptions {
 }
 
 // User passes in config as a JSON string via the CLI. Open to allowing other ways in future.
-const config: ConfigOptions = JSON.parse(parseArgs(Deno.args)["config"] || "{}") // as ConfigOptions
+const config: ConfigOptions = {
+  "branches": [
+    { "branch_name": "main", "prerelease": false },
+    { "branch_name": "beta", "prerelease": true },
+    { "branch_name": "alpha", "prerelease": true },
+  ],
+}
 
 const lastReleaseVersion = input.lastRelease?.versionName
 const isNextReleasePrerelease = config?.branches?.find((branch) => branch.branch_name === input.gitCurrentBranch)?.prerelease

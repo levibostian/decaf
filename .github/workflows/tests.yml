@@ -66,7 +66,7 @@ jobs:
         local_binary_path: compiled-binary
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: './steps/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
+        get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
 
     - uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
         local_binary_path: compiled-binary
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: './steps/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
+        get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
 
     - uses: actions/checkout@v4
@@ -92,5 +92,5 @@ jobs:
         local_binary_path: compiled-binary
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: './steps/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
+        get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'

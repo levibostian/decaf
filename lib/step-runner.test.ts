@@ -5,7 +5,6 @@ import { StepRunnerImpl } from "./step-runner.ts"
 import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepOutput, GetNextReleaseVersionStepOutput } from "./steps/types/output.ts"
 import { logger } from "./log.ts"
-import { parseArgs } from "@std/cli/parse-args"
 
 /**
  * Tests that are common to all steps in StepRunner.
