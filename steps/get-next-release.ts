@@ -1,8 +1,10 @@
-import { versionBumpForCommitBasedOnConventionalCommit } from "../../lib/conventional-commits.ts"
-import { GetNextReleaseVersionStepInput } from "../../lib/types/environment.ts"
+#!/usr/bin/env -S deno run --allow-all
+
+import { versionBumpForCommitBasedOnConventionalCommit } from "../lib/conventional-commits.ts"
+import { GetNextReleaseVersionStepInput } from "../lib/types/environment.ts"
 import * as semver from "@std/semver"
 import { parseArgs } from "@std/cli/parse-args"
-import { logger } from "../../lib/log.ts"
+import { logger } from "../lib/log.ts"
 
 const input: GetNextReleaseVersionStepInput = JSON.parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
 

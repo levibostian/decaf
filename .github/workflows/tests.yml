@@ -65,8 +65,8 @@ jobs:
         simulated_merge_type: 'merge'
         local_binary_path: compiled-binary
         github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: 'deno run --allow-all steps/get-latest-release/get-latest-release.ts'
-        get_next_release_version: 'deno run --allow-all steps/get-next-release/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
+        get_latest_release_current_branch: './steps/get-latest-release.ts'
+        get_next_release_version: './steps/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
         deploy: './steps/deploy.ts'
 
     - uses: actions/checkout@v4
@@ -78,8 +78,8 @@ jobs:
         simulated_merge_type: 'squash'
         local_binary_path: compiled-binary
         github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: 'deno run --allow-all steps/get-latest-release/get-latest-release.ts'
-        get_next_release_version: 'deno run --allow-all steps/get-next-release/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
+        get_latest_release_current_branch: './steps/get-latest-release.ts'
+        get_next_release_version: './steps/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
         deploy: './steps/deploy.ts'
 
     - uses: actions/checkout@v4
@@ -91,6 +91,6 @@ jobs:
         simulated_merge_type: 'rebase'
         local_binary_path: compiled-binary
         github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: 'deno run --allow-all steps/get-latest-release/get-latest-release.ts'
-        get_next_release_version: 'deno run --allow-all steps/get-next-release/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''       
+        get_latest_release_current_branch: './steps/get-latest-release.ts'
+        get_next_release_version: './steps/get-next-release.ts --config ''{ "branches": [ { "branch_name": "${{ github.ref_name }}", "prerelease": true, "version_suffix": "test" }, { "branch_name": "main", "prerelease": false }, { "branch_name": "beta", "prerelease": true }, { "branch_name": "alpha", "prerelease": true }]}'''
         deploy: './steps/deploy.ts'
