@@ -2,6 +2,12 @@
 // This test runs the script as a subprocess, passing real input and checking the output.
 // It uses a real public GitHub repository.
 
+/**
+ * Running these tests:
+ * 1. You can run the script directly by providing a GitHub token in the environment variable `INPUT_GITHUB_TOKEN`.
+ * 2. The test functions in here provide mock data to simulate the behavior of the script.
+ */
+
 import { assertEquals } from "@std/assert"
 
 async function runGetLatestReleaseScript(input: Record<string, unknown>) {
