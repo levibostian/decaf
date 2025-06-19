@@ -1,7 +1,9 @@
-import { GitHubApiImpl } from "../../lib/github-api.ts"
-import { GetLatestReleaseStepInput } from "../../lib/types/environment.ts"
-import { GetLatestReleaseStepOutput } from "../../lib/steps/types/output.ts"
-import { GitHubCommit, GitHubRelease } from "../../lib/github-api.ts"
+#!/usr/bin/env -S deno run --allow-all
+
+import { GitHubApiImpl } from "../lib/github-api.ts"
+import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
+import { GetLatestReleaseStepOutput } from "../lib/steps/types/output.ts"
+import { GitHubCommit, GitHubRelease } from "../lib/github-api.ts"
 
 const input: GetLatestReleaseStepInput & { sampleData?: { getCommitsForBranch: GitHubCommit[]; getTagsWithGitHubReleases: GitHubRelease[] } } = JSON
   .parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
