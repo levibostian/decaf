@@ -13,7 +13,13 @@ jobs:
       contents: write # required to create git tags and releases
       pull-requests: write # allow commenting on PRs
     steps:
+    # Checkout the repo and make sure to get all commits for all branches. 
+    # This is required by the deploy script because we try to merge the deployment branch into 'latest' branch and 
+    # you will get "unrelated histories" error if you don't have all commits on both branches. 
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
     - name: Set up Deno
       uses: denoland/setup-deno@v1
       with:
