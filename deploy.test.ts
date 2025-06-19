@@ -14,6 +14,7 @@ import { mock, when } from "./lib/mock/mock.ts"
 import { StepRunner } from "./lib/step-runner.ts"
 import { GetLatestReleaseStepOutputFake } from "./lib/steps/types/output.test.ts"
 import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
+import { ConvenienceStep } from "./lib/steps/convenience.ts"
 
 describe("run the tool in different scenarios", () => {
   afterEach(() => {
@@ -329,6 +330,11 @@ const setupTestEnvironmentAndRun = async ({
   Deno.env.set("GITHUB_REF", `refs/heads/${currentBranch}`)
   Deno.env.set("GITHUB_REPOSITORY", "levibostian/new-deployment-tool")
 
+  const convenienceStep = mock<ConvenienceStep>()
+  when(convenienceStep, "runConvenienceCommands", async () => {
+    return
+  })
+
   const stepRunner = {} as StepRunner
   const runGetLatestOnCurrentBranchReleaseStepMock = stub(
     stepRunner,
@@ -412,6 +418,7 @@ const setupTestEnvironmentAndRun = async ({
   })
 
   await run({
+    convenienceStep,
     stepRunner,
     prepareEnvironmentForTestMode,
     getCommitsSinceLatestReleaseStep,
