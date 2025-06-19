@@ -1,51 +1,27 @@
 #!/usr/bin/env -S deno run --allow-all
 
-import { GitHubApiImpl } from "../lib/github-api.ts"
-import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
+/**
+ * This script retrieves the latest release of the project.
+ *
+ * This is a very simple script only because of how simple the project's release process is.
+ * All release tags are created off of a commit made on the branch 'latest'. Because of this,
+ * we just need to ask github for the latest release and that's it.
+ *
+ * Testing:
+ * Assuming that you have `gh` cli installed and authenticated, you can run this script directly.
+ * `DATA_FILE_PATH="/tmp/foo.txt" ./steps/get-latest-release.ts && cat /tmp/foo.txt`
+ */
+
 import { GetLatestReleaseStepOutput } from "../lib/steps/types/output.ts"
-import { GitHubCommit, GitHubRelease } from "../lib/github-api.ts"
+import $ from "@david/dax"
 
-const input: GetLatestReleaseStepInput & { sampleData?: { getCommitsForBranch: GitHubCommit[]; getTagsWithGitHubReleases: GitHubRelease[] } } = JSON
-  .parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
+const latestReleaseTagName = await $`gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].tagName'`
+  .text()
+const commitSha = await $`gh release view ${latestReleaseTagName} --json name,tagName,targetCommitish --jq '.targetCommitish'`.text()
 
-const githubApi = GitHubApiImpl
-
-let latestRelease: GetLatestReleaseStepOutput | null = null
-let githubReleases: GitHubRelease[] = []
-
-await githubApi.getTagsWithGitHubReleases({
-  sampleData: input.sampleData?.getTagsWithGitHubReleases,
-  owner: input.gitRepoOwner,
-  repo: input.gitRepoName,
-  processReleases: async (releases: GitHubRelease[]) => {
-    githubReleases = githubReleases.concat(releases)
-    return true // continue paging
-  },
-})
-
-await githubApi.getCommitsForBranch({
-  sampleData: input.sampleData?.getCommitsForBranch,
-  owner: input.gitRepoOwner,
-  repo: input.gitRepoName,
-  branch: input.gitCurrentBranch,
-  processCommits: async (commits: GitHubCommit[]) => {
-    for (const githubRelease of githubReleases) {
-      for (const commit of commits) {
-        if (githubRelease.tag.commit.sha === commit.sha && !latestRelease) {
-          latestRelease = {
-            versionName: githubRelease.tag.name,
-            commitSha: githubRelease.tag.commit.sha,
-          }
-        }
-      }
-    }
-    const getNextPage = latestRelease === null
-    return getNextPage
-  },
-})
-
-// Write output as JSON to the same file, if a latest release was found.
-// Otherwise leave it and the deployment tool will know that there is no release to deploy.
-if (latestRelease !== null) {
-  await Deno.writeTextFile(Deno.env.get("DATA_FILE_PATH")!, JSON.stringify(latestRelease))
+const output: GetLatestReleaseStepOutput = {
+  versionName: latestReleaseTagName,
+  commitSha,
 }
+
+await Deno.writeTextFile(Deno.env.get("DATA_FILE_PATH")!, JSON.stringify(output))

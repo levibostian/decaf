@@ -115,99 +115,6 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
   return prStack
 }
 
-// Get a list of github releases.
-// The github rest api does not return the git tag (and commit sha) for a release. You would need to also call the tags endpoint and match the tag name to the release name (painful).
-// But I found you can use the github graphql api to get this information in 1 call.
-const getTagsWithGitHubReleases = async (
-  { sampleData, owner, repo, processReleases, numberOfResults }: {
-    sampleData?: GitHubRelease[]
-    owner: string
-    repo: string
-    processReleases: (data: GitHubRelease[]) => Promise<boolean>
-    numberOfResults?: number
-  },
-): Promise<void> => {
-  // Gets list of tags that also have a github release made for it.
-  // If a tag does not have a release, it will not be returned.
-  // Sorted by latest release first.
-  // Paging enabled.
-  const graphqlQuery = `
-query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int!) {
-  repository(owner: $owner, name: $repo) {
-    releases(first: $numberOfResults, after: $endCursor) {
-      nodes {
-        name # name of github release 
-        createdAt # "2024-06-06T04:26:30Z"
-        isDraft # true if release is a draft
-        tag {
-          name # tag name 
-          target {
-            ... on Commit {
-              oid # commit sha hash
-            }
-          }
-        }
-      }
-      pageInfo {
-        endCursor
-        hasNextPage
-      }
-    }
-  }
-}
-`
-
-  if (sampleData) {
-    await processReleases(sampleData)
-    return
-  }
-
-  await githubGraphqlRequestPaging<{
-    data: {
-      repository: {
-        releases: {
-          nodes: {
-            name: string
-            createdAt: string
-            isDraft: boolean
-            tag: {
-              name: string
-              target: {
-                oid: string
-              }
-            }
-          }[]
-          pageInfo: {
-            endCursor: string
-            hasNextPage: boolean
-          }
-        }
-      }
-    }
-  }>(
-    graphqlQuery,
-    { owner, repo, numberOfResults: numberOfResults || 100 },
-    (response) => {
-      const releases: GitHubRelease[] = response.data.repository.releases.nodes
-        .filter((release) => !release.isDraft) // only look at releases that are not drafts
-        .map((release) => {
-          return {
-            tag: {
-              name: release.tag.name,
-              commit: {
-                sha: release.tag.target.oid,
-              },
-            },
-            name: release.name,
-            created_at: new Date(release.createdAt),
-          }
-        })
-
-      return processReleases(releases)
-    },
-  )
-}
-
 const getCommitsForBranch = async <T>(
   { sampleData, owner, repo, branch, processCommits }: {
     sampleData?: GitHubCommit[]
@@ -425,13 +332,11 @@ async function githubGraphqlRequestPaging<RESPONSE>(
 }
 
 export interface GitHubApi {
-  getTagsWithGitHubReleases: typeof getTagsWithGitHubReleases
   getCommitsForBranch: typeof getCommitsForBranch
   getPullRequestStack: typeof getPullRequestStack
 }
 
 export const GitHubApiImpl: GitHubApi = {
-  getTagsWithGitHubReleases,
   getCommitsForBranch,
   getPullRequestStack,
 }
