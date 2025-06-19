@@ -61,6 +61,9 @@ jobs:
 
     - name: Run deployment, merge method
       uses: ./
+      env:
+        # required to use 'gh' CLI in my step scripts. 
+        GH_TOKEN: ${{ github.token }}
       with: 
         simulated_merge_type: 'merge'
         local_binary_path: compiled-binary
@@ -74,6 +77,9 @@ jobs:
       run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
     - name: Run deployment, squash method
       uses: ./      
+      env:
+        # required to use 'gh' CLI in my step scripts. 
+        GH_TOKEN: ${{ github.token }}
       with: 
         simulated_merge_type: 'squash'
         local_binary_path: compiled-binary
@@ -87,6 +93,9 @@ jobs:
       run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
     - name: Run deployment, rebase method
       uses: ./      
+      env:
+        # required to use 'gh' CLI in my step scripts. 
+        GH_TOKEN: ${{ github.token }}
       with: 
         simulated_merge_type: 'rebase'
         local_binary_path: compiled-binary

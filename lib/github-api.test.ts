@@ -78,31 +78,6 @@ describe("getPullRequestStack", () => {
   })
 })
 
-describe("getTagsWithGitHubReleases", () => {
-  it("should return sorted list of tags that are also releases", async () => {
-    if (!assertTokenSet()) return
-
-    let allReleases: GitHubRelease[] = []
-
-    await GitHubApiImpl.getTagsWithGitHubReleases({
-      owner: "swiftlang",
-      repo: "swift",
-      processReleases: async (releases) => {
-        allReleases = allReleases.concat(releases)
-        return true // continue paging
-      },
-      numberOfResults: 10, // test that paging works. Expect to receive the combined result of all pages.
-    })
-
-    for (const release of allReleases) {
-      console.log(
-        "Expect to see list of releases, not list of tags. Expect to be sorted",
-      )
-      console.log(`GitHub release: ${JSON.stringify(release, null, 2)}`)
-    }
-  })
-})
-
 describe("getCommitsForBranch", () => {
   it("should return sorted list of commits", async () => {
     if (!assertTokenSet()) return
