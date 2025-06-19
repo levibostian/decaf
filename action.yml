@@ -5,6 +5,9 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN or a repo scoped PAT.'
     default: ${{ github.token }}
+  git_config:
+    description: 'The committer name and email address in the format Display Name <email@address.com>. Defaults to the GitHub Actions bot user on github.com. Tool will set this as the committer for any git operations that you make in your deploy script. Else, provide an empty string for tool to not configure git.'
+    default: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
   deploy:
     description: 'Command to run to deploy your project.'
     required: true
@@ -124,6 +127,7 @@ runs:
         INPUT_SIMULATED_MERGE_TYPE: ${{ inputs.simulated_merge_type }}
         INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH: ${{ inputs.get_latest_release_current_branch }}
         INPUT_GET_NEXT_RELEASE_VERSION: ${{ inputs.get_next_release_version }}
+        INPUT_GIT_CONFIG: ${{ inputs.git_config }}
 
     - name: Pull request comment if the deployment failed 
       uses: peter-evans/create-or-update-comment@v4

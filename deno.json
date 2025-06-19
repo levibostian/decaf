@@ -12,7 +12,7 @@
   "tasks": {
     "test": "deno test --allow-all --junit-path reports/junit.xml --coverage=reports/coverage/",
     "test-update": "deno task test -- --update",
-    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env=GITHUB_OUTPUT,GITHUB_EVENT_PATH,GITHUB_REF,GITHUB_HEAD_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY,INPUT_ANALYZE_COMMITS_CONFIG,INPUT_SIMULATED_MERGE_TYPE,INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH,INPUT_GET_NEXT_RELEASE_VERSION --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts"
+    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env=GITHUB_OUTPUT,GITHUB_EVENT_PATH,GITHUB_REF,GITHUB_HEAD_REF,GITHUB_EVENT_NAME,GITHUB_REPOSITORY,INPUT_GITHUB_TOKEN,INPUT_DEPLOY,INPUT_ANALYZE_COMMITS_CONFIG,INPUT_SIMULATED_MERGE_TYPE,INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH,INPUT_GET_NEXT_RELEASE_VERSION,INPUT_GIT_CONFIG --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts"
   },
   "fmt": {
     "lineWidth": 150,

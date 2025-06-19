@@ -1,4 +1,5 @@
 import { Exec } from "../exec.ts"
+import { GitHubActions } from "../github-actions.ts"
 import * as log from "../log.ts"
 import { DeployStepInput } from "../types/environment.ts"
 import Template from "@deno-library/template"
@@ -27,11 +28,27 @@ export interface DeployStep {
 }
 
 export class DeployStepImpl implements DeployStep {
-  constructor(private exec: Exec) {}
+  constructor(private exec: Exec, private githubActions: GitHubActions) {}
 
   async runDeploymentCommands({ environment }: {
     environment: DeployStepInput
   }): Promise<void> {
+    const userProvidedGitCommitterConfig = this.githubActions.getGitConfigInput()
+    if (userProvidedGitCommitterConfig) {
+      log.debug(`User provided git committer config: ${JSON.stringify(userProvidedGitCommitterConfig)}`)
+      log.notice(
+        `I will set the git committer config to the user provided values: name: ${userProvidedGitCommitterConfig.name}, email: ${userProvidedGitCommitterConfig.email}`,
+      )
+      await this.exec.run({
+        command: `git config user.name "${userProvidedGitCommitterConfig.name}"`,
+        input: undefined,
+      })
+      await this.exec.run({
+        command: `git config user.email "${userProvidedGitCommitterConfig.email}"`,
+        input: undefined,
+      })
+    }
+
     const deployCommand = Deno.env.get("INPUT_DEPLOY")?.trim()
       ? stringTemplating.render(
         Deno.env.get("INPUT_DEPLOY") as string,
