@@ -25,8 +25,7 @@
     "npm:@actions/core@*": "1.11.1",
     "npm:@actions/core@^1.11.1": "1.11.1",
     "npm:ansi-styles@6.2.1": "6.2.1",
-    "npm:shell-quote@1.8.1": "1.8.1",
-    "npm:shell-quote@^1.8.2": "1.8.2"
+    "npm:shell-quote@1.8.1": "1.8.1"
   },
   "jsr": {
     "@david/console-static-text@0.3.0": {
@@ -141,9 +140,6 @@
     "shell-quote@1.8.1": {
       "integrity": "sha512-6j1W9l1iAs/4xYBI1SYOVZyFcCis9b4KCLQ8fgAGG07QvzaRLVVRQvAy85yNmmZSjYjg4MWh4gNvlPujU/5LpA=="
     },
-    "shell-quote@1.8.2": {
-      "integrity": "sha512-AzqKpGKjrj7EM6rKVQEPpB288oCfnrEIuyoT9cyF4nmGa7V8Zk6f7RRqYisX8X9m+Q7bd632aZW4ky7EhbQztA=="
-    },
     "tunnel@0.0.6": {
       "integrity": "sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg=="
     },
@@ -174,8 +170,7 @@
       "jsr:@std/semver@^1.0.4",
       "jsr:@std/testing@^1.0.10",
       "npm:@actions/core@^1.11.1",
-      "npm:ansi-styles@6.2.1",
-      "npm:shell-quote@^1.8.2"
+      "npm:ansi-styles@6.2.1"
     ]
   }
 }
