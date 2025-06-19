@@ -6,8 +6,10 @@ import { GitHubActions } from "./lib/github-actions.ts"
 import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
 import { GitHubCommit } from "./lib/github-api.ts"
 import { StepRunner } from "./lib/step-runner.ts"
+import { ConvenienceStep } from "./lib/steps/convenience.ts"
 
 export const run = async ({
+  convenienceStep,
   stepRunner,
   prepareEnvironmentForTestMode,
   getCommitsSinceLatestReleaseStep,
@@ -15,6 +17,7 @@ export const run = async ({
   githubActions,
   log,
 }: {
+  convenienceStep: ConvenienceStep
   stepRunner: StepRunner
   prepareEnvironmentForTestMode: PrepareTestModeEnvStep
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep
@@ -75,6 +78,8 @@ export const run = async ({
   }
 
   githubActions.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
+
+  await convenienceStep.runConvenienceCommands()
 
   log.notice(
     `👀 I see that the git branch ${currentBranch} is checked out. We will begin the deployment process from the latest commit of this branch.`,

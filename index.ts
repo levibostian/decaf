@@ -9,6 +9,7 @@ import { GitHubActionsImpl } from "./lib/github-actions.ts"
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
 import { StepRunnerImpl } from "./lib/step-runner.ts"
+import { ConvenienceStepImpl } from "./lib/steps/convenience.ts"
 
 /*
 This file is the entrypoint for running the tool.
@@ -19,12 +20,13 @@ const githubApi = GitHubApiImpl
 const githubActions = new GitHubActionsImpl()
 
 await run({
+  convenienceStep: new ConvenienceStepImpl(exec, githubActions, logger),
   stepRunner: new StepRunnerImpl(githubActions, exec, logger),
   prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, githubActions, new SimulateMergeImpl(git, exec), git, exec),
   getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(
     githubApi,
   ),
-  deployStep: new DeployStepImpl(exec, githubActions),
+  deployStep: new DeployStepImpl(exec),
   log: logger,
   githubActions: githubActions,
 })
