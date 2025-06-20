@@ -60,16 +60,22 @@ await $`git show HEAD`.printCommand()
 
 // if there is a hyphen in the version name, we can assume it's a pre-release version since prod versions do not have hyphens
 const isPreRelease = input.nextVersionName.includes("-")
+const latestGitCommitSha = (await $`git rev-parse HEAD`.text()).trim()
 
-const commandToCreateGithubRelease = `release create ${input.nextVersionName} 
-  --generate-notes   
-  ${isPreRelease ? "--prerelease" : ""}
-  --target $(git rev-parse HEAD) 
-  ${githubReleaseAssets.join(" ")}`
+const argsToCreateGithubRelease = [
+  `release`,
+  `create`,
+  input.nextVersionName,
+  `--generate-notes`,
+  isPreRelease ? "--prerelease" : "",
+  `--target`,
+  latestGitCommitSha,
+  ...githubReleaseAssets,
+]
 
 if (input.testMode) {
   console.log("Running in test mode, skipping creating GitHub release.")
-  console.log(`Command to create GitHub release: gh ${commandToCreateGithubRelease}`)
+  console.log(`Command to create GitHub release: gh ${argsToCreateGithubRelease.join(" ")}`)
 
   Deno.exit(0)
 }
@@ -78,5 +84,5 @@ if (input.testMode) {
 await $`git push`.printCommand()
 
 // Create the GitHub release with the compiled binaries
-// We must add "gh" in this string as a hacky workaround to a dax behavior: https://github.com/dsherret/dax/issues/318
-await $`gh ${commandToCreateGithubRelease}`.printCommand()
+// https://github.com/dsherret/dax#providing-arguments-to-a-command
+await $`gh ${argsToCreateGithubRelease}`.printCommand()
