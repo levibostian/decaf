@@ -58,8 +58,6 @@ await $`git add action.yml && git commit -m "Bump version to ${input.nextVersion
 console.log(`to help with debugging, log the recently created commit including all the file changes made`)
 await $`git show HEAD`.printCommand()
 
-// if there is a hyphen in the version name, we can assume it's a pre-release version since prod versions do not have hyphens
-const isPreRelease = input.nextVersionName.includes("-")
 const latestGitCommitSha = (await $`git rev-parse HEAD`.text()).trim()
 
 const argsToCreateGithubRelease = [
@@ -67,7 +65,7 @@ const argsToCreateGithubRelease = [
   `create`,
   input.nextVersionName,
   `--generate-notes`,
-  isPreRelease ? "--prerelease" : "",
+  `--latest`,
   `--target`,
   latestGitCommitSha,
   ...githubReleaseAssets,
