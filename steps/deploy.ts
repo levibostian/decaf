@@ -51,22 +51,31 @@ await compileBinary({
 await $`sed -i.bak 's/GH_RELEASE_VERSION=".*"/GH_RELEASE_VERSION="${input.nextVersionName}"/' ./action.yml && rm ./action.yml.bak`
 
 // Commit the changes to action.yml
-await $`git add action.yml && git commit -m "Bump version to ${input.nextVersionName}"`.printCommand()
+// Do not throw on error because there is a scenario where we previously made this commit but we failed and retried the deployment.
+// This should only fail if there is no change to commit, which is fine.
+await $`git add action.yml && git commit -m "Bump version to ${input.nextVersionName}"`.printCommand().noThrow()
 
 console.log(`to help with debugging, log the recently created commit including all the file changes made`)
 await $`git show HEAD`.printCommand()
 
 // if there is a hyphen in the version name, we can assume it's a pre-release version since prod versions do not have hyphens
 const isPreRelease = input.nextVersionName.includes("-")
-const commandToCreateGithubRelease = `gh release create ${input.nextVersionName} 
-  --generate-notes   
-  ${isPreRelease ? "--prerelease" : ""}
-  --target $(git rev-parse HEAD) 
-  ${githubReleaseAssets.join(" ")}`
+const latestGitCommitSha = (await $`git rev-parse HEAD`.text()).trim()
+
+const argsToCreateGithubRelease = [
+  `release`,
+  `create`,
+  input.nextVersionName,
+  `--generate-notes`,
+  isPreRelease ? "--prerelease" : "",
+  `--target`,
+  latestGitCommitSha,
+  ...githubReleaseAssets,
+]
 
 if (input.testMode) {
   console.log("Running in test mode, skipping creating GitHub release.")
-  console.log(`Command to create GitHub release: ${commandToCreateGithubRelease}`)
+  console.log(`Command to create GitHub release: gh ${argsToCreateGithubRelease.join(" ")}`)
 
   Deno.exit(0)
 }
@@ -75,4 +84,5 @@ if (input.testMode) {
 await $`git push`.printCommand()
 
 // Create the GitHub release with the compiled binaries
-await $`${commandToCreateGithubRelease}`.printCommand()
+// https://github.com/dsherret/dax#providing-arguments-to-a-command
+await $`gh ${argsToCreateGithubRelease}`.printCommand()
