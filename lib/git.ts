@@ -35,6 +35,7 @@ export interface Git {
   getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitHubCommit }): Promise<GitHubCommit[]>
   getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitHubCommit>
   createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
+  getCommits: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<GitHubCommit[]>
 }
 
 const checkoutBranch = async (
@@ -202,6 +203,32 @@ const createLocalBranchFromRemote = async (
   })
 }
 
+const getCommits = async (
+  { exec, branch }: { exec: Exec; branch: string },
+): Promise<GitHubCommit[]> => {
+  const currentBranchName = (await exec.run({
+    command: `git branch --show-current`,
+    input: undefined,
+  })).stdout.trim()
+
+  await checkoutBranch({ exec, branch, createBranchIfNotExist: false })
+
+  const { stdout } = await exec.run({
+    command: `git log --pretty=format:"%H|%s|%ci"`,
+    input: undefined,
+  })
+
+  const commits = stdout.trim().split("\n").map((commitString) => {
+    const [sha, message, dateString] = commitString.split("|")
+
+    return { sha, message, date: new Date(dateString) }
+  })
+
+  await checkoutBranch({ exec, branch: currentBranchName, createBranchIfNotExist: false })
+
+  return commits
+}
+
 export const git: Git = {
   checkoutBranch,
   merge,
@@ -209,6 +236,7 @@ export const git: Git = {
   setUser,
   squash,
   rebase,
+  getCommits,
   getLatestCommitsSince,
   getLatestCommitOnBranch,
   createLocalBranchFromRemote,
