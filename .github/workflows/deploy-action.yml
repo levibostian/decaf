@@ -25,52 +25,47 @@ jobs:
       with:
         deno-version: v2.2
 
-    - name: Compile binary 
-      run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+    # - name: Compile binary 
+    #   run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
 
     - name: Run deployment, merge method
-      uses: ./
-      env:
-        # required to use 'gh' CLI in my step scripts. 
-        GH_TOKEN: ${{ github.token }}
+      uses: levibostian/new-deployment-tool@1.0.0-alpha.9
       with: 
-        simulated_merge_type: 'merge'
-        local_binary_path: compiled-binary
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
         get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
 
-    - uses: actions/checkout@v4
-    - name: Compile binary 
-      run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
-    - name: Run deployment, squash method
-      if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
-      uses: ./      
-      env:
-        # required to use 'gh' CLI in my step scripts. 
-        GH_TOKEN: ${{ github.token }}
-      with: 
-        simulated_merge_type: 'squash'
-        local_binary_path: compiled-binary
-        github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: './steps/get-next-release.ts'
-        deploy: './steps/deploy.ts'
+    # - uses: actions/checkout@v4
+    # - name: Compile binary 
+    #   run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+    # - name: Run deployment, squash method
+    #   if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
+    #   uses: ./      
+    #   env:
+    #     # required to use 'gh' CLI in my step scripts. 
+    #     GH_TOKEN: ${{ github.token }}
+    #   with: 
+    #     simulated_merge_type: 'squash'
+    #     local_binary_path: compiled-binary
+    #     github_token: ${{ secrets.github_token }}
+    #     get_latest_release_current_branch: './steps/get-latest-release.ts'
+    #     get_next_release_version: './steps/get-next-release.ts'
+    #     deploy: './steps/deploy.ts'
 
-    - uses: actions/checkout@v4
-    - name: Compile binary 
-      run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
-    - name: Run deployment, rebase method
-      if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
-      uses: ./      
-      env:
-        # required to use 'gh' CLI in my step scripts. 
-        GH_TOKEN: ${{ github.token }}
-      with: 
-        simulated_merge_type: 'rebase'
-        local_binary_path: compiled-binary
-        github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: './steps/get-next-release.ts'
-        deploy: './steps/deploy.ts'
+    # - uses: actions/checkout@v4
+    # - name: Compile binary 
+    #   run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+    # - name: Run deployment, rebase method
+    #   if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
+    #   uses: ./      
+    #   env:
+    #     # required to use 'gh' CLI in my step scripts. 
+    #     GH_TOKEN: ${{ github.token }}
+    #   with: 
+    #     simulated_merge_type: 'rebase'
+    #     local_binary_path: compiled-binary
+    #     github_token: ${{ secrets.github_token }}
+    #     get_latest_release_current_branch: './steps/get-latest-release.ts'
+    #     get_next_release_version: './steps/get-next-release.ts'
+    #     deploy: './steps/deploy.ts'
