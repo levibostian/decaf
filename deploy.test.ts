@@ -380,7 +380,7 @@ const setupTestEnvironmentAndRun = async ({
   const githubActionsSetOutputMock = stub(
     githubActions,
     "setOutput",
-    () => {
+    async () => {
       return
     },
   )

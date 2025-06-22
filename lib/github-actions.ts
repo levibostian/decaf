@@ -1,5 +1,5 @@
+import { exec } from "./exec.ts"
 import * as log from "./log.ts"
-import * as githubActions from "@actions/core"
 import { AnyStepName } from "./steps/types/any-step.ts"
 
 export interface GitHubActions {
@@ -10,7 +10,7 @@ export interface GitHubActions {
   getCommandForStep({ stepName }: { stepName: AnyStepName }): string | undefined
   failOnDeployVerification(): boolean
   getGitConfigInput(): { name: string; email: string } | undefined
-  setOutput({ key, value }: { key: string; value: string }): void
+  setOutput({ key, value }: { key: string; value: string }): Promise<void>
 }
 
 export class GitHubActionsImpl implements GitHubActions {
@@ -81,8 +81,12 @@ export class GitHubActionsImpl implements GitHubActions {
     }
   }
 
-  setOutput({ key, value }: { key: string; value: string }): void {
-    githubActions.setOutput(key, value)
+  // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#setting-an-output-parameter
+  async setOutput({ key, value }: { key: string; value: string }): Promise<void> {
+    await exec.run({
+      command: `echo "${key}=${value}" >> "$GITHUB_OUTPUT"`,
+      input: undefined,
+    })
   }
 
   failOnDeployVerification(): boolean {
@@ -125,6 +129,11 @@ export class GitHubActionsImpl implements GitHubActions {
   }
 
   private getInput(key: string): string {
-    return githubActions.getInput(key)
+    const val: string = Deno.env.get(`INPUT_${key.replace(/ /g, "_").toUpperCase()}`) || ""
+    if (!val) {
+      throw new Error(`The GitHub Actions input "${key}" is not set.`)
+    }
+
+    return val.trim()
   }
 }
