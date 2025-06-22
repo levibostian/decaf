@@ -77,7 +77,7 @@ export const run = async ({
     )
   }
 
-  githubActions.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
+  await githubActions.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
 
   await convenienceStep.runConvenienceCommands()
 
@@ -220,5 +220,5 @@ export const run = async ({
     `🎉 Congratulations! The deployment process has completed. Bye-bye 👋!`,
   )
 
-  githubActions.setOutput({ key: "new_release_version", value: nextReleaseVersion })
+  await githubActions.setOutput({ key: "new_release_version", value: nextReleaseVersion })
 }
