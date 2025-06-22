@@ -23,7 +23,7 @@ jobs:
     - name: Set up Deno
       uses: denoland/setup-deno@v1
       with:
-        deno-version: v2.2
+        deno-version: v2.x
 
     - name: Compile binary 
       run: OUTPUT_FILE_NAME=compiled-binary DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
