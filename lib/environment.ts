@@ -3,7 +3,7 @@ import * as log from "./log.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
 import envCi from "env-ci"
 
-export interface GitHubActions {
+export interface Environment {
   getNameOfCurrentBranch(): string
   getSimulatedMergeType(): "merge" | "rebase" | "squash"
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
@@ -14,7 +14,7 @@ export interface GitHubActions {
   setOutput({ key, value }: { key: string; value: string }): Promise<void>
 }
 
-export class GitHubActionsImpl implements GitHubActions {
+export class EnvironmentImpl implements Environment {
   private readonly env: Record<string, string>
   private outputFileCache: Record<string, string>
 

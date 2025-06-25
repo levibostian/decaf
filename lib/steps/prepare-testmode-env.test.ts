@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "@std/assert"
 import { beforeEach, describe, it } from "@std/testing/bdd"
 import { GitHubApi } from "../github-api.ts"
-import { GitHubActions } from "../github-actions.ts"
+import { Environment } from "../environment.ts"
 import { SimulateMerge } from "../simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./prepare-testmode-env.ts"
 import { mock, when } from "../mock/mock.ts"
@@ -12,14 +12,14 @@ import { Exec } from "../exec.ts"
 describe("prepareEnvironmentForTestMode", () => {
   let step: PrepareTestModeEnvStepImpl
 
-  let githubActions: GitHubActions
+  let environment: Environment
   let gitHubApi: GitHubApi
   let simulateMerge: SimulateMerge
   let git: Git
   let exec: Exec
 
   beforeEach(() => {
-    githubActions = mock()
+    environment = mock()
     gitHubApi = mock()
     simulateMerge = mock()
     git = mock()
@@ -27,7 +27,7 @@ describe("prepareEnvironmentForTestMode", () => {
 
     step = new PrepareTestModeEnvStepImpl(
       gitHubApi,
-      githubActions,
+      environment,
       simulateMerge,
       git,
       exec,
@@ -35,7 +35,7 @@ describe("prepareEnvironmentForTestMode", () => {
   })
 
   it("should return undefined if not running in test mode", async () => {
-    when(githubActions, "isRunningInPullRequest", () => undefined)
+    when(environment, "isRunningInPullRequest", () => undefined)
 
     const result = await step.prepareEnvironmentForTestMode({
       owner: "owner",
@@ -49,9 +49,9 @@ describe("prepareEnvironmentForTestMode", () => {
     const givenMergeType: "merge" | "squash" | "rebase" = "merge"
 
     when(git, "createLocalBranchFromRemote", async () => {})
-    when(githubActions, "getSimulatedMergeType", () => givenMergeType)
+    when(environment, "getSimulatedMergeType", () => givenMergeType)
     when(
-      githubActions,
+      environment,
       "isRunningInPullRequest",
       () => ({ baseBranch: "feature-branch-2", targetBranch: "feature-branch-1", prNumber: 30 }),
     )

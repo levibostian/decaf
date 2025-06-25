@@ -5,7 +5,7 @@ import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-si
 import { exec } from "./lib/exec.ts"
 import { git } from "./lib/git.ts"
 import { logger } from "./lib/log.ts"
-import { GitHubActionsImpl } from "./lib/github-actions.ts"
+import { EnvironmentImpl } from "./lib/environment.ts"
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
 import { StepRunnerImpl } from "./lib/step-runner.ts"
@@ -43,14 +43,14 @@ Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", args.simulated_merge_type)
 Deno.env.set("INPUT_OUTPUT_FILE", args.output_file)
 
 const githubApi = GitHubApiImpl
-const githubActions = new GitHubActionsImpl()
+const environment = new EnvironmentImpl()
 
 await run({
-  convenienceStep: new ConvenienceStepImpl(exec, githubActions, logger),
-  stepRunner: new StepRunnerImpl(githubActions, exec, logger),
-  prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, githubActions, new SimulateMergeImpl(git, exec), git, exec),
+  convenienceStep: new ConvenienceStepImpl(exec, environment, logger),
+  stepRunner: new StepRunnerImpl(environment, exec, logger),
+  prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec), git, exec),
   getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(githubApi),
   deployStep: new DeployStepImpl(exec),
   log: logger,
-  githubActions: githubActions,
+  environment,
 })
