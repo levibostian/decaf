@@ -6,10 +6,9 @@ import { logger } from "../log.ts"
 import { SimulateMerge } from "../simulate-merge.ts"
 
 export interface PrepareTestModeEnvStep {
-  prepareEnvironmentForTestMode({ owner, repo, startingBranch }: {
+  prepareEnvironmentForTestMode({ owner, repo }: {
     owner: string
     repo: string
-    startingBranch: string
   }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitHubCommit[] } | undefined>
 }
 
@@ -22,22 +21,21 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     private exec: Exec,
   ) {}
 
-  prepareEnvironmentForTestMode = async ({ owner, repo, startingBranch }: {
+  prepareEnvironmentForTestMode = async ({ owner, repo }: {
     owner: string
     repo: string
-    startingBranch: string
   }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitHubCommit[] } | undefined> => {
-    const testModeContext = await this.githubActions.isRunningInPullRequest()
+    const testModeContext = this.githubActions.isRunningInPullRequest()
     const runInTestMode = testModeContext !== undefined
-    let currentBranch = startingBranch
 
     if (!runInTestMode) return undefined
 
     const simulateMergeType = this.githubActions.getSimulatedMergeType()
     logger.debug(`Simulated merge type: ${simulateMergeType}`)
 
-    const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingBranch })
+    const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingPrNumber: testModeContext.prNumber })
     const commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
+    let currentBranch: string = "" // will be set to the last target branch after all simulated merges are done.
 
     for await (const pr of pullRequestStack) {
       // make sure that a local branch exists for the PR branches so we can check simulate the merge by running merge commands between the branches.

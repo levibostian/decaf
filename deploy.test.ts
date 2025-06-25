@@ -220,7 +220,7 @@ describe("user facing logs", () => {
 describe("test the event that triggered running the tool", () => {
   it("should exit early if the tool is triggered by an unsupported event", async () => {
     const { runGetLatestOnCurrentBranchReleaseStepMock, prepareEnvironmentForTestModeMock } = await setupTestEnvironmentAndRun({
-      githubActionEventThatTriggeredTool: "release",
+      githubActionEventThatTriggeredTool: "other",
     })
 
     assertEquals(runGetLatestOnCurrentBranchReleaseStepMock.calls.length, 0)
@@ -317,7 +317,7 @@ const setupTestEnvironmentAndRun = async ({
   latestReleaseAfterDeploy?: GetLatestReleaseStepOutput | null
   commitsSinceLatestRelease?: GitHubCommit[]
   nextReleaseVersion?: string
-  githubActionEventThatTriggeredTool?: string
+  githubActionEventThatTriggeredTool?: "push" | "pull_request" | "other"
   pullRequestTargetBranchName?: string
   currentBranchName?: string
   commitsCreatedBySimulatedMerge?: GitHubCommit[]
@@ -392,13 +392,12 @@ const setupTestEnvironmentAndRun = async ({
   })
   const isRunningInPullRequest = githubActionEventThatTriggeredTool === "pull_request"
 
-  const githubActionsIsRunningInPullRequestMock = stub(githubActions, "isRunningInPullRequest", async () => {
+  const githubActionsIsRunningInPullRequestMock = stub(githubActions, "isRunningInPullRequest", () => {
     return isRunningInPullRequest
       ? {
         baseBranch: currentBranch,
         targetBranch: pullRequestTargetBranch,
-        prTitle: "title",
-        prDescription: "description",
+        prNumber: 1,
       }
       : undefined
   })
