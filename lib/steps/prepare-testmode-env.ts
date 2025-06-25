@@ -1,6 +1,6 @@
 import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
-import { GitHubActions } from "../github-actions.ts"
+import { Environment } from "../environment.ts"
 import { GitHubApi, GitHubCommit } from "../github-api.ts"
 import { logger } from "../log.ts"
 import { SimulateMerge } from "../simulate-merge.ts"
@@ -15,7 +15,7 @@ export interface PrepareTestModeEnvStep {
 export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
   constructor(
     private githubApi: GitHubApi,
-    private githubActions: GitHubActions,
+    private environment: Environment,
     private simulateMerge: SimulateMerge,
     private git: Git,
     private exec: Exec,
@@ -25,12 +25,12 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     owner: string
     repo: string
   }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitHubCommit[] } | undefined> => {
-    const testModeContext = this.githubActions.isRunningInPullRequest()
+    const testModeContext = this.environment.isRunningInPullRequest()
     const runInTestMode = testModeContext !== undefined
 
     if (!runInTestMode) return undefined
 
-    const simulateMergeType = this.githubActions.getSimulatedMergeType()
+    const simulateMergeType = this.environment.getSimulatedMergeType()
     logger.debug(`Simulated merge type: ${simulateMergeType}`)
 
     const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingPrNumber: testModeContext.prNumber })

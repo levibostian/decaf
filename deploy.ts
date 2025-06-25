@@ -2,7 +2,7 @@ import { Logger } from "./lib/log.ts"
 import { DeployStep } from "./lib/steps/deploy.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
 import { DeployStepInput, GetNextReleaseVersionStepInput } from "./lib/types/environment.ts"
-import { GitHubActions } from "./lib/github-actions.ts"
+import { Environment } from "./lib/environment.ts"
 import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
 import { GitHubCommit } from "./lib/github-api.ts"
 import { StepRunner } from "./lib/step-runner.ts"
@@ -14,7 +14,7 @@ export const run = async ({
   prepareEnvironmentForTestMode,
   getCommitsSinceLatestReleaseStep,
   deployStep,
-  githubActions,
+  environment,
   log,
 }: {
   convenienceStep: ConvenienceStep
@@ -22,12 +22,12 @@ export const run = async ({
   prepareEnvironmentForTestMode: PrepareTestModeEnvStep
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep
   deployStep: DeployStep
-  githubActions: GitHubActions
+  environment: Environment
   log: Logger
 }): Promise<void> => {
-  if (githubActions.getEventThatTriggeredThisRun() !== "push" && githubActions.getEventThatTriggeredThisRun() !== "pull_request") {
+  if (environment.getEventThatTriggeredThisRun() !== "push" && environment.getEventThatTriggeredThisRun() !== "pull_request") {
     log.error(
-      `Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${githubActions.getEventThatTriggeredThisRun()}. Bye bye...`,
+      `Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${environment.getEventThatTriggeredThisRun()}. Bye bye...`,
     )
     return
   }
@@ -42,7 +42,7 @@ export const run = async ({
   log.message(`Ok, let's get started with the deployment!`)
   log.message(`--------------------------------`)
 
-  let currentBranch = githubActions.getNameOfCurrentBranch()
+  let currentBranch = environment.getNameOfCurrentBranch()
   log.debug(`name of current git branch: ${currentBranch}`)
 
   // example value for GITHUB_REPOSITORY: "denoland/deno"
@@ -52,7 +52,7 @@ export const run = async ({
     `github repository executing in: ${githubRepositoryFromEnvironment}. owner: ${owner}, repo: ${repo}`,
   )
 
-  const runInTestMode = (githubActions.isRunningInPullRequest()) !== undefined
+  const runInTestMode = (environment.isRunningInPullRequest()) !== undefined
   let commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
   if (runInTestMode) {
     log.notice(
@@ -76,7 +76,7 @@ export const run = async ({
     )
   }
 
-  await githubActions.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
+  await environment.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
 
   await convenienceStep.runConvenienceCommands()
 
@@ -207,7 +207,7 @@ export const run = async ({
         }, but expected ${nextReleaseVersion}. This could indicate a problem with the deployment process.`,
       )
 
-      if (githubActions.failOnDeployVerification()) {
+      if (environment.failOnDeployVerification()) {
         throw new Error(
           `Deployment verification failed: latest release is ${latestReleaseAfterDeploy?.versionName ?? "<none>"}, expected ${nextReleaseVersion}`,
         )
@@ -219,5 +219,5 @@ export const run = async ({
     `🎉 Congratulations! The deployment process has completed. Bye-bye 👋!`,
   )
 
-  await githubActions.setOutput({ key: "new_release_version", value: nextReleaseVersion })
+  await environment.setOutput({ key: "new_release_version", value: nextReleaseVersion })
 }

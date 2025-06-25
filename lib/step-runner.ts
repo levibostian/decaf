@@ -3,7 +3,7 @@ import Template from "@deno-library/template"
 const stringTemplating = new Template({
   isEscape: false,
 })
-import { GitHubActions } from "./github-actions.ts"
+import { Environment } from "./environment.ts"
 import { Exec, RunResult } from "./exec.ts"
 import { AnyStepInput, GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "./types/environment.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
@@ -22,7 +22,7 @@ export interface StepRunner {
 }
 
 export class StepRunnerImpl implements StepRunner {
-  constructor(private githubActions: GitHubActions, private exec: Exec, private logger: Logger) {}
+  constructor(private environment: Environment, private exec: Exec, private logger: Logger) {}
 
   runGetLatestOnCurrentBranchReleaseStep(input: GetLatestReleaseStepInput): Promise<GetLatestReleaseStepOutput | null> {
     return this.getCommandFromUserAndRun({ step: "get_latest_release_current_branch", input, outputCheck: isGetLatestReleaseStepOutput })
@@ -36,7 +36,7 @@ export class StepRunnerImpl implements StepRunner {
     { step, input, outputCheck }: { step: AnyStepName; input: AnyStepInput; outputCheck: (output: unknown) => boolean },
   ): Promise<Output | null> {
     const commandToRun = pipe(
-      this.githubActions.getCommandForStep({ stepName: step }),
+      this.environment.getCommandForStep({ stepName: step }),
       (command) => command ? stringTemplating.render(command, input as unknown as Record<string, unknown>) : command,
     )
 
