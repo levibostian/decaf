@@ -52,7 +52,7 @@ export const run = async ({
     `github repository executing in: ${githubRepositoryFromEnvironment}. owner: ${owner}, repo: ${repo}`,
   )
 
-  const runInTestMode = (await githubActions.isRunningInPullRequest()) !== undefined
+  const runInTestMode = (githubActions.isRunningInPullRequest()) !== undefined
   let commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
   if (runInTestMode) {
     log.notice(
@@ -65,7 +65,6 @@ export const run = async ({
     const prepareEnvironmentForTestModeResults = await prepareEnvironmentForTestMode.prepareEnvironmentForTestMode({
       owner,
       repo,
-      startingBranch: currentBranch,
     })
 
     const pullRequestBranchBeforeSimulatedMerges = currentBranch

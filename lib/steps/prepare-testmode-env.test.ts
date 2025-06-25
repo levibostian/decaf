@@ -35,12 +35,11 @@ describe("prepareEnvironmentForTestMode", () => {
   })
 
   it("should return undefined if not running in test mode", async () => {
-    when(githubActions, "isRunningInPullRequest", async () => undefined)
+    when(githubActions, "isRunningInPullRequest", () => undefined)
 
     const result = await step.prepareEnvironmentForTestMode({
       owner: "owner",
       repo: "repo",
-      startingBranch: "main",
     })
 
     assertEquals(result, undefined)
@@ -54,7 +53,7 @@ describe("prepareEnvironmentForTestMode", () => {
     when(
       githubActions,
       "isRunningInPullRequest",
-      async () => ({ baseBranch: "feature-branch-2", targetBranch: "feature-branch-1", prTitle: "title", prDescription: "description" }),
+      () => ({ baseBranch: "feature-branch-2", targetBranch: "feature-branch-1", prNumber: 30 }),
     )
 
     const givenTopPullRequestInPRStack = {
@@ -106,7 +105,6 @@ describe("prepareEnvironmentForTestMode", () => {
     const result = await step.prepareEnvironmentForTestMode({
       owner: "owner",
       repo: "repo",
-      startingBranch: "feature-branch-2",
     })
 
     assertEquals(performSimulatedMergeMock.calls.length, 2)

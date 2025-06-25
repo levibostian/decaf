@@ -38,7 +38,7 @@ export interface GitHubPullRequest {
 // Returns list of all open pull requests that are stacked on top of each other.
 // Index 0 is the newest pull request.
 const getPullRequestStack = async (
-  { owner, repo, startingBranch }: { owner: string; repo: string; startingBranch: string },
+  { owner, repo, startingPrNumber }: { owner: string; repo: string; startingPrNumber: number },
 ): Promise<GitHubPullRequest[]> => {
   // get list of all open pull requests.
   const graphqlQuery = `
@@ -91,15 +91,15 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
   )
 
   // Takes the list of all pull requests for the repo and puts into a list, starting at the startingBranch PR, and creates the stack. Going from starting to the top of the stack (example: PR 1 -> PR 2 -> PR 3).
-  const startingPullRequest = pullRequests.find((pr) => pr.sourceBranchName === startingBranch)
+  const startingPullRequest = pullRequests.find((pr) => pr.prNumber === startingPrNumber)
   if (!startingPullRequest) {
     throw new Error(
-      `Could not get pull request stack because not able to find pull request for starting branch, ${startingBranch}. This is unexpected.`,
+      `Could not get pull request stack because not able to find pull request for starting PR number, ${startingPrNumber}. This is unexpected.`,
     )
   }
 
   const prStack: GitHubPullRequest[] = [startingPullRequest]
-  let sourceBranchSearchingFor = startingBranch
+  let sourceBranchSearchingFor = startingPullRequest.sourceBranchName
 
   while (true) {
     const nextPullRequest = pullRequests.find((pr) => pr.targetBranchName === sourceBranchSearchingFor)

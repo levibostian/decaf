@@ -20,6 +20,7 @@ const args = parseArgs(Deno.args, {
     "get_latest_release_current_branch",
     "get_next_release_version",
     "simulated_merge_type",
+    "output_file",
   ],
   default: {
     github_token: "",
@@ -28,6 +29,7 @@ const args = parseArgs(Deno.args, {
     get_latest_release_current_branch: "",
     get_next_release_version: "",
     simulated_merge_type: "merge",
+    output_file: "",
   },
 })
 
@@ -38,6 +40,7 @@ Deno.env.set("INPUT_DEPLOY", args.deploy)
 Deno.env.set("INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH", args.get_latest_release_current_branch)
 Deno.env.set("INPUT_GET_NEXT_RELEASE_VERSION", args.get_next_release_version)
 Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", args.simulated_merge_type)
+Deno.env.set("INPUT_OUTPUT_FILE", args.output_file)
 
 const githubApi = GitHubApiImpl
 const githubActions = new GitHubActionsImpl()

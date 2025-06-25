@@ -1,12 +1,13 @@
 import { exec } from "./exec.ts"
 import * as log from "./log.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
+import envCi from "env-ci"
 
 export interface GitHubActions {
   getNameOfCurrentBranch(): string
   getSimulatedMergeType(): "merge" | "rebase" | "squash"
-  getEventThatTriggeredThisRun(): "push" | "pull_request" | unknown
-  isRunningInPullRequest(): Promise<{ baseBranch: string; targetBranch: string; prTitle: string; prDescription: string } | undefined>
+  getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
+  isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
   getCommandForStep({ stepName }: { stepName: AnyStepName }): string | undefined
   failOnDeployVerification(): boolean
   getGitConfigInput(): { name: string; email: string } | undefined
@@ -14,20 +15,20 @@ export interface GitHubActions {
 }
 
 export class GitHubActionsImpl implements GitHubActions {
+  private readonly env: Record<string, string>
+  private outputFileCache: Record<string, string>
+
+  constructor() {
+    // Example of the values in `this.env`:
+    // {"isCi":true,"name":"GitHub Actions","service":"github","commit":"7d4aec10df2b2dcbe99643662beca90a24a8a81f","build":"15876053587","isPr":true,"branch":"alpha","prBranch":"refs/pull/68/merge","slug":"levibostian/new-deployment-tool","root":"/home/runner/work/new-deployment-tool/new-deployment-tool","pr":68}
+    this.env = envCi()
+    this.outputFileCache = {}
+  }
+
+  // Note: For pull requests, the return value is pretty useless. Example: "refs/pull/68/merge"
   getNameOfCurrentBranch(): string {
-    const githubRef = Deno.env.get("GITHUB_REF")!
-    log.debug(`GITHUB_REF: ${githubRef}`)
-
-    // if the ref starts with "refs/pull/", then it's a pull request.
-    // the tool is only compatible with branch names that start with "refs/heads/".
-    // We need a different way to get the branch name.
-    if (githubRef.startsWith("refs/pull/")) {
-      const githubHeadRef = Deno.env.get("GITHUB_HEAD_REF")!
-      log.debug(`GITHUB_HEAD_REF: ${githubHeadRef}`)
-      return githubHeadRef
-    }
-
-    return githubRef.replace("refs/heads/", "")
+    if (this.env.isPr) return this.env.prBranch
+    return this.env.branch
   }
 
   getSimulatedMergeType(): "merge" | "rebase" | "squash" {
@@ -49,44 +50,36 @@ export class GitHubActionsImpl implements GitHubActions {
     return simulateMergeType
   }
 
-  getEventThatTriggeredThisRun(): "push" | "pull_request" | string {
-    const eventName = Deno.env.get("GITHUB_EVENT_NAME")
+  getEventThatTriggeredThisRun(): "push" | "pull_request" | "other" {
+    if (this.env.isPr) return "pull_request"
+    if (this.env.branch) return "push"
 
-    switch (eventName) {
-      case "push":
-        return "push"
-      case "pull_request":
-        return "pull_request"
-      default:
-        return eventName || "unknown"
-    }
+    return "other"
   }
 
-  async isRunningInPullRequest(): Promise<{ baseBranch: string; targetBranch: string; prTitle: string; prDescription: string } | undefined> {
-    const githubEventName = Deno.env.get("GITHUB_EVENT_NAME")
-    if (githubEventName !== "pull_request") {
+  isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined {
+    if (!this.env.isPr) {
       return undefined
     }
 
-    // object reference: https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=opened#pull_request
-    const pullRequestContext = await this.getFullRunContext()! // we can force since we know we are in a pull request event
-
-    const eventData = pullRequestContext.pull_request
-
     return {
-      baseBranch: eventData.head.ref,
-      targetBranch: eventData.base.ref,
-      prTitle: eventData.title,
-      prDescription: eventData.body || "", // github body can be null, we want a string.
+      baseBranch: this.env.prBranch,
+      targetBranch: this.env.branch,
+      prNumber: this.env.pr as unknown as number,
     }
   }
 
-  // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#setting-an-output-parameter
   async setOutput({ key, value }: { key: string; value: string }): Promise<void> {
-    await exec.run({
-      command: `echo "${key}=${value}" >> "$GITHUB_OUTPUT"`,
-      input: undefined,
-    })
+    await this.setOutputFile(key, value)
+
+    if (this.env.service == "github") {
+      await exec.run({
+        command: `echo "${key}=${value}" >> "$GITHUB_OUTPUT"`,
+        input: undefined,
+      })
+    }
+
+    // Open to adding other CI services in the future, if they have a simple system for setting outputs.
   }
 
   failOnDeployVerification(): boolean {
@@ -120,14 +113,6 @@ export class GitHubActionsImpl implements GitHubActions {
     return command
   }
 
-  private async getFullRunContext(): Promise<any | undefined> {
-    const eventPath = Deno.env.get("GITHUB_EVENT_PATH")
-    if (eventPath) {
-      const fileContents = new TextDecoder("utf-8").decode(Deno.readFileSync(eventPath))
-      return JSON.parse(fileContents)
-    }
-  }
-
   private getInput(key: string): string {
     const val: string = Deno.env.get(`INPUT_${key.replace(/ /g, "_").toUpperCase()}`) || ""
     if (!val) {
@@ -135,5 +120,18 @@ export class GitHubActionsImpl implements GitHubActions {
     }
 
     return val.trim()
+  }
+
+  // Writes output to a file as a way to support other CI services that are not github actions.
+  private async setOutputFile(key: string, value: string): Promise<void> {
+    const nameOfOutputFile = Deno.env.get("INPUT_OUTPUT_FILE")
+    if (!nameOfOutputFile || nameOfOutputFile.trim() === "") return
+
+    this.outputFileCache[key] = value
+
+    await Deno.writeFile(
+      nameOfOutputFile,
+      new TextEncoder().encode(JSON.stringify(this.outputFileCache, null, 2)),
+    )
   }
 }
