@@ -5,6 +5,8 @@ import envCi from "env-ci"
 
 export interface Environment {
   getNameOfCurrentBranch(): string
+  getRepository(): { owner: string; repo: string }
+  getBuild(): { buildUrl: string; buildId: string }
   getSimulatedMergeType(): "merge" | "rebase" | "squash"
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
   isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
@@ -29,6 +31,20 @@ export class EnvironmentImpl implements Environment {
   getNameOfCurrentBranch(): string {
     if (this.env.isPr) return this.env.prBranch
     return this.env.branch
+  }
+
+  getBuild(): { buildUrl: string; buildId: string } {
+    return {
+      buildId: this.env.build,
+      buildUrl: this.env.buildUrl,
+    }
+  }
+
+  getRepository(): { owner: string; repo: string } {
+    return {
+      owner: this.env.slug.split("/")[0],
+      repo: this.env.slug.split("/")[1],
+    }
   }
 
   getSimulatedMergeType(): "merge" | "rebase" | "squash" {

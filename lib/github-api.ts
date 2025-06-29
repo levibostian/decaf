@@ -1,4 +1,5 @@
 import * as log from "./log.ts"
+import * as cathy from "npm:cathy"
 
 export interface GitHubRelease {
   tag: {
@@ -290,8 +291,8 @@ async function githubGraphqlRequestPaging<RESPONSE>(
   variables: { [key: string]: string | number },
   processResponse: (data: RESPONSE) => Promise<boolean>,
 ): Promise<void> {
-  // deno-lint-ignore no-explicit-any
   function findPageInfo(
+    // deno-lint-ignore no-explicit-any
     _obj: any,
   ): { hasNextPage: boolean; endCursor: string } {
     // Create a shallow copy of the object to avoid modifying the original
@@ -331,12 +332,31 @@ async function githubGraphqlRequestPaging<RESPONSE>(
   }
 }
 
+const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, ciBuildId }: {
+  message: string
+  owner: string
+  repo: string
+  prNumber: number
+  ciBuildId: string
+}) => {
+  await cathy.speak(message, {
+    githubToken: Deno.env.get("INPUT_GITHUB_TOKEN")!,
+    githubRepo: `${owner}/${repo}`,
+    githubIssue: prNumber,
+    updateExisting: true,
+    appendToExisting: true,
+    updateID: ["new-deployment-tool-deploy-run-output", `new-deployment-tool-deploy-run-output-${ciBuildId}`],
+  })
+}
+
 export interface GitHubApi {
   getCommitsForBranch: typeof getCommitsForBranch
   getPullRequestStack: typeof getPullRequestStack
+  postStatusUpdateOnPullRequest: typeof postStatusUpdateOnPullRequest
 }
 
 export const GitHubApiImpl: GitHubApi = {
   getCommitsForBranch,
   getPullRequestStack,
+  postStatusUpdateOnPullRequest,
 }

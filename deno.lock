@@ -24,6 +24,8 @@
     "jsr:@std/testing@1": "1.0.10",
     "jsr:@std/testing@^1.0.10": "1.0.10",
     "npm:ansi-styles@6.2.1": "6.2.1",
+    "npm:cathy@*": "1.4.0",
+    "npm:cathy@^1.4.0": "1.4.0",
     "npm:env-ci@^11.1.1": "11.1.1",
     "npm:shell-quote@1.8.1": "1.8.1",
     "npm:shell-quote@^1.8.2": "1.8.2"
@@ -114,6 +116,9 @@
   "npm": {
     "ansi-styles@6.2.1": {
       "integrity": "sha512-bN798gFfQX+viw3R7yrGWRqnrN2oRkEkUjjl4JNn4E8GxxbjtG3FbrEIIY3l8/hrwUwIeCZvi4QuOTP4MErVug=="
+    },
+    "cathy@1.4.0": {
+      "integrity": "sha512-7lLPZ9IQKfeZmHtsV8VjxCX7oEAIGdkJHpSZN/AHruwPIQmOrVloyBKyjD3AKNE22a+yNGs6+5Vjcd3JEiDUfQ=="
     },
     "cross-spawn@7.0.6": {
       "integrity": "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==",
@@ -233,6 +238,7 @@
       "jsr:@std/semver@^1.0.4",
       "jsr:@std/testing@^1.0.10",
       "npm:ansi-styles@6.2.1",
+      "npm:cathy@^1.4.0",
       "npm:env-ci@^11.1.1",
       "npm:shell-quote@^1.8.2"
     ]
