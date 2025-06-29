@@ -407,6 +407,9 @@ const setupTestEnvironmentAndRun = async ({
   stub(environment, "getNameOfCurrentBranch", () => {
     return currentBranch
   })
+  stub(environment, "getRepository", () => {
+    return { owner: "levibostian", repo: "new-deployment-tool" }
+  })
 
   const prepareEnvironmentForTestMode = mock<PrepareTestModeEnvStep>()
   const prepareEnvironmentForTestModeMock = when(prepareEnvironmentForTestMode, "prepareEnvironmentForTestMode", async () => {

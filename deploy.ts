@@ -24,7 +24,7 @@ export const run = async ({
   deployStep: DeployStep
   environment: Environment
   log: Logger
-}): Promise<void> => {
+}): Promise<{ nextReleaseVersion: string } | undefined> => {
   if (environment.getEventThatTriggeredThisRun() !== "push" && environment.getEventThatTriggeredThisRun() !== "pull_request") {
     log.error(
       `Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${environment.getEventThatTriggeredThisRun()}. Bye bye...`,
@@ -44,15 +44,10 @@ export const run = async ({
 
   let currentBranch = environment.getNameOfCurrentBranch()
   log.debug(`name of current git branch: ${currentBranch}`)
+  const { owner, repo } = environment.getRepository()
 
-  // example value for GITHUB_REPOSITORY: "denoland/deno"
-  const githubRepositoryFromEnvironment = Deno.env.get("GITHUB_REPOSITORY")!
-  const [owner, repo] = githubRepositoryFromEnvironment.split("/")
-  log.debug(
-    `github repository executing in: ${githubRepositoryFromEnvironment}. owner: ${owner}, repo: ${repo}`,
-  )
-
-  const runInTestMode = (environment.isRunningInPullRequest()) !== undefined
+  const pullRequestInfo = environment.isRunningInPullRequest()
+  const runInTestMode = pullRequestInfo !== undefined
   let commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
   if (runInTestMode) {
     log.notice(
@@ -220,4 +215,6 @@ export const run = async ({
   )
 
   await environment.setOutput({ key: "new_release_version", value: nextReleaseVersion })
+
+  return { nextReleaseVersion }
 }
