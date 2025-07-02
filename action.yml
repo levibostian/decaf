@@ -12,9 +12,6 @@ inputs:
     description: 'Command to run to deploy your project.'
     required: true
     default: ''
-  analyze_commits_config:
-    description: 'Configure the behavior when analyzing commits.'
-    default: ''
   get_latest_release_current_branch:
     description: 'Command to run to get the latest release version for the current branch.'
     default: ''
@@ -66,96 +63,18 @@ runs:
         chmod +x new-deployment-tool
       shell: bash
 
-    - name: Find pull request comment previously created, if there is one. 
-      if: ${{ github.event_name == 'pull_request' }}
-      uses: peter-evans/find-comment@v3
-      id: find-comment
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        comment-author: 'github-actions[bot]'
-        body-includes: '<!-- new-deployment-tool-deploy-run-output -->'
-        token: ${{ inputs.github_token }}  
-
-    - name: Find pull request comment previously created for this particular run, if there is one.
-      if: ${{ github.event_name == 'pull_request' }}
-      uses: peter-evans/find-comment@v3
-      id: find-comment-job
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        comment-author: 'github-actions[bot]'
-        body-includes: '<!-- run-${{ github.run_id }} -->'
-        token: ${{ inputs.github_token }}  
-        
-    - name: Create or update pull request comment with new deployment tool output
-      uses: peter-evans/create-or-update-comment@v4
-      id: create-or-update-comment
-      # only replace comment if there isn't one already created for this run
-      if: ${{ github.event_name == 'pull_request' && inputs.make_pull_request_comment == 'true' && steps.find-comment-job.outputs.comment-id == '' }}
-      with:
-        comment-id: ${{ steps.find-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          <!-- new-deployment-tool-deploy-run-output -->
-          <!-- run-${{ github.run_id }} -->
-          ## New deployment tool
-          Running deployments in test mode. Results will appear below. 
-          If this pull request and all of it's parent pull requests are merged using the...
-        edit-mode: replace
-
-    # one final time, find the comment id for this run now that a comment has been created or had already existed. 
-    - name: Find pull request comment previously created for this particular run, if there is one.
-      if: ${{ github.event_name == 'pull_request' }}
-      uses: peter-evans/find-comment@v3
-      id: get-comment-id
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        comment-author: 'github-actions[bot]'
-        body-includes: '<!-- run-${{ github.run_id }} -->'
-        token: ${{ inputs.github_token }}  
-
     - name: Run deployment tool 
       # Deno's runtime permissions are a great feature. It would be nice to take advantage of it, however, it may not be possible with future features like running plugins. 
       #
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
-      run: ./new-deployment-tool 
-      id: deployment
-      shell: bash 
-      env:
-        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
-        INPUT_DEPLOY: ${{ inputs.deploy }}
-        INPUT_ANALYZE_COMMITS_CONFIG: ${{ inputs.analyze_commits_config }}
-        INPUT_SIMULATED_MERGE_TYPE: ${{ inputs.simulated_merge_type }}
-        INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH: ${{ inputs.get_latest_release_current_branch }}
-        INPUT_GET_NEXT_RELEASE_VERSION: ${{ inputs.get_next_release_version }}
-        INPUT_GIT_CONFIG: ${{ inputs.git_config }}
+      run: |
+        ./new-deployment-tool \
+          --github_token "${{ inputs.github_token }}" \
+          --git_config "${{ inputs.git_config }}" \
+          --deploy "${{ inputs.deploy }}" \
+          --get_latest_release_current_branch "${{ inputs.get_latest_release_current_branch }}" \
+          --get_next_release_version "${{ inputs.get_next_release_version }}" \
+          --simulated_merge_type "${{ inputs.simulated_merge_type }}" 
+      shell: bash
 
-    - name: Pull request comment if the deployment failed 
-      uses: peter-evans/create-or-update-comment@v4
-      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome != 'success' }}
-      with:
-        comment-id: ${{ steps.get-comment-id.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          - ...🟩 **${{ inputs.simulated_merge_type }}** 🟩 merge method... ⚠️ There was an error during deployment run. [See logs to learn more and fix the issue](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}).
-        edit-mode: append
-
-    - name: Pull request comment if there will be a release
-      uses: peter-evans/create-or-update-comment@v4
-      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome == 'success' && steps.deployment.outputs.new_release_version != '' }}
-      with:
-        comment-id: ${{ steps.get-comment-id.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          - ...🟩 **${{ inputs.simulated_merge_type }}** 🟩 merge method... 🚢 The next version of the project will be: **${{ steps.deployment.outputs.new_release_version }}**
-        edit-mode: append 
-
-    - name: Pull request comment if there will not be a release
-      uses: peter-evans/create-or-update-comment@v4
-      if: ${{ inputs.make_pull_request_comment == 'true' && steps.deployment.outputs.test_mode_on == 'true' && steps.deployment.outcome == 'success' && steps.deployment.outputs.new_release_version == '' }}
-      with:
-        comment-id: ${{ steps.get-comment-id.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          - ...🟩 **${{ inputs.simulated_merge_type }}** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.
-        edit-mode: append 
 

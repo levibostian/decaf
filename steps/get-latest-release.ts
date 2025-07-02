@@ -14,14 +14,35 @@
 
 import { GetLatestReleaseStepOutput } from "../lib/steps/types/output.ts"
 import $ from "@david/dax"
+import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
+import { git } from "../lib/git.ts"
+import { exec } from "../lib/exec.ts"
 
-const latestReleaseTagName = await $`gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].tagName'`
+const input: GetLatestReleaseStepInput = JSON.parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
+
+// First, get the latest release version.
+const latestReleaseVersionName = await $`gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].name'`
   .text()
-const commitSha = await $`gh release view ${latestReleaseTagName} --json name,tagName,targetCommitish --jq '.targetCommitish'`.text()
+
+if (latestReleaseVersionName.trim() === "") {
+  Deno.exit(0) // No releases found, exit early without writing output.
+}
+
+// Next, get the commit of the latest release. We can't get this from the 'latest' branch because it points to the metadata commit of the latest release, which is not present in the development branch that we are checked out to. Instead, we find the latest commit that is present on both branches.
+const commitsForLatestBranch = await git.getCommits({ exec, branch: "latest" })
+const commitsForCurrentBranch = await git.getCommits({ exec, branch: input.gitCurrentBranch })
+
+const latestCommitOnBothBranches = commitsForLatestBranch.find((commit) =>
+  commitsForCurrentBranch.some((currentCommit) => currentCommit.sha === commit.sha)
+)
+
+if (!latestCommitOnBothBranches) {
+  Deno.exit(0) // No commits found that are present on both branches, exit early without writing output.
+}
 
 const output: GetLatestReleaseStepOutput = {
-  versionName: latestReleaseTagName,
-  commitSha,
+  versionName: latestReleaseVersionName,
+  commitSha: latestCommitOnBothBranches.sha,
 }
 
 await Deno.writeTextFile(Deno.env.get("DATA_FILE_PATH")!, JSON.stringify(output))

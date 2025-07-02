@@ -58,7 +58,7 @@ describe("getPullRequestStack", () => {
     const actualPRStack = await GitHubApiImpl.getPullRequestStack({
       owner: "levibostian",
       repo: "new-deployment-tool",
-      startingBranch: "does-not-exist",
+      startingPrNumber: 999999, // a PR that does not exist
     })
 
     assertEquals(actualPRStack, null)
@@ -70,7 +70,7 @@ describe("getPullRequestStack", () => {
     const actualPRStack = await GitHubApiImpl.getPullRequestStack({
       owner: "levibostian",
       repo: "new-deployment-tool",
-      startingBranch: "spr/alpha/00aa0a8b",
+      startingPrNumber: 1,
     })
 
     // it will not actually be null. check the stdout when running the test to see the true value.

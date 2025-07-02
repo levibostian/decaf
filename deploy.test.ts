@@ -8,7 +8,7 @@ import { GitHubCommitFake } from "./lib/github-api.test.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
 import { DeployStep } from "./lib/steps/deploy.ts"
 import { getLogMock } from "./lib/log.test.ts"
-import { GitHubActions } from "./lib/github-actions.ts"
+import { Environment } from "./lib/environment.ts"
 import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
 import { mock, when } from "./lib/mock/mock.ts"
 import { StepRunner } from "./lib/step-runner.ts"
@@ -43,7 +43,7 @@ describe("run the tool in different scenarios", () => {
 
 describe("test github actions output", () => {
   it("should set new release version output when a new release is created", async () => {
-    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [
         new GitHubCommitFake({
           message: "feat: trigger a release",
@@ -54,20 +54,20 @@ describe("test github actions output", () => {
     })
 
     assertEquals(
-      githubActionsSetOutputMock.calls[1].args[0],
+      setOutputMock.calls[1].args[0],
       { key: "new_release_version", value: "1.0.0" },
     )
   })
   it("should not set new release version output when no new release is created", async () => {
-    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [],
       nextReleaseVersion: "1.0.0",
     })
 
-    assertEquals(githubActionsSetOutputMock.calls.filter((call) => call.args[0].key === "new_release_version").length, 0)
+    assertEquals(setOutputMock.calls.filter((call) => call.args[0].key === "new_release_version").length, 0)
   })
   it("should set new pre-release version output when a new pre-release is created", async () => {
-    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [
         new GitHubCommitFake({
           message: "feat: trigger a release",
@@ -78,12 +78,12 @@ describe("test github actions output", () => {
     })
 
     assertEquals(
-      githubActionsSetOutputMock.calls[1].args[0],
+      setOutputMock.calls[1].args[0],
       { key: "new_release_version", value: "1.0.0-beta.1" },
     )
   })
   it("should set test mode output when running in test mode", async () => {
-    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [
         new GitHubCommitFake({
           message: "feat: trigger a release",
@@ -96,7 +96,7 @@ describe("test github actions output", () => {
     })
 
     assertEquals(
-      githubActionsSetOutputMock.calls[0].args[0],
+      setOutputMock.calls[0].args[0],
       { key: "test_mode_on", value: "true" },
     )
   })
@@ -148,7 +148,7 @@ describe("test github actions output", () => {
       }),
     ]
 
-    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
       pullRequestTargetBranchName: "main",
       currentBranchName: "sweet-feature",
       githubActionEventThatTriggeredTool: "pull_request",
@@ -157,7 +157,7 @@ describe("test github actions output", () => {
       commitsCreatedBySimulatedMerge: givenCommitsCreatedBySimulatedMerge,
     })
 
-    const didExitEarly = githubActionsSetOutputMock.calls.filter((call) => call.args[0].key === "new_release_version").length === 0
+    const didExitEarly = setOutputMock.calls.filter((call) => call.args[0].key === "new_release_version").length === 0
 
     assertEquals(didExitEarly, false)
   })
@@ -220,14 +220,14 @@ describe("user facing logs", () => {
 describe("test the event that triggered running the tool", () => {
   it("should exit early if the tool is triggered by an unsupported event", async () => {
     const { runGetLatestOnCurrentBranchReleaseStepMock, prepareEnvironmentForTestModeMock } = await setupTestEnvironmentAndRun({
-      githubActionEventThatTriggeredTool: "release",
+      githubActionEventThatTriggeredTool: "other",
     })
 
     assertEquals(runGetLatestOnCurrentBranchReleaseStepMock.calls.length, 0)
     assertEquals(prepareEnvironmentForTestModeMock.calls.length, 0)
   })
   it("should run a deployment if triggered from a push event, expect not to run simulated merge", async () => {
-    const { githubActionsSetOutputMock, prepareEnvironmentForTestModeMock } = await setupTestEnvironmentAndRun({
+    const { setOutputMock, prepareEnvironmentForTestModeMock } = await setupTestEnvironmentAndRun({
       githubActionEventThatTriggeredTool: "push",
       nextReleaseVersion: "1.0.0",
       commitsSinceLatestRelease: [
@@ -238,33 +238,32 @@ describe("test the event that triggered running the tool", () => {
       ],
     })
 
-    assertEquals(githubActionsSetOutputMock.calls[1].args[0].value, "1.0.0")
-    assertEquals(githubActionsSetOutputMock.calls[0].args[0], { key: "test_mode_on", value: "false" })
+    assertEquals(setOutputMock.calls[1].args[0].value, "1.0.0")
+    assertEquals(setOutputMock.calls[0].args[0], { key: "test_mode_on", value: "false" })
     assertEquals(prepareEnvironmentForTestModeMock.calls.length, 0)
   })
   it("should run a deployment in test mode if triggered from a pull_request event, expect to run merge simulation", async () => {
     const givenBaseBranch = "sweet-feature"
     const givenTargetBranch = "main"
 
-    const { githubActionsSetOutputMock, prepareEnvironmentForTestModeMock, runGetLatestOnCurrentBranchReleaseStepMock } =
-      await setupTestEnvironmentAndRun({
-        pullRequestTargetBranchName: givenTargetBranch,
-        currentBranchName: givenBaseBranch,
-        githubActionEventThatTriggeredTool: "pull_request",
-        nextReleaseVersion: "1.0.0",
-        commitsSinceLatestRelease: [
-          new GitHubCommitFake({
-            message: "feat: trigger a release",
-            sha: "trigger-release",
-          }),
-        ],
-      })
+    const { setOutputMock, prepareEnvironmentForTestModeMock, runGetLatestOnCurrentBranchReleaseStepMock } = await setupTestEnvironmentAndRun({
+      pullRequestTargetBranchName: givenTargetBranch,
+      currentBranchName: givenBaseBranch,
+      githubActionEventThatTriggeredTool: "pull_request",
+      nextReleaseVersion: "1.0.0",
+      commitsSinceLatestRelease: [
+        new GitHubCommitFake({
+          message: "feat: trigger a release",
+          sha: "trigger-release",
+        }),
+      ],
+    })
 
     assertEquals(
-      githubActionsSetOutputMock.calls[1].args[0],
+      setOutputMock.calls[1].args[0],
       { key: "new_release_version", value: "1.0.0" },
     )
-    assertEquals(githubActionsSetOutputMock.calls[0].args[0], { key: "test_mode_on", value: "true" })
+    assertEquals(setOutputMock.calls[0].args[0], { key: "test_mode_on", value: "true" })
     assertEquals(prepareEnvironmentForTestModeMock.calls.length, 1)
 
     // We expect that after simulated merge, the current branch is now the target branch.
@@ -275,7 +274,7 @@ describe("test the event that triggered running the tool", () => {
 describe("deployment verification after deploy", () => {
   it("should verify the latest release matches the deployed version after deployment", async () => {
     const deployedVersion = "2.0.0"
-    const { githubActionsSetOutputMock } = await setupTestEnvironmentAndRun({
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
       latestRelease: { versionName: "1.0.0", commitSha: "sha1" },
       latestReleaseAfterDeploy: { versionName: deployedVersion, commitSha: "sha2" },
       nextReleaseVersion: deployedVersion,
@@ -283,7 +282,7 @@ describe("deployment verification after deploy", () => {
     })
 
     assertEquals(
-      githubActionsSetOutputMock.calls[1].args[0],
+      setOutputMock.calls[1].args[0],
       { key: "new_release_version", value: deployedVersion },
     )
   })
@@ -317,7 +316,7 @@ const setupTestEnvironmentAndRun = async ({
   latestReleaseAfterDeploy?: GetLatestReleaseStepOutput | null
   commitsSinceLatestRelease?: GitHubCommit[]
   nextReleaseVersion?: string
-  githubActionEventThatTriggeredTool?: string
+  githubActionEventThatTriggeredTool?: "push" | "pull_request" | "other"
   pullRequestTargetBranchName?: string
   currentBranchName?: string
   commitsCreatedBySimulatedMerge?: GitHubCommit[]
@@ -376,38 +375,40 @@ const setupTestEnvironmentAndRun = async ({
 
   const logMock = getLogMock()
 
-  const githubActions = {} as GitHubActions
-  const githubActionsSetOutputMock = stub(
-    githubActions,
+  const environment = {} as Environment
+  const setOutputMock = stub(
+    environment,
     "setOutput",
-    () => {
+    async () => {
       return
     },
   )
-  stub(githubActions, "getEventThatTriggeredThisRun", () => {
+  stub(environment, "getEventThatTriggeredThisRun", () => {
     return githubActionEventThatTriggeredTool || "push"
   })
-  stub(githubActions, "failOnDeployVerification", () => {
+  stub(environment, "failOnDeployVerification", () => {
     return true
   })
   const isRunningInPullRequest = githubActionEventThatTriggeredTool === "pull_request"
 
-  const githubActionsIsRunningInPullRequestMock = stub(githubActions, "isRunningInPullRequest", async () => {
+  const environmentIsRunningInPullRequestMock = stub(environment, "isRunningInPullRequest", () => {
     return isRunningInPullRequest
       ? {
         baseBranch: currentBranch,
         targetBranch: pullRequestTargetBranch,
-        prTitle: "title",
-        prDescription: "description",
+        prNumber: 1,
       }
       : undefined
   })
-  stub(githubActions, "getSimulatedMergeType", (): "merge" | "rebase" | "squash" => {
+  stub(environment, "getSimulatedMergeType", (): "merge" | "rebase" | "squash" => {
     return "merge"
   })
 
-  stub(githubActions, "getNameOfCurrentBranch", () => {
+  stub(environment, "getNameOfCurrentBranch", () => {
     return currentBranch
+  })
+  stub(environment, "getRepository", () => {
+    return { owner: "levibostian", repo: "new-deployment-tool" }
   })
 
   const prepareEnvironmentForTestMode = mock<PrepareTestModeEnvStep>()
@@ -424,7 +425,7 @@ const setupTestEnvironmentAndRun = async ({
     getCommitsSinceLatestReleaseStep,
     deployStep,
     log: logMock,
-    githubActions,
+    environment,
   })
 
   return {
@@ -433,8 +434,8 @@ const setupTestEnvironmentAndRun = async ({
     deployStepMock,
     determineNextReleaseVersionStepMock,
     logMock,
-    githubActionsSetOutputMock,
-    githubActionsIsRunningInPullRequestMock,
+    setOutputMock,
+    environmentIsRunningInPullRequestMock,
     prepareEnvironmentForTestModeMock,
   }
 }
