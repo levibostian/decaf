@@ -49,7 +49,7 @@ runs:
         set -e
         ARCH=$(uname -m)
         OS=$(uname)
-        GH_RELEASE_VERSION="1.0.0-alpha.9"
+        GH_RELEASE_VERSION="1.0.0-alpha.10"
         gh release download "$GH_RELEASE_VERSION" --repo "levibostian/new-deployment-tool" --pattern "bin-$ARCH-$OS" --output new-deployment-tool
         chmod +x new-deployment-tool
       shell: bash
