@@ -10,20 +10,18 @@ jobs:
       - gh/install
       - run:
           name: Install CLI Tool
-          command: gh release download --repo "levibostian/new-deployment-tool" --pattern "bin-$(uname -m)-$(uname)" --output new-deployment-tool
+          command: |
+            gh release download --repo "levibostian/new-deployment-tool" --pattern "bin-$(uname -m)-$(uname)" --output new-deployment-tool && \
+            chmod +x new-deployment-tool
       - run:
           name: Run CLI Tool
           command: |
             ./new-deployment-tool \
-              --github_token "" \
-              --git_config "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>" \
-              --deploy "" \
-              --get_latest_release_current_branch "" \
-              --get_next_release_version "" \
-              --simulated_merge_type "merge" \
-              --output_file "" \
-              --make_pull_request_comment "true" \
-              --fail_on_deploy_verification "true"
+              --github_token "$GH_TOKEN" \
+              --deploy "./steps/deploy.ts" \
+              --get_latest_release_current_branch "./steps/get-latest-release.ts" \
+              --get_next_release_version "./steps/get-next-release.ts" \
+              --simulated_merge_type "rebase"
 workflows:
   version: 2
   build_and_deploy:
