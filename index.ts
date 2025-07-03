@@ -22,6 +22,7 @@ const args = parseArgs(Deno.args, {
     "simulated_merge_type",
     "output_file",
     "make_pull_request_comment",
+    "fail_on_deploy_verification",
   ],
   default: {
     github_token: "",
@@ -32,6 +33,7 @@ const args = parseArgs(Deno.args, {
     simulated_merge_type: "merge",
     output_file: "",
     make_pull_request_comment: "true",
+    fail_on_deploy_verification: "true",
   },
 })
 
@@ -43,6 +45,8 @@ Deno.env.set("INPUT_GET_LATEST_RELEASE_CURRENT_BRANCH", args.get_latest_release_
 Deno.env.set("INPUT_GET_NEXT_RELEASE_VERSION", args.get_next_release_version)
 Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", args.simulated_merge_type)
 Deno.env.set("INPUT_OUTPUT_FILE", args.output_file)
+Deno.env.set("INPUT_MAKE_PULL_REQUEST_COMMENT", args.make_pull_request_comment)
+Deno.env.set("INPUT_FAIL_ON_DEPLOY_VERIFICATION", args.fail_on_deploy_verification)
 
 const githubApi = GitHubApiImpl
 const environment = new EnvironmentImpl()
