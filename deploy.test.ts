@@ -386,8 +386,11 @@ const setupTestEnvironmentAndRun = async ({
   stub(environment, "getEventThatTriggeredThisRun", () => {
     return githubActionEventThatTriggeredTool || "push"
   })
-  stub(environment, "failOnDeployVerification", () => {
-    return true
+  stub(environment, "getUserConfigurationOptions", () => {
+    return {
+      failOnDeployVerification: true,
+      makePullRequestComment: true,
+    }
   })
   const isRunningInPullRequest = githubActionEventThatTriggeredTool === "pull_request"
 
@@ -404,8 +407,12 @@ const setupTestEnvironmentAndRun = async ({
     return "merge"
   })
 
-  stub(environment, "getNameOfCurrentBranch", () => {
-    return currentBranch
+  stub(environment, "getBuild", () => {
+    return {
+      currentBranch,
+      buildUrl: "https://example.com/build/123",
+      buildId: "123",
+    }
   })
   stub(environment, "getRepository", () => {
     return { owner: "levibostian", repo: "new-deployment-tool" }

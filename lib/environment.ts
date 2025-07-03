@@ -4,16 +4,16 @@ import { AnyStepName } from "./steps/types/any-step.ts"
 import envCi from "env-ci"
 
 export interface Environment {
-  getNameOfCurrentBranch(): string
   getRepository(): { owner: string; repo: string }
-  getBuild(): { buildUrl: string; buildId: string }
+  getBuild(): { buildUrl: string; buildId: string; currentBranch: string }
   getSimulatedMergeType(): "merge" | "rebase" | "squash"
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
   isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
   getCommandForStep({ stepName }: { stepName: AnyStepName }): string | undefined
-  failOnDeployVerification(): boolean
   getGitConfigInput(): { name: string; email: string } | undefined
   setOutput({ key, value }: { key: string; value: string }): Promise<void>
+  // A catch-all method to get inputs that dont match the other methods.
+  getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean }
 }
 
 export class EnvironmentImpl implements Environment {
@@ -33,10 +33,11 @@ export class EnvironmentImpl implements Environment {
     return this.env.branch
   }
 
-  getBuild(): { buildUrl: string; buildId: string } {
+  getBuild(): { buildUrl: string; buildId: string; currentBranch: string } {
     return {
       buildId: this.env.build,
       buildUrl: this.env.buildUrl,
+      currentBranch: this.getNameOfCurrentBranch(),
     }
   }
 
@@ -98,8 +99,11 @@ export class EnvironmentImpl implements Environment {
     // Open to adding other CI services in the future, if they have a simple system for setting outputs.
   }
 
-  failOnDeployVerification(): boolean {
-    return this.getInput("fail_on_deploy_verification") === "true"
+  getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean } {
+    return {
+      failOnDeployVerification: this.getInput("fail_on_deploy_verification") === "true",
+      makePullRequestComment: this.getInput("make_pull_request_comment") === "true",
+    }
   }
 
   getGitConfigInput(): { name: string; email: string } | undefined {
