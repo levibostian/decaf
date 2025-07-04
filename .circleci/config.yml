@@ -10,6 +10,9 @@ jobs:
       - gh/install
       - run: curl -fsSL https://deno.land/install.sh | sh
       - run:
+          name: Add Deno to PATH
+          command: echo 'export PATH="/home/circleci/.deno/bin:$PATH"' >> $BASH_ENV
+      - run:
           name: Install CLI Tool
           command: |
             gh release download --repo "levibostian/new-deployment-tool" --pattern "bin-$(uname -m)-$(uname)" --output new-deployment-tool && \
