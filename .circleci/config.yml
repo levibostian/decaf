@@ -8,6 +8,7 @@ jobs:
     steps:
       - checkout
       - gh/install
+      - run: curl -fsSL https://deno.land/install.sh | sh
       - run:
           name: Install CLI Tool
           command: |
