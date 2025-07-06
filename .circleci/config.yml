@@ -14,9 +14,7 @@ jobs:
           command: echo 'export PATH="/home/circleci/.deno/bin:$PATH"' >> $BASH_ENV
       - run:
           name: Install CLI Tool
-          command: |
-            gh release download --repo "levibostian/new-deployment-tool" --pattern "bin-$(uname -m)-$(uname)" --output new-deployment-tool && \
-            chmod +x new-deployment-tool
+          command: curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
       - run:
           name: Run CLI Tool
           command: |
