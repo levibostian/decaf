@@ -1,4 +1,5 @@
 import colors from "ansi-styles"
+import envCi from "env-ci"
 
 // log.ts
 // This module provides a simple API for logging messages at different levels to GitHub Actions.
@@ -6,12 +7,30 @@ import colors from "ansi-styles"
 // GitHub Actions supports setting log level by prefixing the message with specific tokens.
 // Reference: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-debug-message
 
-// Log levels
-const levels = {
+// All of the different log levels that can be used in this project.
+interface LogLevels {
+  debug: string
+  warning: string
+  error: string
+  notice: string
+  message: string
+}
+
+// Log levels for GitHub Actions. Each level has a specific prefix that GitHub Actions recognizes and formats accordingly.
+const githubActionLevels: LogLevels = {
   debug: `::debug::${colors.white.open}`, // Debug messages, not shown by default in GitHub Actions logs.
   warning: `::warning::${colors.white.open}`, // Lines are highlighted with yellow in the GitHub Actions logs.
   error: `::error::${colors.white.open}`, // Lines are highlighted with red in the GitHub Actions logs.
   notice: `${colors.blue.open}`, // Notice messages, a way to highlight important information, displayed in blue.
+  message: `${colors.white.open}`,
+}
+
+// Log levels for non-GitHub Actions CI environments. GitHub Actions has specific formatting for log levels, but other CI environments may not support the same syntax.
+const otherCILevels: LogLevels = {
+  debug: `${colors.white.open}`, // Debug messages, not shown by default in other CI logs.
+  warning: `${colors.yellow.open}`, // Lines are highlighted with yellow in the logs.
+  error: `${colors.red.open}`, // Lines are highlighted with red in the logs.
+  notice: `${colors.blue.open}`, // Notice messages, displayed in blue.
   message: `${colors.white.open}`,
 }
 
@@ -23,10 +42,19 @@ export interface Logger {
   message: (message: string) => void
 }
 
-// Generic log function
-function log(level: keyof typeof levels, message: string) {
+// The way we log is different depending on whether we are running on GitHub Actions or another CI service.
+// We use the env-ci package to detect the CI environment. I dont want the logger to use the DI graph to make
+// using it more complex, so just using env-ci directly here.
+const isOnGitHubActions = envCi().isCI && envCi().service === "github"
+
+// Generic log function that is used by all other logging functions.
+function log(level: keyof LogLevels, message: string) {
   message.split("\n").forEach((line) => {
-    console.log(`${levels[level]}${line}`)
+    if (isOnGitHubActions) {
+      console.log(`${githubActionLevels[level]}${line}`)
+    } else {
+      console.log(`${otherCILevels[level]}${line}`)
+    }
   })
 }
 
@@ -35,6 +63,13 @@ function log(level: keyof typeof levels, message: string) {
  * Debug messages are useful for detailed troubleshooting information.
  */
 export function debug(message: string) {
+  // Always show debug messages in GitHub Actions environments. Because github actions will show or not depending
+  // on if you enabled debug mode in the web UI.
+  const shouldShowDebugMessage = Deno.env.get("INPUT_DEBUG") === "true" || isOnGitHubActions
+  if (!shouldShowDebugMessage) {
+    return
+  }
+
   log("debug", message)
 }
 

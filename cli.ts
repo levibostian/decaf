@@ -13,6 +13,7 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       "output_file",
       "make_pull_request_comment",
       "fail_on_deploy_verification",
+      "debug",
     ],
     default: {
       github_token: "",
@@ -24,6 +25,7 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       output_file: "",
       make_pull_request_comment: "true",
       fail_on_deploy_verification: "true",
+      debug: "false",
     },
   })
 
@@ -37,4 +39,5 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
   Deno.env.set("INPUT_OUTPUT_FILE", args.output_file)
   Deno.env.set("INPUT_MAKE_PULL_REQUEST_COMMENT", args.make_pull_request_comment)
   Deno.env.set("INPUT_FAIL_ON_DEPLOY_VERIFICATION", args.fail_on_deploy_verification)
+  Deno.env.set("INPUT_DEBUG", args.debug)
 }
