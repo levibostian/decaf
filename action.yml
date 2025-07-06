@@ -43,24 +43,11 @@ runs:
   using: "composite"
   steps:  
     - name: Download deployment tool binary
-      if: ${{ inputs.local_binary_path == '' }}
-      id: download-binary
+      if: ${{ inputs.local_binary_path == '' }}      
       run: |
         set -e
-        ARCH=$(uname -m)
-        OS=$(uname)
         GH_RELEASE_VERSION="1.0.0"
-        gh release download "$GH_RELEASE_VERSION" --repo "levibostian/new-deployment-tool" --pattern "bin-$ARCH-$OS" --output new-deployment-tool
-        chmod +x new-deployment-tool
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-    - name: Prepare local binary
-      if: ${{ inputs.local_binary_path != '' }}
-      run: |
-        set -e
-        cp "${{ inputs.local_binary_path }}" new-deployment-tool
-        chmod +x new-deployment-tool
+        curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash -s -- $GH_RELEASE_VERSION
       shell: bash
 
     - name: Run deployment tool 
