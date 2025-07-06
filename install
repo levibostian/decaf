@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO="levibostian/new-deployment-tool"
+BINARY_NAME="new-deployment-tool"
+
+# Detect platform
+OS=$(uname -s)
+ARCH=$(uname -m)
+
+# Map to binary naming convention
+PLATFORM="$OS"
+ARCH_NAME="$ARCH"
+BINARY_FILE="bin-${ARCH_NAME}-${PLATFORM}"
+
+# Allow optional version argument
+VERSION="${1:-latest}"
+
+echo "Installing version: $VERSION - $OS - $ARCH..."
+
+# Download release binary for the specified version
+if [ "$VERSION" = "latest" ]; then
+    DOWNLOAD_URL="https://github.com/$REPO/releases/latest/download/$BINARY_FILE"
+else
+    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/$BINARY_FILE"
+fi
+DEST="./$BINARY_NAME"
+
+if ! curl -fsSL "$DOWNLOAD_URL" -o "$DEST"; then
+    echo "\nNo binary found for OS '$OS' and architecture '$ARCH'." >&2
+    echo "If you believe this is a mistake, please check your release assets or open an issue." >&2
+    exit 1
+fi
+chmod +x "$DEST"
+
+echo "Install complete! Run the tool with:"
+echo "  ./new-deployment-tool [args]"
