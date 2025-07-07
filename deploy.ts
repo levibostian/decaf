@@ -42,7 +42,7 @@ export const run = async ({
   log.message(`Ok, let's get started with the deployment!`)
   log.message(`--------------------------------`)
 
-  let currentBranch = environment.getNameOfCurrentBranch()
+  let currentBranch = environment.getBuild().currentBranch
   log.debug(`name of current git branch: ${currentBranch}`)
   const { owner, repo } = environment.getRepository()
 
@@ -202,7 +202,7 @@ export const run = async ({
         }, but expected ${nextReleaseVersion}. This could indicate a problem with the deployment process.`,
       )
 
-      if (environment.failOnDeployVerification()) {
+      if (environment.getUserConfigurationOptions().failOnDeployVerification) {
         throw new Error(
           `Deployment verification failed: latest release is ${latestReleaseAfterDeploy?.versionName ?? "<none>"}, expected ${nextReleaseVersion}`,
         )

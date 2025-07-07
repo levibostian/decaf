@@ -1,0 +1,31 @@
+version: 2.1
+orbs:
+  gh: circleci/github-cli@2.6
+jobs:
+  build:
+    machine:
+      image: ubuntu-2404:2024.11.1
+    steps:
+      - checkout
+      - gh/install
+      - run: curl -fsSL https://deno.land/install.sh | sh
+      - run:
+          name: Add Deno to PATH
+          command: echo 'export PATH="/home/circleci/.deno/bin:$PATH"' >> $BASH_ENV
+      - run:
+          name: Install CLI Tool
+          command: curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
+      - run:
+          name: Run CLI Tool
+          command: |
+            ./new-deployment-tool \
+              --github_token "$GH_TOKEN" \
+              --deploy "./steps/deploy.ts" \
+              --get_latest_release_current_branch "./steps/get-latest-release.ts" \
+              --get_next_release_version "./steps/get-next-release.ts" \
+              --simulated_merge_type "rebase"
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build
