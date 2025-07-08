@@ -169,6 +169,10 @@ const createLocalBranchFromRemote = async (
     command: `git branch --show-current`,
     input: undefined,
   })).stdout.trim()
+  const doesBranchExist = (await exec.run({
+    command: `git branch --list ${branch}`,
+    input: undefined,
+  })).stdout.trim() !== ""
 
   // Perform a fetch, otherwise you might get errors about origin branch not being found.
   await exec.run({
@@ -176,11 +180,13 @@ const createLocalBranchFromRemote = async (
     input: undefined,
   })
 
-  // Create a local branch that tracks the remote branch.
-  await exec.run({
-    command: `git branch --track ${branch} origin/${branch}`,
-    input: undefined,
-  })
+  // Only run if it doesn't exist locally. This is to avoid a error that crashes the tool: "fatal: a branch named '<branch-name>' already exists"
+  if (!doesBranchExist) {
+    await exec.run({
+      command: `git branch --track ${branch} origin/${branch}`,
+      input: undefined,
+    })
+  }
 
   // Checkout the branch so we can pull it.
   await exec.run({
