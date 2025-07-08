@@ -12,9 +12,20 @@ jobs:
       - run:
           name: Add Deno to PATH
           command: echo 'export PATH="/home/circleci/.deno/bin:$PATH"' >> $BASH_ENV
-      - run:
-          name: Install CLI Tool
-          command: curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
+
+
+      # In production, you would typically install the CLI like this: 
+      # - run:
+      #     name: Install CLI Tool
+      #     command: curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
+
+
+      # Compile and run so we can test the recent code changes in project. 
+      # This is used for development purposes only.
+      - run: 
+          name: Compile binary
+          command: OUTPUT_FILE_NAME=new-deployment-tool DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+
       - run:
           name: Run CLI Tool
           command: |
@@ -23,7 +34,9 @@ jobs:
               --deploy "./steps/deploy.ts" \
               --get_latest_release_current_branch "./steps/get-latest-release.ts" \
               --get_next_release_version "./steps/get-next-release.ts" \
-              --simulated_merge_type "rebase"
+              --simulated_merge_type "rebase" \
+              --make_pull_request_comment false \
+              --debug true 
 workflows:
   version: 2
   build_and_deploy:
