@@ -57,6 +57,7 @@ describe("createLocalBranchFromRemote", () => {
 
     assertEquals(execMock.calls.map((call) => call.args[0].command), [
       "git branch --show-current",
+      "git branch --list branch-to-pull",
       "git fetch origin",
       "git branch --track branch-to-pull origin/branch-to-pull",
       "git checkout branch-to-pull",

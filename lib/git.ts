@@ -63,8 +63,13 @@ const merge = async (
 }
 
 const pull = async ({ exec }: { exec: Exec }): Promise<void> => {
+  const currentBranchName = (await exec.run({
+    command: `git branch --show-current`,
+    input: undefined,
+  })).stdout.trim()
+
   await exec.run({
-    command: `git pull`,
+    command: `git pull origin ${currentBranchName}`,
     input: undefined,
   })
 }
