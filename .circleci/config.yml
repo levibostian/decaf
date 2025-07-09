@@ -13,27 +13,22 @@ jobs:
           name: Add Deno to PATH
           command: echo 'export PATH="/home/circleci/.deno/bin:$PATH"' >> $BASH_ENV
 
-
-      # In production, you would typically install the CLI like this: 
-      # - run:
-      #     name: Install CLI Tool
-      #     command: curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
-      # ---
-      # To be safer, you can install the CLI given a specific version like this:
-      # - run:
-      #     name: Install CLI Tool
-      #     command: curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/1.0.0/install?raw=true | bash
+      # Install a specific version of the tool (recommended for teams)
+      # - run: curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash "1.0.0"
+      # --- 
+      # To always install the latest version (not recommended for teams):
+      # - run: curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash
 
       # Compile and run so we can test the recent code changes in project. 
       # This is used for development purposes only.
       - run: 
           name: Compile binary
-          command: OUTPUT_FILE_NAME=new-deployment-tool DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+          command: OUTPUT_FILE_NAME=decaf DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
 
       - run:
           name: Run CLI Tool
           command: |
-            ./new-deployment-tool \
+            ./decaf \
               --github_token "$GH_TOKEN" \
               --deploy "./steps/deploy.ts" \
               --get_latest_release_current_branch "./steps/get-latest-release.ts" \

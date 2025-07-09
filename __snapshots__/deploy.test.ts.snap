@@ -2,9 +2,9 @@ export const snapshot = {};
 
 snapshot[`user facing logs > given no commits will trigger a release, expect logs to easily communicate that to the user 1`] = `
 [
-  "👋 Hello! I am a tool called new-deployment-tool. I help you deploy your projects.",
+  "👋 Hello! I am a tool called decaf. I help you deploy your projects.",
   "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
-  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/new-deployment-tool/",
+  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/",
   "Ok, let's get started with the deployment!",
   "--------------------------------",
   "👀 I see that the git branch main is checked out. We will begin the deployment process from the latest commit of this branch.",
@@ -19,9 +19,9 @@ snapshot[`user facing logs > given no commits will trigger a release, expect log
 
 snapshot[`user facing logs > given no commits created since last deployment, expect logs to easily communicate that to the user 1`] = `
 [
-  "👋 Hello! I am a tool called new-deployment-tool. I help you deploy your projects.",
+  "👋 Hello! I am a tool called decaf. I help you deploy your projects.",
   "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
-  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/new-deployment-tool/",
+  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/",
   "Ok, let's get started with the deployment!",
   "--------------------------------",
   "👀 I see that the git branch main is checked out. We will begin the deployment process from the latest commit of this branch.",
@@ -34,9 +34,9 @@ snapshot[`user facing logs > given no commits created since last deployment, exp
 
 snapshot[`user facing logs > given no release has ever been made, expect logs to easily communicate that to the user 1`] = `
 [
-  "👋 Hello! I am a tool called new-deployment-tool. I help you deploy your projects.",
+  "👋 Hello! I am a tool called decaf. I help you deploy your projects.",
   "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
-  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/new-deployment-tool/",
+  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/",
   "Ok, let's get started with the deployment!",
   "--------------------------------",
   "👀 I see that the git branch main is checked out. We will begin the deployment process from the latest commit of this branch.",
@@ -55,9 +55,9 @@ snapshot[`user facing logs > given no release has ever been made, expect logs to
 
 snapshot[`user facing logs > given running in test mode, given commits that trigger a release, expect logs to easily communicate that to the user 1`] = `
 [
-  "👋 Hello! I am a tool called new-deployment-tool. I help you deploy your projects.",
+  "👋 Hello! I am a tool called decaf. I help you deploy your projects.",
   "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
-  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/new-deployment-tool/",
+  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/",
   "Ok, let's get started with the deployment!",
   "--------------------------------",
   "🧪 I see that I got triggered to run from a pull request event. In pull requests, I run in test mode which means that I will run the deployment process but I will not actually deploy anything.",

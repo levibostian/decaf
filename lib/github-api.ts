@@ -345,7 +345,7 @@ const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, c
     githubIssue: prNumber,
     updateExisting: true,
     appendToExisting: true,
-    updateID: ["new-deployment-tool-deploy-run-output", `new-deployment-tool-deploy-run-output-${ciBuildId}`],
+    updateID: ["decaf-deploy-run-output", `decaf-deploy-run-output-${ciBuildId}`],
   })
 }
 
