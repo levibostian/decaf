@@ -82,7 +82,7 @@ export class EnvironmentImpl implements Environment {
     return {
       baseBranch: this.env.prBranch,
       targetBranch: this.env.branch,
-      prNumber: this.env.pr as unknown as number,
+      prNumber: Number(this.env.pr), // module provides this as a string, but we want it as a number.
     }
   }
 
