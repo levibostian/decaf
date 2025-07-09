@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="levibostian/new-deployment-tool"
-BINARY_NAME="new-deployment-tool"
+REPO="levibostian/decaf"
+BINARY_NAME="decaf"
 
 # Script has a hardcoded version that is checked into version control. 
 # If you always run this script from the HEAD of the repo, this will always be the latest version.
@@ -35,4 +35,4 @@ fi
 chmod +x "$DEST"
 
 echo "Install complete! Run the tool with:"
-echo "  ./new-deployment-tool [args]"
+echo "  ./decaf [args]"

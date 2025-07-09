@@ -67,7 +67,7 @@ const run = async (
   let inputDataFileContents: string | undefined
   if (input) {
     tempFilePathToCommunicateWithCommand = await Deno.makeTempFile({
-      prefix: "new-deployment-tool-",
+      prefix: "decaf-",
       suffix: ".json",
     })
     inputDataFileContents = JSON.stringify(input)

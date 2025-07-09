@@ -1,4 +1,4 @@
-name: 'New deployment tool'
+name: 'decaf'
 description: 'Deploy your project with ease'
 
 inputs:
@@ -55,7 +55,7 @@ runs:
       #
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
       run: |
-        ./new-deployment-tool \
+        ./decaf \
           --github_token "${{ inputs.github_token }}" \
           --git_config "${{ inputs.git_config }}" \
           --deploy "${{ inputs.deploy }}" \

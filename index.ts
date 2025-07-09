@@ -25,7 +25,7 @@ const { owner, repo } = environment.getRepository()
 
 if (shouldPostStatusUpdatesOnPullRequest) {
   await githubApi.postStatusUpdateOnPullRequest({
-    message: `## New deployment tool
+    message: `## decaf
 Running deployments in test mode. Results will appear below. 
 If this pull request and all of it's parent pull requests are merged using the...`,
     owner,
