@@ -4,6 +4,11 @@ set -euo pipefail
 REPO="levibostian/new-deployment-tool"
 BINARY_NAME="new-deployment-tool"
 
+# Script has a hardcoded version that is checked into version control. 
+# If you always run this script from the HEAD of the repo, this will always be the latest version.
+# If you checkout a git tag and run, this will be the version of that tag.
+LATEST=$(cat version.txt)
+
 # Detect platform
 OS=$(uname -s)
 ARCH=$(uname -m)
@@ -14,16 +19,12 @@ ARCH_NAME="$ARCH"
 BINARY_FILE="bin-${ARCH_NAME}-${PLATFORM}"
 
 # Allow optional version argument
-VERSION="${1:-latest}"
+VERSION="${1:-$LATEST}"
 
 echo "Installing version: $VERSION - $OS - $ARCH..."
 
 # Download release binary for the specified version
-if [ "$VERSION" = "latest" ]; then
-    DOWNLOAD_URL="https://github.com/$REPO/releases/latest/download/$BINARY_FILE"
-else
-    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/$BINARY_FILE"
-fi
+DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/$BINARY_FILE"
 DEST="./$BINARY_NAME"
 
 if ! curl -fsSL "$DOWNLOAD_URL" -o "$DEST"; then

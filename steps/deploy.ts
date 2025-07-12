@@ -46,14 +46,15 @@ await compileBinary({
   outputFileName: "bin-aarch64-Darwin",
 })
 
-// Update the GH_RELEASE_VERSION in the action.yml file with new version
-// https://stackoverflow.com/a/22084103
-await $`sed -i.bak 's/GH_RELEASE_VERSION=".*"/GH_RELEASE_VERSION="${input.nextVersionName}"/' ./action.yml && rm ./action.yml.bak`
+// Hard-code the version into a file so that when someone pulls a git tag, that code knows what version it is.
+// This script is designed to modify a file that no other branch has a chance of modifying. This is opposed to modifying a file such as `action.yml` file.
+// This is because we want to prevent merge conflicts whenever we have the `latest` branch modifying a file, but other branch is also modifying that file.
+await $`echo "${input.nextVersionName}" > version.txt`
 
-// Commit the changes to action.yml
+// Commit the changes to version.txt
 // Do not throw on error because there is a scenario where we previously made this commit but we failed and retried the deployment.
 // This should only fail if there is no change to commit, which is fine.
-await $`git add action.yml && git commit -m "Bump version to ${input.nextVersionName}"`.printCommand().noThrow()
+await $`git add version.txt && git commit -m "Bump version to ${input.nextVersionName}"`.printCommand().noThrow()
 
 console.log(`to help with debugging, log the recently created commit including all the file changes made`)
 await $`git show HEAD`.printCommand()

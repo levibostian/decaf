@@ -103,8 +103,7 @@ jobs:
           name: Install CLI Tool
           command: |
             # Install a specific version of the tool (recommended for teams)
-            GH_RELEASE_VERSION="1.0.0" # or your desired version
-            curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash -s -- $GH_RELEASE_VERSION
+            curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash "1.0.0"
 
             # To always install the latest version (not recommended for teams):
             # curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
