@@ -43,11 +43,11 @@ runs:
   using: "composite"
   steps:  
     - name: Download deployment tool binary
-      if: ${{ inputs.local_binary_path == '' }}      
-      run: |
-        set -e
-        GH_RELEASE_VERSION="1.0.0-alpha.12"
-        curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash -s -- $GH_RELEASE_VERSION
+      if: ${{ inputs.local_binary_path == '' }}
+      # Run the install script that is packed with the tool. Because we want to install the version of the tool that is associated with the git tag that the action is running from. 
+      # When this file runs, it was more then likely run from a github release tag. So a specific version of the tool is meant to be run. 
+      # We need to know at runtime what version of the tool to run. Because github actions downloads all the code for a git tag, we can get the version from the install script.
+      run: ./install 
       shell: bash
 
     - name: Run deployment tool 

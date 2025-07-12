@@ -39,28 +39,36 @@ This tool automates all of these steps for you each time you merge your code. Yo
 
 Just follow these 3 steps. 
 
-1. [Install the tool](#install-the-tool-with-github-actions)
+1. [Install the tool](#install-the-tool)
 2. [Write your step scripts](#write-your-step-scripts)
 3. [Push git commits to your deployment branch](#push-git-commits-with-the-correct-pr-message)
 
-## Install the tool with Github Actions
+# Install the tool
 
-This tool is designed to run on GitHub Actions for the project that you want to deploy. 
+You can install and run the tool in two ways:
+
+## 1. GitHub Actions
 
 Here is an example workflow file to install and run the tool in your project. Read the comments to learn about the requirements for setting up the project. 
 
-```yml
-# In your project, what branch do you merge code into when it's ready to ship? 
-# Replace 'main' below with the branch your project uses. 
-on: 
-  push: [main] 
+```yaml
+# In your project, what branch do you merge code into when it's ready to ship?
+# Replace 'main' below with the branch your project uses.
+on:
+  push: [main]
 
-jobs: 
+jobs:
   deploy:
     runs-on: ubuntu-latest
-    # The tool only requires read permissions to the repository. Only enable write permissions if any of your step scripts require it.
     permissions:
-      contents: write # Example, if your deploy script needs to push a git commit or tag, enable content write permissions. 
+      # Required permissions for the tool to run: 
+      # By default, this tool only needs read permissions to the repository.
+      # contents: read
+      # pull-requests: read
+
+      # For most projects, these are the permissions you want to grant: 
+      contents: write # If your deploy script that you write needs to push a git commit, git tag, or create a GitHub Release.
+      pull-requests: write # If you enable pull request comments (they are enabled by default).
     steps:
       - uses: actions/checkout@v4
       
@@ -77,7 +85,46 @@ jobs:
 
 > Reminder: You must provide a script for each step. The tool will execute your scripts in order and expects them to follow the input/output contract described below.
 
-## Write your step scripts
+## 2. CLI Usage (Any CI/CD, e.g., CircleCI)
+
+You can run the tool as a standalone CLI in any environment. This is useful for CircleCI, Azure devops, whatever CI service you want! [This is the list of CI services this tool supports](https://github.com/semantic-release/env-ci#supported-ci). 
+
+> Note: Some of the CI services have not been tested yet, so please report any issues you find.
+
+```yaml
+# Example CircleCI config for running the deployment tool as a CLI
+jobs:
+  build:
+    machine:
+      image: ubuntu-2404:2024.11.1 
+    steps:
+      - checkout # Check out your code
+      - run:
+          name: Install CLI Tool
+          command: |
+            # Install a specific version of the tool (recommended for teams)
+            curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash "1.0.0"
+
+            # To always install the latest version (not recommended for teams):
+            # curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
+      - run:
+          name: Run CLI Tool
+          command: |
+            # You must provide a GitHub personal access token (PAT) with the required permissions.
+            # The minimum required is contents:read, pull-requests:read. 
+            # If your deployment step pushes tags, commits, or creates releases, you need contents:write.
+            # If you want PR comments in test mode, you also need pull-requests:write.
+            ./new-deployment-tool \
+              --github_token "$GH_TOKEN" \
+              --deploy "./steps/deploy.ts" \
+              --get_latest_release_current_branch "./steps/get-latest-release.ts" \
+              --get_next_release_version "./steps/get-next-release.ts" \
+              --simulated_merge_type "rebase" \
+              --make_pull_request_comment false              
+            # --make_pull_request_comment true # Enable this if you want PR comments (requires pull-requests:write)
+```
+
+# Write your step scripts
 
 You are responsible for writing the scripts that perform each deployment step. This includes determining the next version, updating the version number in metadata files, and pushing code to a server. You can use *any* language or tools you prefer 😍!
 
