@@ -1,6 +1,8 @@
-# new-deployment-tool
+# decaf
 
 Simple, calm, and flexible tool to automate your project's deployments. 
+
+**No more coffee breaks to deploy your code.**
 
 > [!WARNING] 
 > This tool is early on in development and will likely introduce breaking 
@@ -73,7 +75,7 @@ jobs:
       - uses: actions/checkout@v4
       
       # This block installs the tool and configures it for your project. 
-      - uses: levibostian/new-deployment-tool@<version>
+      - uses: levibostian/decaf@<version>
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           get_latest_release_current_branch: python scripts/get_latest_release.py
@@ -81,7 +83,7 @@ jobs:
           deploy: python scripts/deploy.py
 ```
 
-> Note: Replace `<version>` with the version of the tool you want to use. You can find the latest version on the [GitHub releases page](https://github.com/levibostian/new-deployment-tool/releases).
+> Note: Replace `<version>` with the version of the tool you want to use. You can find the latest version on the [GitHub releases page](https://github.com/levibostian/decaf/releases).
 
 > Reminder: You must provide a script for each step. The tool will execute your scripts in order and expects them to follow the input/output contract described below.
 
@@ -103,10 +105,10 @@ jobs:
           name: Install CLI Tool
           command: |
             # Install a specific version of the tool (recommended for teams)
-            curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash "1.0.0"
+            curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash "1.0.0"
 
             # To always install the latest version (not recommended for teams):
-            # curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
+            # curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash
       - run:
           name: Run CLI Tool
           command: |
@@ -114,7 +116,7 @@ jobs:
             # The minimum required is contents:read, pull-requests:read. 
             # If your deployment step pushes tags, commits, or creates releases, you need contents:write.
             # If you want PR comments in test mode, you also need pull-requests:write.
-            ./new-deployment-tool \
+            ./decaf \
               --github_token "$GH_TOKEN" \
               --deploy "./steps/deploy.ts" \
               --get_latest_release_current_branch "./steps/get-latest-release.ts" \
@@ -278,18 +280,18 @@ To do this, it's as easy as running the tool multiple times in the same workflow
     steps:
     # You must run checkout before running the tool each time. It resets the git history for the tool to run accurately.
     - uses: actions/checkout@v4
-    - uses: levibostian/new-deployment-tool@main
+    - uses: levibostian/decaf@main
       with: 
         simulated_merge_type: 'merge'
         # ... Put rest of your config here. 
     - uses: actions/checkout@v4
-    - uses: levibostian/new-deployment-tool@main
+    - uses: levibostian/decaf@main
       with: 
         simulated_merge_type: 'squash'
         # ... Put rest of your config here. 
 
     - uses: actions/checkout@v4
-    - uses: levibostian/new-deployment-tool@main
+    - uses: levibostian/decaf@main
       with: 
         simulated_merge_type: 'rebase'
         # ... Put rest of your config here.  

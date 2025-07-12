@@ -22,7 +22,7 @@ export class EnvironmentImpl implements Environment {
 
   constructor() {
     // Example of the values in `this.env`:
-    // {"isCi":true,"name":"GitHub Actions","service":"github","commit":"7d4aec10df2b2dcbe99643662beca90a24a8a81f","build":"15876053587","isPr":true,"branch":"alpha","prBranch":"refs/pull/68/merge","slug":"levibostian/new-deployment-tool","root":"/home/runner/work/new-deployment-tool/new-deployment-tool","pr":68}
+    // {"isCi":true,"name":"GitHub Actions","service":"github","commit":"7d4aec10df2b2dcbe99643662beca90a24a8a81f","build":"15876053587","isPr":true,"branch":"alpha","prBranch":"refs/pull/68/merge","slug":"levibostian/decaf","root":"/home/runner/work/decaf/decaf","pr":68}
     this.env = envCi()
     this.outputFileCache = {}
   }

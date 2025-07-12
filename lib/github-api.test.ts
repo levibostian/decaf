@@ -57,7 +57,7 @@ describe("getPullRequestStack", () => {
 
     const actualPRStack = await GitHubApiImpl.getPullRequestStack({
       owner: "levibostian",
-      repo: "new-deployment-tool",
+      repo: "decaf",
       startingPrNumber: 999999, // a PR that does not exist
     })
 
@@ -69,7 +69,7 @@ describe("getPullRequestStack", () => {
 
     const actualPRStack = await GitHubApiImpl.getPullRequestStack({
       owner: "levibostian",
-      repo: "new-deployment-tool",
+      repo: "decaf",
       startingPrNumber: 1,
     })
 

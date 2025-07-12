@@ -327,7 +327,7 @@ const setupTestEnvironmentAndRun = async ({
 
   // default to push event, since we want to test the actual deployment process and not test mode by default.
   Deno.env.set("GITHUB_REF", `refs/heads/${currentBranch}`)
-  Deno.env.set("GITHUB_REPOSITORY", "levibostian/new-deployment-tool")
+  Deno.env.set("GITHUB_REPOSITORY", "levibostian/decaf")
 
   const convenienceStep = mock<ConvenienceStep>()
   when(convenienceStep, "runConvenienceCommands", async () => {
@@ -415,7 +415,7 @@ const setupTestEnvironmentAndRun = async ({
     }
   })
   stub(environment, "getRepository", () => {
-    return { owner: "levibostian", repo: "new-deployment-tool" }
+    return { owner: "levibostian", repo: "decaf" }
   })
 
   const prepareEnvironmentForTestMode = mock<PrepareTestModeEnvStep>()

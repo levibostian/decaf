@@ -32,12 +32,12 @@ export const run = async ({
     return
   }
 
-  log.notice(`👋 Hello! I am a tool called new-deployment-tool. I help you deploy your projects.`)
+  log.notice(`👋 Hello! I am a tool called decaf. I help you deploy your projects.`)
   log.message(
     `To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.`,
   )
   log.message(
-    `If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/new-deployment-tool/`,
+    `If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/`,
   )
   log.message(`Ok, let's get started with the deployment!`)
   log.message(`--------------------------------`)
