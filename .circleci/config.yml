@@ -18,7 +18,11 @@ jobs:
       # - run:
       #     name: Install CLI Tool
       #     command: curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/HEAD/install?raw=true | bash
-
+      # ---
+      # To be safer, you can install the CLI given a specific version like this:
+      # - run:
+      #     name: Install CLI Tool
+      #     command: curl -fsSL https://github.com/levibostian/new-deployment-tool/blob/1.0.0/install?raw=true | bash
 
       # Compile and run so we can test the recent code changes in project. 
       # This is used for development purposes only.
