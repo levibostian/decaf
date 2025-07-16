@@ -7,6 +7,7 @@ import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
 import { GitHubCommit } from "./lib/github-api.ts"
 import { StepRunner } from "./lib/step-runner.ts"
 import { ConvenienceStep } from "./lib/steps/convenience.ts"
+import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
 
 export const run = async ({
   convenienceStep,
@@ -24,7 +25,9 @@ export const run = async ({
   deployStep: DeployStep
   environment: Environment
   log: Logger
-}): Promise<{ nextReleaseVersion: string } | undefined> => {
+}): Promise<
+  { nextReleaseVersion: string; commitsSinceLastRelease: GitHubCommit[]; latestRelease: GetLatestReleaseStepOutput | null } | undefined
+> => {
   if (environment.getEventThatTriggeredThisRun() !== "push" && environment.getEventThatTriggeredThisRun() !== "pull_request") {
     log.error(
       `Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${environment.getEventThatTriggeredThisRun()}. Bye bye...`,
@@ -216,5 +219,5 @@ export const run = async ({
 
   await environment.setOutput({ key: "new_release_version", value: nextReleaseVersion })
 
-  return { nextReleaseVersion }
+  return { nextReleaseVersion, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
 }
