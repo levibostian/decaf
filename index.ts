@@ -48,9 +48,19 @@ try {
   const newReleaseVersion = runResult?.nextReleaseVersion
 
   if (shouldPostStatusUpdatesOnPullRequest) {
-    const message = newReleaseVersion
+    let message = newReleaseVersion
       ? `...🟩 **${simulatedMergeType}** 🟩 merge method... 🚢 The next version of the project will be: **${newReleaseVersion}**`
       : `...🟩 **${simulatedMergeType}** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.`
+
+    message += `\n\n<details>
+<summary>Learn more</summary>
+<br>
+Latest release: ${runResult?.latestRelease?.versionName || "none, this is the first release."}<br>
+Commit of latest release: ${runResult?.latestRelease?.commitSha || "none, this is the first release."}<br>
+<br>
+Commits since last release:<br>
+- ${runResult?.commitsSinceLastRelease.map((commit) => commit.message).join("<br>- ") || "none"}    
+</details>`
 
     await githubApi.postStatusUpdateOnPullRequest({
       message,
