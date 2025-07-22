@@ -1,22 +1,33 @@
 import { assertEquals } from "@std/assert"
-import { afterEach, describe, it } from "@std/testing/bdd"
+import { afterEach, beforeEach, describe, it } from "@std/testing/bdd"
 import { restore, stub } from "@std/testing/mock"
-import { GitHubApiImpl } from "../github-api.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./get-commits-since-latest-release.ts"
 import { GetLatestReleaseStepOutputFake } from "./types/output.test.ts"
+import { mock } from "../mock/mock.ts"
+import { Exec } from "../exec.ts"
+import { Git } from "../git.ts"
+import { GitCommitFake } from "../types/git.test.ts"
 
 describe("getAllCommitsSinceGivenCommit", () => {
+  let git: Git = mock()
+  let exec: Exec = mock()
+
+  beforeEach(() => {
+    git = mock()
+    exec = mock()
+  })
+
   afterEach(() => {
     restore()
   })
 
   it("given no commits, expect empty array", async () => {
-    stub(GitHubApiImpl, "getCommitsForBranch", async (args) => {
-      args.processCommits([])
+    stub(git, "getCommits", async () => {
+      return []
     })
 
     assertEquals(
-      await new GetCommitsSinceLatestReleaseStepImpl(GitHubApiImpl)
+      await new GetCommitsSinceLatestReleaseStepImpl(git, exec)
         .getAllCommitsSinceGivenCommit({
           owner: "owner",
           repo: "repo",
@@ -30,26 +41,19 @@ describe("getAllCommitsSinceGivenCommit", () => {
   it("given multiple pages of commits, expect get expected set of commits", async () => {
     const givenLastTagSha = "sha-E"
 
-    stub(GitHubApiImpl, "getCommitsForBranch", async (args) => {
-      let returnResult = await args.processCommits([
-        { sha: "sha-A", message: "", date: new Date(6) },
-        { sha: "sha-B", message: "", date: new Date(5) },
-        { sha: "sha-C", message: "", date: new Date(4) },
-      ])
-
-      assertEquals(returnResult, true) // expect continue paging
-
-      returnResult = await args.processCommits([
-        { sha: "sha-D", message: "", date: new Date(3) },
-        { sha: "sha-E", message: "", date: new Date(2) },
-        { sha: "sha-F", message: "", date: new Date(1) },
-      ])
-
-      assertEquals(returnResult, false) // Since we return the last tag sha, we expect to stop paging.
+    stub(git, "getCommits", async () => {
+      return [
+        new GitCommitFake({ sha: "sha-A", message: "", date: new Date(6) }),
+        new GitCommitFake({ sha: "sha-B", message: "", date: new Date(5) }),
+        new GitCommitFake({ sha: "sha-C", message: "", date: new Date(4) }),
+        new GitCommitFake({ sha: "sha-D", message: "", date: new Date(3) }),
+        new GitCommitFake({ sha: "sha-E", message: "", date: new Date(2) }),
+        new GitCommitFake({ sha: "sha-F", message: "", date: new Date(1) }),
+      ]
     })
 
     assertEquals(
-      await new GetCommitsSinceLatestReleaseStepImpl(GitHubApiImpl)
+      await new GetCommitsSinceLatestReleaseStepImpl(git, exec)
         .getAllCommitsSinceGivenCommit({
           owner: "owner",
           repo: "repo",
@@ -60,10 +64,10 @@ describe("getAllCommitsSinceGivenCommit", () => {
           },
         }),
       [
-        { sha: "sha-A", message: "", date: new Date(6) },
-        { sha: "sha-B", message: "", date: new Date(5) },
-        { sha: "sha-C", message: "", date: new Date(4) },
-        { sha: "sha-D", message: "", date: new Date(3) },
+        new GitCommitFake({ sha: "sha-A", message: "", date: new Date(6) }),
+        new GitCommitFake({ sha: "sha-B", message: "", date: new Date(5) }),
+        new GitCommitFake({ sha: "sha-C", message: "", date: new Date(4) }),
+        new GitCommitFake({ sha: "sha-D", message: "", date: new Date(3) }),
       ],
     )
   })

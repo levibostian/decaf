@@ -15,6 +15,8 @@ import { StepRunner } from "./lib/step-runner.ts"
 import { GetLatestReleaseStepOutputFake } from "./lib/steps/types/output.test.ts"
 import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
 import { ConvenienceStep } from "./lib/steps/convenience.ts"
+import { GitCommit } from "./lib/types/git.ts"
+import { GitCommitFake } from "./lib/types/git.test.ts"
 
 describe("run the tool in different scenarios", () => {
   afterEach(() => {
@@ -32,7 +34,7 @@ describe("run the tool in different scenarios", () => {
 
   it("given no commits trigger a release, expect to not run a new deployment", async () => {
     const { deployStepMock } = await setupTestEnvironmentAndRun({
-      commitsSinceLatestRelease: [new GitHubCommitFake()],
+      commitsSinceLatestRelease: [new GitCommitFake()],
       nextReleaseVersion: undefined,
     })
 
@@ -45,7 +47,7 @@ describe("test github actions output", () => {
   it("should set new release version output when a new release is created", async () => {
     const { setOutputMock } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [
-        new GitHubCommitFake({
+        new GitCommitFake({
           message: "feat: trigger a release",
           sha: "trigger-release",
         }),
@@ -69,7 +71,7 @@ describe("test github actions output", () => {
   it("should set new pre-release version output when a new pre-release is created", async () => {
     const { setOutputMock } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [
-        new GitHubCommitFake({
+        new GitCommitFake({
           message: "feat: trigger a release",
           sha: "trigger-release",
         }),
@@ -85,14 +87,14 @@ describe("test github actions output", () => {
   it("should set test mode output when running in test mode", async () => {
     const { setOutputMock } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [
-        new GitHubCommitFake({
+        new GitCommitFake({
           message: "feat: trigger a release",
           sha: "trigger-release",
         }),
       ],
       nextReleaseVersion: "1.0.0",
       githubActionEventThatTriggeredTool: "pull_request",
-      commitsCreatedBySimulatedMerge: [new GitHubCommitFake()],
+      commitsCreatedBySimulatedMerge: [new GitCommitFake()],
     })
 
     assertEquals(
@@ -101,17 +103,17 @@ describe("test github actions output", () => {
     )
   })
   it("should add commits created during simulated merges to list of commits to analyze", async () => {
-    const givenLatestCommitOnBranch = new GitHubCommitFake({
+    const givenLatestCommitOnBranch = new GitCommitFake({
       message: "feat: trigger a release",
       sha: "trigger-release",
     })
 
     const givenCommitsCreatedBySimulatedMerge = [
-      new GitHubCommitFake({
+      new GitCommitFake({
         message: "Merge commit created during simulated merge",
         sha: "merge-commit-created-during-simulated-merge",
       }),
-      new GitHubCommitFake({
+      new GitCommitFake({
         message: "feat: commit created during simulated merge",
         sha: "commit-created-during-simulated-merge",
       }),
@@ -138,11 +140,11 @@ describe("test github actions output", () => {
   // Test a bug found where you are in test mode > simulate merge > new commits are made > tool says "zero commits created" > exits early.
   it("should not exit early if parent branch has no commits, but we make new commits during simulated merge", async () => {
     const givenCommitsCreatedBySimulatedMerge = [
-      new GitHubCommitFake({
+      new GitCommitFake({
         message: "Merge commit created during simulated merge",
         sha: "merge-commit-created-during-simulated-merge",
       }),
-      new GitHubCommitFake({
+      new GitCommitFake({
         message: "feat: commit created during simulated merge",
         sha: "commit-created-during-simulated-merge",
       }),
@@ -166,7 +168,7 @@ describe("test github actions output", () => {
 describe("user facing logs", () => {
   it("given no commits will trigger a release, expect logs to easily communicate that to the user", async (t) => {
     const { logMock } = await setupTestEnvironmentAndRun({
-      commitsSinceLatestRelease: [new GitHubCommitFake()],
+      commitsSinceLatestRelease: [new GitCommitFake()],
       nextReleaseVersion: undefined,
     })
 
@@ -182,7 +184,7 @@ describe("user facing logs", () => {
   })
 
   it("given no release has ever been made, expect logs to easily communicate that to the user", async (t) => {
-    const givenLatestCommitOnBranch = new GitHubCommitFake({
+    const givenLatestCommitOnBranch = new GitCommitFake({
       message: "feat: trigger a release",
       sha: "trigger-release",
     })
@@ -200,7 +202,7 @@ describe("user facing logs", () => {
     const givenBaseBranch = "sweet-feature"
     const givenTargetBranch = "main"
 
-    const givenLatestCommitOnBranch = new GitHubCommitFake({
+    const givenLatestCommitOnBranch = new GitCommitFake({
       message: "feat: trigger a release",
       sha: "trigger-release",
     })
@@ -231,7 +233,7 @@ describe("test the event that triggered running the tool", () => {
       githubActionEventThatTriggeredTool: "push",
       nextReleaseVersion: "1.0.0",
       commitsSinceLatestRelease: [
-        new GitHubCommitFake({
+        new GitCommitFake({
           message: "feat: trigger a release",
           sha: "trigger-release",
         }),
@@ -252,7 +254,7 @@ describe("test the event that triggered running the tool", () => {
       githubActionEventThatTriggeredTool: "pull_request",
       nextReleaseVersion: "1.0.0",
       commitsSinceLatestRelease: [
-        new GitHubCommitFake({
+        new GitCommitFake({
           message: "feat: trigger a release",
           sha: "trigger-release",
         }),
@@ -278,7 +280,7 @@ describe("deployment verification after deploy", () => {
       latestRelease: { versionName: "1.0.0", commitSha: "sha1" },
       latestReleaseAfterDeploy: { versionName: deployedVersion, commitSha: "sha2" },
       nextReleaseVersion: deployedVersion,
-      commitsSinceLatestRelease: [new GitHubCommitFake()],
+      commitsSinceLatestRelease: [new GitCommitFake()],
     })
 
     assertEquals(
@@ -296,7 +298,7 @@ describe("deployment verification after deploy", () => {
         latestRelease: { versionName: wrongLatestRelease, commitSha: "sha2" },
         latestReleaseAfterDeploy: { versionName: wrongLatestRelease, commitSha: "sha2" },
         nextReleaseVersion: deployedVersion,
-        commitsSinceLatestRelease: [new GitHubCommitFake()],
+        commitsSinceLatestRelease: [new GitCommitFake()],
       })
     })
   })
@@ -314,12 +316,12 @@ const setupTestEnvironmentAndRun = async ({
 }: {
   latestRelease?: GetLatestReleaseStepOutput | null
   latestReleaseAfterDeploy?: GetLatestReleaseStepOutput | null
-  commitsSinceLatestRelease?: GitHubCommit[]
+  commitsSinceLatestRelease?: GitCommit[]
   nextReleaseVersion?: string
   githubActionEventThatTriggeredTool?: "push" | "pull_request" | "other"
   pullRequestTargetBranchName?: string
   currentBranchName?: string
-  commitsCreatedBySimulatedMerge?: GitHubCommit[]
+  commitsCreatedBySimulatedMerge?: GitCommit[]
 }) => {
   // Set some defaults.
   const pullRequestTargetBranch = pullRequestTargetBranchName || "main" // assume we are running a pull_request event that merges into main

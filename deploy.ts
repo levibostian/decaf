@@ -8,6 +8,7 @@ import { GitHubCommit } from "./lib/github-api.ts"
 import { StepRunner } from "./lib/step-runner.ts"
 import { ConvenienceStep } from "./lib/steps/convenience.ts"
 import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
+import { GitCommit } from "./lib/types/git.ts"
 
 export const run = async ({
   convenienceStep,
@@ -51,7 +52,7 @@ export const run = async ({
 
   const pullRequestInfo = environment.isRunningInPullRequest()
   const runInTestMode = pullRequestInfo !== undefined
-  let commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
+  let commitsCreatedDuringSimulatedMerges: GitCommit[] = []
   if (runInTestMode) {
     log.notice(
       `🧪 I see that I got triggered to run from a pull request event. In pull requests, I run in test mode which means that I will run the deployment process but I will not actually deploy anything.`,
