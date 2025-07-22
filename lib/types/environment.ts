@@ -1,5 +1,5 @@
-import { GitHubCommit } from "../github-api.ts"
 import { GetLatestReleaseStepOutput } from "../steps/types/output.ts"
+import { GitCommit } from "./git.ts"
 
 /*
   Each environment object contains information about the current state of the git repository and data that the tool has fetched/processed. Each step of the deployment may find this environment object useful to make decisions on what to do next.
@@ -16,7 +16,7 @@ export interface GetLatestReleaseStepInput {
 
 export interface GetNextReleaseVersionStepInput extends GetLatestReleaseStepInput {
   lastRelease: GetLatestReleaseStepOutput | null
-  gitCommitsSinceLastRelease: GitHubCommit[]
+  gitCommitsSinceLastRelease: GitCommit[]
 }
 
 export interface DeployStepInput extends GetNextReleaseVersionStepInput {

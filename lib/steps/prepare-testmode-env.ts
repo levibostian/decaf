@@ -4,12 +4,13 @@ import { Environment } from "../environment.ts"
 import { GitHubApi, GitHubCommit } from "../github-api.ts"
 import { logger } from "../log.ts"
 import { SimulateMerge } from "../simulate-merge.ts"
+import { GitCommit } from "../types/git.ts"
 
 export interface PrepareTestModeEnvStep {
   prepareEnvironmentForTestMode({ owner, repo }: {
     owner: string
     repo: string
-  }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitHubCommit[] } | undefined>
+  }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitCommit[] } | undefined>
 }
 
 export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
@@ -24,7 +25,7 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
   prepareEnvironmentForTestMode = async ({ owner, repo }: {
     owner: string
     repo: string
-  }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitHubCommit[] } | undefined> => {
+  }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitCommit[] } | undefined> => {
     const testModeContext = this.environment.isRunningInPullRequest()
     const runInTestMode = testModeContext !== undefined
 
@@ -34,7 +35,7 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     logger.debug(`Simulated merge type: ${simulateMergeType}`)
 
     const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingPrNumber: testModeContext.prNumber })
-    const commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
+    const commitsCreatedDuringSimulatedMerges: GitCommit[] = []
     let currentBranch: string = "" // will be set to the last target branch after all simulated merges are done.
 
     for await (const pr of pullRequestStack) {

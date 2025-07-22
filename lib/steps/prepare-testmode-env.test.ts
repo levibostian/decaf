@@ -8,6 +8,7 @@ import { mock, when } from "../mock/mock.ts"
 import { GitHubCommitFake } from "../github-api.test.ts"
 import { Git } from "../git.ts"
 import { Exec } from "../exec.ts"
+import { GitCommitFake } from "../types/git.test.ts"
 
 describe("prepareEnvironmentForTestMode", () => {
   let step: PrepareTestModeEnvStepImpl
@@ -77,13 +78,13 @@ describe("prepareEnvironmentForTestMode", () => {
     ])
 
     const expectedCommitsCreatedByFirstSimulatedMerge = [
-      new GitHubCommitFake({ sha: "merge commit for merging feature-branch-2 into feature-branch-1" }),
-      new GitHubCommitFake({ sha: "super sweet feature in feature-branch-2" }),
+      new GitCommitFake({ sha: "merge commit for merging feature-branch-2 into feature-branch-1" }),
+      new GitCommitFake({ sha: "super sweet feature in feature-branch-2" }),
     ]
 
     const expectedCommitsCreatedBySecondSimulatedMerge = [
-      new GitHubCommitFake({ sha: "merge commit for merging feature-branch-1 into main" }),
-      new GitHubCommitFake({ sha: "super sweet feature in feature-branch-1" }),
+      new GitCommitFake({ sha: "merge commit for merging feature-branch-1 into main" }),
+      new GitCommitFake({ sha: "super sweet feature in feature-branch-1" }),
     ]
 
     const expectedCommitsCreatedBySimulatedMerge = [
