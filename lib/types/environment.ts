@@ -12,6 +12,8 @@ export interface GetLatestReleaseStepInput {
   gitRepoOwner: string
   gitRepoName: string
   testMode: boolean
+  gitCommitsCurrentBranch: GitCommit[]
+  gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
 }
 
 export interface GetNextReleaseVersionStepInput extends GetLatestReleaseStepInput {

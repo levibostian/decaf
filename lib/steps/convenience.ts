@@ -1,6 +1,8 @@
-import { Exec } from "../exec.ts"
+import { Exec, exec } from "../exec.ts"
 import { Environment } from "../environment.ts"
 import { Logger } from "../log.ts"
+import { GitCommit } from "../types/git.ts"
+import { Git } from "../git.ts"
 
 /**
  * To make life easier for the user, we perform some prep to avoid common issues that can happen when running commands on
@@ -9,13 +11,19 @@ import { Logger } from "../log.ts"
  * One goal of this project is to deploy your code quickly and easily. One way to do that is avoid a lot of the gotchas.
  */
 export interface ConvenienceStep {
-  runConvenienceCommands(): Promise<void>
+  runConvenienceCommands(): Promise<{
+    gitCommitsCurrentBranch: GitCommit[]
+    gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
+  }>
 }
 
 export class ConvenienceStepImpl implements ConvenienceStep {
-  constructor(private exec: Exec, private environment: Environment, private log: Logger) {}
+  constructor(private exec: Exec, private environment: Environment, private git: Git, private log: Logger) {}
 
-  async runConvenienceCommands(): Promise<void> {
+  async runConvenienceCommands(): Promise<{
+    gitCommitsCurrentBranch: GitCommit[]
+    gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
+  }> {
     this.log.debug(`Running convenience commands...`)
 
     // Perform a git fetch to allow user to checkout a branch in their deployment commands.
@@ -39,6 +47,20 @@ export class ConvenienceStepImpl implements ConvenienceStep {
         command: `git config user.email "${userProvidedGitCommitterConfig.email}"`,
         input: undefined,
       })
+    }
+
+    this.log.debug(`Getting commits for all branches and parsing commits...`)
+    const gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] } = {}
+    const allLocalBranches = await this.git.getLocalBranches({ exec })
+    for (const branch of allLocalBranches) {
+      const commitsOnBranch = await this.git.getCommits({ exec, branch })
+      gitCommitsAllLocalBranches[branch] = commitsOnBranch
+    }
+    const gitCommitsCurrentBranch = gitCommitsAllLocalBranches[await this.git.getCurrentBranch({ exec })]
+
+    return {
+      gitCommitsCurrentBranch,
+      gitCommitsAllLocalBranches,
     }
   }
 }

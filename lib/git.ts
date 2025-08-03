@@ -35,6 +35,8 @@ export interface Git {
   getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitCommit>
   createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
   getCommits: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<GitCommit[]>
+  getCurrentBranch: ({ exec }: { exec: Exec }) => Promise<string>
+  getLocalBranches: ({ exec }: { exec: Exec }) => Promise<string[]>
 }
 
 const checkoutBranch = async (
@@ -62,10 +64,7 @@ const merge = async (
 }
 
 const pull = async ({ exec }: { exec: Exec }): Promise<void> => {
-  const currentBranchName = (await exec.run({
-    command: `git branch --show-current`,
-    input: undefined,
-  })).stdout.trim()
+  const currentBranchName = await getCurrentBranch({ exec })
 
   await exec.run({
     command: `git pull origin ${currentBranchName}`,
@@ -133,10 +132,7 @@ const rebase = async (
 const getLatestCommitsSince = async (
   { exec, commit }: { exec: Exec; commit: GitCommit },
 ): Promise<GitCommit[]> => {
-  const currentBranchName = (await exec.run({
-    command: `git branch --show-current`,
-    input: undefined,
-  })).stdout.trim()
+  const currentBranchName = await getCurrentBranch({ exec })
 
   const allCommits = await getCommits({ exec, branch: currentBranchName })
 
@@ -172,10 +168,7 @@ const getLatestCommitOnBranch = async (
 const createLocalBranchFromRemote = async (
   { exec, branch }: { exec: Exec; branch: string },
 ): Promise<void> => {
-  const currentBranchName = (await exec.run({
-    command: `git branch --show-current`,
-    input: undefined,
-  })).stdout.trim()
+  const currentBranchName = await getCurrentBranch({ exec })
   const doesBranchExist = (await exec.run({
     command: `git branch --list ${branch}`,
     input: undefined,
@@ -331,6 +324,22 @@ const getCommits = async (
   return commits
 }
 
+const getCurrentBranch = async ({ exec }: { exec: Exec }): Promise<string> => {
+  const { stdout } = await exec.run({
+    command: `git branch --show-current`,
+    input: undefined,
+  })
+  return stdout.trim()
+}
+
+const getLocalBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => {
+  const { stdout } = await exec.run({
+    command: `git branch --format='%(refname:short)'`,
+    input: undefined,
+  })
+  return stdout.trim().split("\n").map((branch) => branch.trim()).filter((branch) => branch !== "")
+}
+
 export const git: Git = {
   checkoutBranch,
   merge,
@@ -342,4 +351,6 @@ export const git: Git = {
   getLatestCommitsSince,
   getLatestCommitOnBranch,
   createLocalBranchFromRemote,
+  getCurrentBranch,
+  getLocalBranches,
 }

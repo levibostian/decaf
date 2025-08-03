@@ -3,8 +3,6 @@ import { afterEach, describe, it } from "@std/testing/bdd"
 import { restore, stub } from "@std/testing/mock"
 import { assertSnapshot } from "@std/testing/snapshot"
 import { run } from "./deploy.ts"
-import { GitHubCommit } from "./lib/github-api.ts"
-import { GitHubCommitFake } from "./lib/github-api.test.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
 import { DeployStep } from "./lib/steps/deploy.ts"
 import { getLogMock } from "./lib/log.test.ts"
@@ -333,7 +331,7 @@ const setupTestEnvironmentAndRun = async ({
 
   const convenienceStep = mock<ConvenienceStep>()
   when(convenienceStep, "runConvenienceCommands", async () => {
-    return
+    return { gitCommitsAllLocalBranches: {}, gitCommitsCurrentBranch: [] }
   })
 
   const stepRunner = {} as StepRunner
