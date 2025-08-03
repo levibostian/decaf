@@ -3,6 +3,7 @@ import { GitCommit } from "./git.ts"
 export class GitCommitFake implements GitCommit {
   title: string
   sha: string
+  abbreviatedSha: string
   message: string
   messageLines: string[]
   author: { name: string; email: string }
@@ -24,6 +25,7 @@ export class GitCommitFake implements GitCommit {
     date = new Date("2021-01-01T00:00:00Z"),
   }: Partial<GitCommit> = {}) {
     this.sha = sha
+    this.abbreviatedSha = sha.substring(0, 8)
     this.message = message
     this.date = date
     this.messageLines = message.split("\n")

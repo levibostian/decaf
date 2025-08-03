@@ -110,6 +110,7 @@ This is a merge commit with multiple parents.|John Doe|john@example.com|GitHub|n
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
     sha: "abc1234567890123456789012345678901234567",
+    abbreviatedSha: "abc12345",
     title: "Merge pull request #123 from feature/new-feature",
     isMergeCommit: true,
     isRevertCommit: false,
@@ -120,6 +121,23 @@ This is a merge commit with multiple parents.|John Doe|john@example.com|GitHub|n
       { filename: "src/file1.ts", additions: 5, deletions: 2 },
       { filename: "src/file2.ts", additions: 10, deletions: 0 },
     ],
+  })
+})
+
+Deno.test("getCommits - should parse abbreviated SHA correctly", async () => {
+  const gitLogOutput = `||abc1234567890123456789012345678901234567|feat: test abbreviated SHA|feat: test abbreviated SHA
+
+Testing that abbreviated SHA is correctly extracted.|Test Author|test@example.com|Test Author|test@example.com|2023-10-15T10:30:00Z|parent1|main
+1	0	test.ts`
+
+  setupExecMock(gitLogOutput)
+  const result = await git.getCommits({ exec, branch: "main" })
+
+  assertEquals(result.length, 1)
+  assertFirstCommit(result, {
+    sha: "abc1234567890123456789012345678901234567",
+    abbreviatedSha: "abc12345",
+    title: "feat: test abbreviated SHA",
   })
 })
 
@@ -136,6 +154,8 @@ The feature was causing issues in production.|Alice Smith|alice@example.com|Alic
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
+    sha: "def9876543210987654321098765432109876543",
+    abbreviatedSha: "def98765",
     isRevertCommit: true,
     isMergeCommit: false,
     title: 'Revert "Add problematic feature"',

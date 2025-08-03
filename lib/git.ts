@@ -304,6 +304,7 @@ const getCommits = async (
     return {
       title: title.trim(),
       sha: sha.trim(),
+      abbreviatedSha: sha.trim().substring(0, 8),
       message: message.trim(),
       messageLines: message.trim().split("\n"),
       author: { name: authorName.trim(), email: authorEmail.trim() },

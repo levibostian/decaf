@@ -6,6 +6,8 @@ export interface GitCommit {
   title: string
   /** The full SHA hash of the commit */
   sha: string
+  /** The abbreviated SHA hash (first 8 characters) for display purposes */
+  abbreviatedSha: string
   /** The complete commit message body */
   message: string
   /** The commit message split into individual lines */
