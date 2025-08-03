@@ -40,13 +40,12 @@ export class DeployStepImpl implements DeployStep {
       : undefined
 
     if (deployCommand) {
-      const { exitCode, output: outputRecord } = await this.exec.run({
+      const { exitCode } = await this.exec.run({
         command: deployCommand,
         input: environment,
         displayLogs: true,
         throwOnNonZeroExitCode: false,
       })
-      // const output: DeployCommandOutput | undefined = isDeployCommandOutput(outputRecord) ? outputRecord : undefined
 
       if (exitCode !== 0) {
         log.error(
