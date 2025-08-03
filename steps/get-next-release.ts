@@ -19,15 +19,11 @@ function exit({ nextReleaseVersion }: { nextReleaseVersion: string | null }): ne
 
 // First, parse all commits to determine the version bump for each commit.
 const versionBumpsForEachCommit = input.gitCommitsSinceLastRelease.map((commit) => {
-  const firstLineOfCommitMessage = commit.message.split("\n")[0]
-  const abbreviatedFirstLineOfCommitMessage = firstLineOfCommitMessage.length > 50
-    ? firstLineOfCommitMessage.substring(0, 50) + "..."
-    : firstLineOfCommitMessage
-  const first8CharactersOfCommitHash = commit.sha.substring(0, 8)
+  const abbreviatedCommitTitle = commit.title.length > 50 ? commit.title.substring(0, 50) + "..." : commit.title
 
   const versionBumpForCommit = versionBumpForCommitBasedOnConventionalCommit(commit)
 
-  const logPrefix = `${abbreviatedFirstLineOfCommitMessage} (${first8CharactersOfCommitHash})`
+  const logPrefix = `${abbreviatedCommitTitle} (${commit.abbreviatedSha})`
   switch (versionBumpForCommit) {
     case "major":
       logger.message(`${logPrefix} => indicates a major release.`)
