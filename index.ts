@@ -37,10 +37,10 @@ If this pull request and all of it's parent pull requests are merged using the..
 
 try {
   const runResult = await run({
-    convenienceStep: new ConvenienceStepImpl(exec, environment, logger),
+    convenienceStep: new ConvenienceStepImpl(exec, environment, git, logger),
     stepRunner: new StepRunnerImpl(environment, exec, logger),
     prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec), git, exec),
-    getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(githubApi),
+    getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec),
     deployStep: new DeployStepImpl(exec),
     log: logger,
     environment,

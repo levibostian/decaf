@@ -77,7 +77,7 @@ export const run = async ({
 
   await environment.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
 
-  await convenienceStep.runConvenienceCommands()
+  const { gitCommitsAllLocalBranches, gitCommitsCurrentBranch } = await convenienceStep.runConvenienceCommands()
 
   log.notice(
     `👀 I see that the git branch ${currentBranch} is checked out. We will begin the deployment process from the latest commit of this branch.`,
@@ -92,6 +92,8 @@ export const run = async ({
     gitRepoOwner: owner,
     gitRepoName: repo,
     testMode: runInTestMode,
+    gitCommitsCurrentBranch,
+    gitCommitsAllLocalBranches,
   })
 
   log.debug(`Latest release on branch ${currentBranch} is: ${JSON.stringify(lastRelease)}`)
@@ -152,6 +154,8 @@ export const run = async ({
     testMode: runInTestMode,
     gitCommitsSinceLastRelease: listOfCommits,
     lastRelease,
+    gitCommitsAllLocalBranches,
+    gitCommitsCurrentBranch,
   }
 
   const nextReleaseVersion = (await stepRunner.determineNextReleaseVersionStep(determineNextReleaseVersionEnvironment))?.version
@@ -185,6 +189,8 @@ export const run = async ({
     gitRepoOwner: owner,
     gitRepoName: repo,
     testMode: runInTestMode,
+    gitCommitsCurrentBranch,
+    gitCommitsAllLocalBranches,
   })
   log.debug(`Latest release after deploy: ${JSON.stringify(latestReleaseAfterDeploy)}`)
 

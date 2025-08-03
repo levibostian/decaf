@@ -1,6 +1,7 @@
 import { exec } from "./exec.ts"
 import { assertEquals } from "@std/assert"
 import { DeployStepInput } from "./types/environment.ts"
+import { GitCommitFake } from "./types/git.test.ts"
 
 const givenPluginInput: DeployStepInput = {
   gitCurrentBranch: "main",
@@ -10,6 +11,17 @@ const givenPluginInput: DeployStepInput = {
   nextVersionName: "1.0.0",
   testMode: true,
   lastRelease: null,
+  gitCommitsAllLocalBranches: {
+    "branch-1": [
+      new GitCommitFake({}),
+    ],
+    "branch-2": [
+      new GitCommitFake({}),
+    ],
+  },
+  gitCommitsCurrentBranch: [
+    new GitCommitFake({}),
+  ],
 }
 
 Deno.test("given contextual input data, expect the executed command receives the input data", async () => {

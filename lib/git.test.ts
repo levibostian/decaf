@@ -414,3 +414,43 @@ Testing date parsing functionality.|Date Tester|date@example.com|Date Tester|dat
     committer: { name: "Date Tester", email: "date@example.com" },
   })
 })
+
+Deno.test("getCurrentBranch - should return the current branch name", async () => {
+  setupExecMock("feature-branch")
+
+  const result = await git.getCurrentBranch({ exec })
+
+  assertEquals(result, "feature-branch")
+})
+
+Deno.test("getCurrentBranch - should handle whitespace in branch name", async () => {
+  setupExecMock("  develop  \n")
+
+  const result = await git.getCurrentBranch({ exec })
+
+  assertEquals(result, "develop")
+})
+
+Deno.test("getLocalBranches - should return list of local branches", async () => {
+  setupExecMock("main\nfeature-branch\ndevelop")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, ["main", "feature-branch", "develop"])
+})
+
+Deno.test("getLocalBranches - should handle single branch", async () => {
+  setupExecMock("main")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, ["main"])
+})
+
+Deno.test("getLocalBranches - should handle empty repository with no branches", async () => {
+  setupExecMock("")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, [])
+})
