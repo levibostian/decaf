@@ -212,6 +212,26 @@ const createLocalBranchFromRemote = async (
 const getCommits = async (
   { exec, branch }: { exec: Exec; branch: string },
 ): Promise<GitCommit[]> => {
+  // The provided branch might be local, might be remote. We must determine which one to use.
+  let branchRef = branch
+  // Check if the local branch exists
+  const localBranchExists = await exec.run({
+    command: `git show-ref --verify --quiet refs/heads/${branch}`,
+    input: undefined,
+  }).then(() => true).catch(() => false)
+
+  // If local branch doesn't exist, try the remote branch
+  if (!localBranchExists) {
+    const remoteBranchExists = await exec.run({
+      command: `git show-ref --verify --quiet refs/remotes/origin/${branch}`,
+      input: undefined,
+    }).then(() => true).catch(() => false)
+
+    if (remoteBranchExists) {
+      branchRef = `origin/${branch}`
+    }
+  }
+
   // Use a more detailed pretty format to get more info per commit
   const { stdout } = await exec.run({
     /**
@@ -231,7 +251,7 @@ const getCommits = async (
      * Newlines are not reliable because the commit message body can contain newlines, written
      * by the commit author.
      */
-    command: `git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branch}`,
+    command: `git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branchRef}`,
     input: undefined,
   })
 
@@ -334,11 +354,33 @@ const getCurrentBranch = async ({ exec }: { exec: Exec }): Promise<string> => {
 }
 
 const getLocalBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => {
+  /*
+   * We call "git fetch" before running the tool. fetch does not create a local branch which by default will not show up when you call `git branch`.
+   * The implementation of this function is to get a list of all local and remote branches. So we run multiple commands to get all branches.
+   */
   const { stdout } = await exec.run({
-    command: `git branch --format='%(refname:short)'`,
+    command: `git branch -a --format='%(refname:short)'`,
     input: undefined,
   })
-  return stdout.trim().split("\n").map((branch) => branch.trim()).filter((branch) => branch !== "")
+
+  const branches = stdout.trim().split("\n")
+    .map((branch) => branch.trim())
+    .filter((branch) => branch !== "")
+    .map((branch) => {
+      // Remove the 'origin/' prefix from remote branches to get just the branch name
+      if (branch.startsWith("origin/")) {
+        return branch.replace("origin/", "")
+      }
+      return branch
+    })
+    // Remove duplicates (same branch might exist both locally and remotely)
+    .filter((branch, index, array) => array.indexOf(branch) === index)
+    // Filter out HEAD reference
+    .filter((branch) => branch !== "HEAD")
+    // Filter out 'origin' reference, which is not a branch but a remote
+    .filter((branch) => branch !== "origin")
+
+  return branches
 }
 
 export const git: Git = {
