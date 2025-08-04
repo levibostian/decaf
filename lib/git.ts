@@ -227,23 +227,23 @@ const getCommits = async (
      * %D — Refs (branches, tags, HEAD) pointing to this commit
      * --numstat outputs the number of added and deleted lines for each file changed in the commit.
      *
-     * The || is used to separate commits. Single | is used to separate fields within a commit.
+     * [[⬛]] is used to separate commits. [⬛] is used to separate fields within a commit.
      * Newlines are not reliable because the commit message body can contain newlines, written
      * by the commit author.
      */
-    command: `git log --pretty=format:"||%H|%s|%B|%an|%ae|%cn|%ce|%ci|%P|%D" --numstat ${branch}`,
+    command: `git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branch}`,
     input: undefined,
   })
 
-  // Split by double pipes (||) to separate commits. We can't use another method like newlines because the git message body might contain newlines.
-  const rawCommits = stdout.trim().split("||").filter((commitBlock) => commitBlock.trim() !== "")
+  // Split by commit separator to separate commits. We can't use another method like newlines because the git message body might contain newlines.
+  const rawCommits = stdout.trim().split("[[⬛]]").filter((commitBlock) => commitBlock.trim() !== "")
   if (rawCommits.length === 0) {
     log.message(`No commits found on branch ${branch}.`)
     return []
   }
 
   const commits: GitCommit[] = rawCommits.map((commitBlock) => {
-    const parts = commitBlock.split("|")
+    const parts = commitBlock.split("[⬛]")
     const [
       sha,
       title,

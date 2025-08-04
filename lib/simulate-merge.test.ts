@@ -24,8 +24,8 @@ describe("snapshot test all of the merge options", () => {
         return {
           exitCode: 0,
           stdout:
-            `||f15d5ac43a47b8333019461170fcaf0bd5a139d4|test: update snapshots to remove un-used ones|test: update snapshots to remove un-used ones
-|Foo Bar|foo@bar.com|Foo Bar|foo@bar.com|2025-07-09 07:02:35 -0500|2c7e53b35e1b4b278700294b7781d770f16124c8|
+            `[[⬛]]f15d5ac43a47b8333019461170fcaf0bd5a139d4[⬛]test: update snapshots to remove un-used ones[⬛]test: update snapshots to remove un-used ones
+[⬛]Foo Bar[⬛]foo@bar.com[⬛]Foo Bar[⬛]foo@bar.com[⬛]2025-07-09 07:02:35 -0500[⬛]2c7e53b35e1b4b278700294b7781d770f16124c8[⬛]
 0       42      __snapshots__/deploy.test.ts.snap`,
           output: undefined,
         }

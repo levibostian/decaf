@@ -98,9 +98,9 @@ const assertFirstCommit = (result: GitCommit[], expected: Partial<GitCommit>) =>
 
 Deno.test("getCommits - should parse merge commits", async () => {
   const gitLogOutput =
-    `||abc1234567890123456789012345678901234567|Merge pull request #123 from feature/new-feature|Merge pull request #123 from feature/new-feature
+    `[[⬛]]abc1234567890123456789012345678901234567[⬛]Merge pull request #123 from feature/new-feature[⬛]Merge pull request #123 from feature/new-feature
 
-This is a merge commit with multiple parents.|John Doe|john@example.com|GitHub|noreply@github.com|2023-10-15T10:30:00Z|parent1 parent2|HEAD -> main, origin/main
+This is a merge commit with multiple parents.[⬛]John Doe[⬛]john@example.com[⬛]GitHub[⬛]noreply@github.com[⬛]2023-10-15T10:30:00Z[⬛]parent1 parent2[⬛]HEAD -> main, origin/main
 5	2	src/file1.ts
 10	0	src/file2.ts`
 
@@ -125,9 +125,9 @@ This is a merge commit with multiple parents.|John Doe|john@example.com|GitHub|n
 })
 
 Deno.test("getCommits - should parse abbreviated SHA correctly", async () => {
-  const gitLogOutput = `||abc1234567890123456789012345678901234567|feat: test abbreviated SHA|feat: test abbreviated SHA
+  const gitLogOutput = `[[⬛]]abc1234567890123456789012345678901234567[⬛]feat: test abbreviated SHA[⬛]feat: test abbreviated SHA
 
-Testing that abbreviated SHA is correctly extracted.|Test Author|test@example.com|Test Author|test@example.com|2023-10-15T10:30:00Z|parent1|main
+Testing that abbreviated SHA is correctly extracted.[⬛]Test Author[⬛]test@example.com[⬛]Test Author[⬛]test@example.com[⬛]2023-10-15T10:30:00Z[⬛]parent1[⬛]main
 1	0	test.ts`
 
   setupExecMock(gitLogOutput)
@@ -142,11 +142,11 @@ Testing that abbreviated SHA is correctly extracted.|Test Author|test@example.co
 })
 
 Deno.test("getCommits - should parse revert commits", async () => {
-  const gitLogOutput = `||def9876543210987654321098765432109876543|Revert "Add problematic feature"|Revert "Add problematic feature"
+  const gitLogOutput = `[[⬛]]def9876543210987654321098765432109876543[⬛]Revert "Add problematic feature"[⬛]Revert "Add problematic feature"
 
 This reverts commit abc123.
 
-The feature was causing issues in production.|Alice Smith|alice@example.com|Alice Smith|alice@example.com|2023-10-14T15:20:00Z|parent1|main
+The feature was causing issues in production.[⬛]Alice Smith[⬛]alice@example.com[⬛]Alice Smith[⬛]alice@example.com[⬛]2023-10-14T15:20:00Z[⬛]parent1[⬛]main
 3	5	src/feature.ts`
 
   setupExecMock(gitLogOutput)
@@ -165,9 +165,9 @@ The feature was causing issues in production.|Alice Smith|alice@example.com|Alic
 })
 
 Deno.test("getCommits - should parse commits with no file stats", async () => {
-  const gitLogOutput = `||xyz1111111111111111111111111111111111111|Initial commit|Initial commit
+  const gitLogOutput = `[[⬛]]xyz1111111111111111111111111111111111111[⬛]Initial commit[⬛]Initial commit
 
-This is the very first commit with no files changed.|Bob Wilson|bob@example.com|Bob Wilson|bob@example.com|2023-10-01T09:00:00Z| |main`
+This is the very first commit with no files changed.[⬛]Bob Wilson[⬛]bob@example.com[⬛]Bob Wilson[⬛]bob@example.com[⬛]2023-10-01T09:00:00Z[⬛] [⬛]main`
 
   setupExecMock(gitLogOutput)
   const result = await git.getCommits({ exec, branch: "main" })
@@ -183,10 +183,10 @@ This is the very first commit with no files changed.|Bob Wilson|bob@example.com|
 })
 
 Deno.test("getCommits - should parse file stats with multiple files", async () => {
-  const gitLogOutput = `||mno4444444444444444444444444444444444444|feat: implement user authentication|feat: implement user authentication
+  const gitLogOutput = `[[⬛]]mno4444444444444444444444444444444444444[⬛]feat: implement user authentication[⬛]feat: implement user authentication
 
 Added login, logout, and session management.
-Includes unit tests and documentation.|Carol Davis|carol@example.com|Carol Davis|carol@example.com|2023-10-12T14:45:00Z|parent1|origin/main, main
+Includes unit tests and documentation.[⬛]Carol Davis[⬛]carol@example.com[⬛]Carol Davis[⬛]carol@example.com[⬛]2023-10-12T14:45:00Z[⬛]parent1[⬛]origin/main, main
 25	0	src/auth/login.ts
 15	3	src/auth/session.ts
 40	0	tests/auth.test.ts
@@ -211,9 +211,9 @@ Includes unit tests and documentation.|Carol Davis|carol@example.com|Carol Davis
 })
 
 Deno.test("getCommits - should parse commits with tags", async () => {
-  const gitLogOutput = `||tag1111111111111111111111111111111111111|v2.1.0 release|v2.1.0 release
+  const gitLogOutput = `[[⬛]]tag1111111111111111111111111111111111111[⬛]v2.1.0 release[⬛]v2.1.0 release
 
-Release version 2.1.0 with new features and bug fixes.|Release Bot|release@example.com|Release Bot|release@example.com|2023-10-20T12:00:00Z|parent1|tag: v2.1.0, tag: v2.1.0-rc1, main
+Release version 2.1.0 with new features and bug fixes.[⬛]Release Bot[⬛]release@example.com[⬛]Release Bot[⬛]release@example.com[⬛]2023-10-20T12:00:00Z[⬛]parent1[⬛]tag: v2.1.0, tag: v2.1.0-rc1, main
 2	1	package.json
 10	5	CHANGELOG.md`
 
@@ -229,9 +229,9 @@ Release version 2.1.0 with new features and bug fixes.|Release Bot|release@examp
 })
 
 Deno.test("getCommits - should parse commits with empty refs", async () => {
-  const gitLogOutput = `||empty111111111111111111111111111111111111|fix: minor bug fix|fix: minor bug fix
+  const gitLogOutput = `[[⬛]]empty111111111111111111111111111111111111[⬛]fix: minor bug fix[⬛]fix: minor bug fix
 
-Fixed a small issue in error handling.|Dev User|dev@example.com|Dev User|dev@example.com|2023-10-18T08:15:00Z|parent1|
+Fixed a small issue in error handling.[⬛]Dev User[⬛]dev@example.com[⬛]Dev User[⬛]dev@example.com[⬛]2023-10-18T08:15:00Z[⬛]parent1[⬛]
 1	1	src/error.ts`
 
   setupExecMock(gitLogOutput)
@@ -246,23 +246,23 @@ Fixed a small issue in error handling.|Dev User|dev@example.com|Dev User|dev@exa
 })
 
 Deno.test("getCommits - should parse multiple commits", async () => {
-  const gitLogOutput = `||commit1111111111111111111111111111111111111|feat: add search functionality|feat: add search functionality
+  const gitLogOutput = `[[⬛]]commit1111111111111111111111111111111111111[⬛]feat: add search functionality[⬛]feat: add search functionality
 
-Implemented full-text search with indexing.|Alice Dev|alice@dev.com|Alice Dev|alice@dev.com|2023-10-25T16:30:00Z|parent1|main
+Implemented full-text search with indexing.[⬛]Alice Dev[⬛]alice@dev.com[⬛]Alice Dev[⬛]alice@dev.com[⬛]2023-10-25T16:30:00Z[⬛]parent1[⬛]main
 50	10	src/search.ts
 25	5	src/index.ts
-||commit2222222222222222222222222222222222222|fix: resolve memory leak|fix: resolve memory leak
+[[⬛]]commit2222222222222222222222222222222222222[⬛]fix: resolve memory leak[⬛]fix: resolve memory leak
 
-Fixed memory leak in event listeners.|Bob Dev|bob@dev.com|Bob Dev|bob@dev.com|2023-10-24T14:20:00Z|parent2|main
+Fixed memory leak in event listeners.[⬛]Bob Dev[⬛]bob@dev.com[⬛]Bob Dev[⬛]bob@dev.com[⬛]2023-10-24T14:20:00Z[⬛]parent2[⬛]main
 5	15	src/events.ts
 3	0	src/cleanup.ts
-||commit3333333333333333333333333333333333333|Merge pull request #456 from feature/auth|Merge pull request #456 from feature/auth
+[[⬛]]commit3333333333333333333333333333333333333[⬛]Merge pull request #456 from feature/auth[⬛]Merge pull request #456 from feature/auth
 
-Merge authentication feature branch.|GitHub|noreply@github.com|GitHub|noreply@github.com|2023-10-23T12:00:00Z|merge1 merge2|HEAD -> main, origin/main
+Merge authentication feature branch.[⬛]GitHub[⬛]noreply@github.com[⬛]GitHub[⬛]noreply@github.com[⬛]2023-10-23T12:00:00Z[⬛]merge1 merge2[⬛]HEAD -> main, origin/main
 0	0	merge-file.txt
-||commit4444444444444444444444444444444444444|Revert "Broken feature"|Revert "Broken feature"
+[[⬛]]commit4444444444444444444444444444444444444[⬛]Revert "Broken feature"[⬛]Revert "Broken feature"
 
-This reverts commit broken123.|Carol Maintainer|carol@example.com|Carol Maintainer|carol@example.com|2023-10-22T09:15:00Z|parent4|tag: v1.2.0, main
+This reverts commit broken123.[⬛]Carol Maintainer[⬛]carol@example.com[⬛]Carol Maintainer[⬛]carol@example.com[⬛]2023-10-22T09:15:00Z[⬛]parent4[⬛]tag: v1.2.0, main
 10	20	src/revert.ts`
 
   setupExecMock(gitLogOutput)
@@ -314,9 +314,9 @@ This reverts commit broken123.|Carol Maintainer|carol@example.com|Carol Maintain
 })
 
 Deno.test("getCommits - should handle binary files correctly", async () => {
-  const gitLogOutput = `||binary11111111111111111111111111111111111|docs: add documentation images|docs: add documentation images
+  const gitLogOutput = `[[⬛]]binary11111111111111111111111111111111111[⬛]docs: add documentation images[⬛]docs: add documentation images
 
-Added screenshots and diagrams for documentation.|Doc Writer|docs@example.com|Doc Writer|docs@example.com|2023-10-22T11:45:00Z|parent1|main
+Added screenshots and diagrams for documentation.[⬛]Doc Writer[⬛]docs@example.com[⬛]Doc Writer[⬛]docs@example.com[⬛]2023-10-22T11:45:00Z[⬛]parent1[⬛]main
 -	-	docs/screenshot1.png
 -	-	docs/diagram.jpg
 20	5	docs/setup.md
@@ -340,7 +340,7 @@ Added screenshots and diagrams for documentation.|Doc Writer|docs@example.com|Do
 
 Deno.test("getCommits - should parse commit with complex message", async () => {
   const gitLogOutput =
-    `||complex111111111111111111111111111111111|refactor: restructure authentication module|refactor: restructure authentication module
+    `[[⬛]]complex111111111111111111111111111111111[⬛]refactor: restructure authentication module[⬛]refactor: restructure authentication module
 
 This commit includes several changes:
 - Moved auth logic to separate files
@@ -353,7 +353,7 @@ Breaking changes:
 - Login method now returns Promise<User>
 
 Fixes #123, #456
-Co-authored-by: Jane Doe <jane@example.com>|Main Author|main@example.com|Main Author|main@example.com|2023-10-23T09:30:00Z|parent1|origin/feature-auth, feature-auth
+Co-authored-by: Jane Doe <jane@example.com>[⬛]Main Author[⬛]main@example.com[⬛]Main Author[⬛]main@example.com[⬛]2023-10-23T09:30:00Z[⬛]parent1[⬛]origin/feature-auth, feature-auth
 30	45	src/auth/service.ts
 20	10	src/auth/types.ts
 15	5	tests/auth.test.ts`
@@ -374,9 +374,9 @@ Co-authored-by: Jane Doe <jane@example.com>|Main Author|main@example.com|Main Au
 })
 
 Deno.test("getCommits - should handle commits with HEAD reference", async () => {
-  const gitLogOutput = `||head1111111111111111111111111111111111111|chore: update dependencies|chore: update dependencies
+  const gitLogOutput = `[[⬛]]head1111111111111111111111111111111111111[⬛]chore: update dependencies[⬛]chore: update dependencies
 
-Updated all packages to latest versions.|Maintainer|maintainer@example.com|Maintainer|maintainer@example.com|2023-10-26T10:00:00Z|parent1|HEAD -> main, origin/main
+Updated all packages to latest versions.[⬛]Maintainer[⬛]maintainer@example.com[⬛]Maintainer[⬛]maintainer@example.com[⬛]2023-10-26T10:00:00Z[⬛]parent1[⬛]HEAD -> main, origin/main
 5	3	package.json
 100	50	package-lock.json`
 
@@ -397,9 +397,9 @@ Deno.test("getCommits - should return empty array for no commits", async () => {
 })
 
 Deno.test("getCommits - should handle commits with only deletions", async () => {
-  const gitLogOutput = `||delete11111111111111111111111111111111111|remove: delete unused files|remove: delete unused files
+  const gitLogOutput = `[[⬛]]delete11111111111111111111111111111111111[⬛]remove: delete unused files[⬛]remove: delete unused files
 
-Cleanup: removed old, unused files.|Cleaner|clean@example.com|Cleaner|clean@example.com|2023-10-27T13:15:00Z|parent1|main
+Cleanup: removed old, unused files.[⬛]Cleaner[⬛]clean@example.com[⬛]Cleaner[⬛]clean@example.com[⬛]2023-10-27T13:15:00Z[⬛]parent1[⬛]main
 0	50	old-file1.ts
 0	25	old-file2.ts
 0	10	deprecated.md`
@@ -419,9 +419,9 @@ Cleanup: removed old, unused files.|Cleaner|clean@example.com|Cleaner|clean@exam
 })
 
 Deno.test("getCommits - should parse dates correctly", async () => {
-  const gitLogOutput = `||date1111111111111111111111111111111111111|test: verify date parsing|test: verify date parsing
+  const gitLogOutput = `[[⬛]]date1111111111111111111111111111111111111[⬛]test: verify date parsing[⬛]test: verify date parsing
 
-Testing date parsing functionality.|Date Tester|date@example.com|Date Tester|date@example.com|2023-12-25T23:59:59Z|parent1|main
+Testing date parsing functionality.[⬛]Date Tester[⬛]date@example.com[⬛]Date Tester[⬛]date@example.com[⬛]2023-12-25T23:59:59Z[⬛]parent1[⬛]main
 1	0	test.ts`
 
   setupExecMock(gitLogOutput)
