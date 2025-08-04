@@ -459,6 +459,46 @@ Deno.test("getLocalBranches - should return list of local branches", async () =>
   assertEquals(result, ["main", "feature-branch", "develop"])
 })
 
+Deno.test("getLocalBranches - should return list of local and remote branches", async () => {
+  setupExecMock("main\nfeature-branch\norigin/develop\norigin/hotfix")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, ["main", "feature-branch", "develop", "hotfix"])
+})
+
+Deno.test("getLocalBranches - should remove duplicates when same branch exists locally and remotely", async () => {
+  setupExecMock("main\nfeature-branch\norigin/main\norigin/feature-branch\norigin/develop")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, ["main", "feature-branch", "develop"])
+})
+
+Deno.test("getLocalBranches - should filter out HEAD and origin references", async () => {
+  setupExecMock("main\norigin/HEAD\norigin/main\nfeature-branch\norigin")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, ["main", "feature-branch"])
+})
+
+Deno.test("getLocalBranches - should handle only remote branches", async () => {
+  setupExecMock("origin/main\norigin/develop\norigin/feature-auth")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, ["main", "develop", "feature-auth"])
+})
+
+Deno.test("getLocalBranches - should handle mixed local and remote branches with complex names", async () => {
+  setupExecMock("main\nfeature/user-auth\norigin/main\norigin/hotfix/critical-bug\norigin/release/v2.0\nbugfix/memory-leak")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, ["main", "feature/user-auth", "hotfix/critical-bug", "release/v2.0", "bugfix/memory-leak"])
+})
+
 Deno.test("getLocalBranches - should handle single branch", async () => {
   setupExecMock("main")
 
