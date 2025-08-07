@@ -77,7 +77,7 @@ export const run = async ({
 
   await environment.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
 
-  const { gitCommitsAllLocalBranches, gitCommitsCurrentBranch } = await convenienceStep.runConvenienceCommands()
+  const { gitCommitsAllLocalBranches, gitCommitsCurrentBranch } = await convenienceStep.runConvenienceCommands(environment.getBranchFilters())
 
   log.notice(
     `👀 I see that the git branch ${currentBranch} is checked out. We will begin the deployment process from the latest commit of this branch.`,
