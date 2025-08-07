@@ -11,6 +11,7 @@ export interface Environment {
   isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
   getCommandForStep({ stepName }: { stepName: AnyStepName }): string | undefined
   getGitConfigInput(): { name: string; email: string } | undefined
+  getBranchFilters(): string[]
   setOutput({ key, value }: { key: string; value: string }): Promise<void>
   // A catch-all method to get inputs that dont match the other methods.
   getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean }
@@ -104,6 +105,61 @@ export class EnvironmentImpl implements Environment {
       failOnDeployVerification: this.getInput("fail_on_deploy_verification") === "true",
       makePullRequestComment: this.getInput("make_pull_request_comment") === "true",
     }
+  }
+
+  getBranchFilters(): string[] {
+    let branchFilters: string[] = []
+    try {
+      const input = this.getInput("branch_filters")
+
+      // Smart comma splitting that respects brace nesting for glob patterns like {main,develop}
+      // This allows patterns like "main,feature/{new,old}/*,develop" to work correctly
+      const result: string[] = []
+      let current = ""
+      let braceDepth = 0
+
+      // Parse each character to track when we're inside braces
+      for (let i = 0; i < input.length; i++) {
+        const char = input[i]
+
+        if (char === "{") {
+          // Entering a brace group - increase depth
+          braceDepth++
+          current += char
+        } else if (char === "}") {
+          // Exiting a brace group - decrease depth
+          braceDepth--
+          current += char
+        } else if (char === "," && braceDepth === 0) {
+          // Only split on commas when we're not inside braces
+          // This preserves brace patterns like {main,develop}
+          const trimmed = current.trim()
+          if (trimmed !== "") {
+            result.push(trimmed)
+          }
+          current = ""
+        } else {
+          // Regular character - add to current segment
+          current += char
+        }
+      }
+
+      // Don't forget the last segment after the loop
+      const trimmed = current.trim()
+      if (trimmed !== "") {
+        result.push(trimmed)
+      }
+
+      branchFilters = result
+    } catch (_error) {
+      // Ignore errors - return empty array if input parsing fails
+    }
+
+    if (!branchFilters || branchFilters.length === 0) {
+      return [] // Empty array means get all branches
+    }
+
+    return branchFilters
   }
 
   getGitConfigInput(): { name: string; email: string } | undefined {
