@@ -3,7 +3,7 @@ export const snapshot = {};
 snapshot[`snapshot test all of the merge options > merge, should generate the correct git commands, should end on target branch 1`] = `
 [
   "git show-ref --verify --quiet refs/heads/main",
-  'git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat main',
+  'git log  --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat main',
   "git checkout feature",
   "git branch --show-current",
   "git pull origin success",
@@ -16,14 +16,14 @@ snapshot[`snapshot test all of the merge options > merge, should generate the co
   'git merge feature -m "Merge pull request #123 from feature" -m "" --no-ff',
   "git branch --show-current",
   "git show-ref --verify --quiet refs/heads/success",
-  'git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat success',
+  'git log  --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat success',
 ]
 `;
 
 snapshot[`snapshot test all of the merge options > squash, should generate the correct git commands, should end on target branch 1`] = `
 [
   "git show-ref --verify --quiet refs/heads/main",
-  'git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat main',
+  'git log  --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat main',
   "git checkout feature",
   "git branch --show-current",
   "git pull origin success",
@@ -41,14 +41,14 @@ snapshot[`snapshot test all of the merge options > squash, should generate the c
   'git merge feature -m "title-here" -m "message-here" --ff-only',
   "git branch --show-current",
   "git show-ref --verify --quiet refs/heads/success",
-  'git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat success',
+  'git log  --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat success',
 ]
 `;
 
 snapshot[`snapshot test all of the merge options > rebase, should generate the correct git commands, should end on target branch 1`] = `
 [
   "git show-ref --verify --quiet refs/heads/main",
-  'git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat main',
+  'git log  --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat main',
   "git checkout feature",
   "git branch --show-current",
   "git pull origin success",
@@ -63,6 +63,6 @@ snapshot[`snapshot test all of the merge options > rebase, should generate the c
   'git merge feature -m "title-here" -m "message-here" --ff-only',
   "git branch --show-current",
   "git show-ref --verify --quiet refs/heads/success",
-  'git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat success',
+  'git log  --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat success',
 ]
 `;
