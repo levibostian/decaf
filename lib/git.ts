@@ -34,7 +34,7 @@ export interface Git {
   getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitCommit }): Promise<GitCommit[]>
   getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitCommit>
   createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
-  getCommits: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<GitCommit[]>
+  getCommits: ({ exec, branch, limit }: { exec: Exec; branch: string; limit?: number }) => Promise<GitCommit[]>
   getCurrentBranch: ({ exec }: { exec: Exec }) => Promise<string>
   getLocalBranches: ({ exec }: { exec: Exec }) => Promise<string[]>
 }
@@ -210,7 +210,7 @@ const createLocalBranchFromRemote = async (
 }
 
 const getCommits = async (
-  { exec, branch }: { exec: Exec; branch: string },
+  { exec, branch, limit }: { exec: Exec; branch: string; limit?: number },
 ): Promise<GitCommit[]> => {
   // The provided branch might be local, might be remote. We must determine which one to use.
   let branchRef = branch
@@ -233,6 +233,7 @@ const getCommits = async (
   }
 
   // Use a more detailed pretty format to get more info per commit
+  const limitArg = limit ? `-${limit}` : ""
   const { stdout } = await exec.run({
     /**
      * %H — Commit hash (SHA)
@@ -251,7 +252,7 @@ const getCommits = async (
      * Newlines are not reliable because the commit message body can contain newlines, written
      * by the commit author.
      */
-    command: `git log --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branchRef}`,
+    command: `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branchRef}`,
     input: undefined,
   })
 

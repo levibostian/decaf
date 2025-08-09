@@ -1,11 +1,11 @@
 import { assertEquals } from "@std/assert"
 import { EnvironmentImpl } from "./environment.ts"
 
-function setupEnvironment(): string | undefined {
+function setupBranchFiltersEnvironment(): string | undefined {
   return Deno.env.get("INPUT_BRANCH_FILTERS")
 }
 
-function restoreEnvironment(originalValue: string | undefined): void {
+function restoreBranchFiltersEnvironment(originalValue: string | undefined): void {
   if (originalValue === undefined) {
     Deno.env.delete("INPUT_BRANCH_FILTERS")
   } else {
@@ -13,8 +13,20 @@ function restoreEnvironment(originalValue: string | undefined): void {
   }
 }
 
+function setupCommitLimitEnvironment(): string | undefined {
+  return Deno.env.get("INPUT_COMMIT_LIMIT")
+}
+
+function restoreCommitLimitEnvironment(originalValue: string | undefined): void {
+  if (originalValue === undefined) {
+    Deno.env.delete("INPUT_COMMIT_LIMIT")
+  } else {
+    Deno.env.set("INPUT_COMMIT_LIMIT", originalValue)
+  }
+}
+
 Deno.test("getBranchFilters - should return empty array when branch_filters input is not set", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     // Ensure the environment variable is not set
@@ -25,12 +37,12 @@ Deno.test("getBranchFilters - should return empty array when branch_filters inpu
 
     assertEquals(result, [])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should return empty array when branch_filters input is empty string", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "")
@@ -40,12 +52,12 @@ Deno.test("getBranchFilters - should return empty array when branch_filters inpu
 
     assertEquals(result, [])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should return empty array when branch_filters input contains only whitespace", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "   ")
@@ -55,12 +67,12 @@ Deno.test("getBranchFilters - should return empty array when branch_filters inpu
 
     assertEquals(result, [])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should return single filter when one branch is specified", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "main")
@@ -70,12 +82,12 @@ Deno.test("getBranchFilters - should return single filter when one branch is spe
 
     assertEquals(result, ["main"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should return multiple filters when comma-separated branches are specified", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "main,develop,feature")
@@ -85,12 +97,12 @@ Deno.test("getBranchFilters - should return multiple filters when comma-separate
 
     assertEquals(result, ["main", "develop", "feature"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should trim whitespace from each filter", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", " main , develop , feature ")
@@ -100,12 +112,12 @@ Deno.test("getBranchFilters - should trim whitespace from each filter", () => {
 
     assertEquals(result, ["main", "develop", "feature"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should filter out empty strings after splitting", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "main,,develop,  ,feature")
@@ -115,12 +127,12 @@ Deno.test("getBranchFilters - should filter out empty strings after splitting", 
 
     assertEquals(result, ["main", "develop", "feature"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle single comma-separated value with extra commas", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", ",main,")
@@ -130,12 +142,12 @@ Deno.test("getBranchFilters - should handle single comma-separated value with ex
 
     assertEquals(result, ["main"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle complex branch names with special characters", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "feature/new-deployment,bugfix/issue-123,release/v1.0.0")
@@ -145,12 +157,12 @@ Deno.test("getBranchFilters - should handle complex branch names with special ch
 
     assertEquals(result, ["feature/new-deployment", "bugfix/issue-123", "release/v1.0.0"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should return empty array when all filters are empty after trimming", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", " , , ")
@@ -160,12 +172,12 @@ Deno.test("getBranchFilters - should return empty array when all filters are emp
 
     assertEquals(result, [])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle glob patterns with asterisk", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "feature/*,release/*,hotfix/*")
@@ -175,12 +187,12 @@ Deno.test("getBranchFilters - should handle glob patterns with asterisk", () => 
 
     assertEquals(result, ["feature/*", "release/*", "hotfix/*"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle glob patterns with question mark", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "v?.?.?,release-v?")
@@ -190,12 +202,12 @@ Deno.test("getBranchFilters - should handle glob patterns with question mark", (
 
     assertEquals(result, ["v?.?.?", "release-v?"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle mixed glob patterns and literal branch names", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "main,develop,feature/*,release/v*,bugfix-*")
@@ -205,12 +217,12 @@ Deno.test("getBranchFilters - should handle mixed glob patterns and literal bran
 
     assertEquals(result, ["main", "develop", "feature/*", "release/v*", "bugfix-*"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle glob patterns with square brackets", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "release/[0-9]*,feature/[a-z]*,v[0-9].[0-9].[0-9]")
@@ -220,12 +232,12 @@ Deno.test("getBranchFilters - should handle glob patterns with square brackets",
 
     assertEquals(result, ["release/[0-9]*", "feature/[a-z]*", "v[0-9].[0-9].[0-9]"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle complex glob patterns with multiple wildcards", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "*/feature/*,*-hotfix-*,release-*-*")
@@ -235,12 +247,12 @@ Deno.test("getBranchFilters - should handle complex glob patterns with multiple 
 
     assertEquals(result, ["*/feature/*", "*-hotfix-*", "release-*-*"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle glob patterns with braces containing commas", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     // Now that we have brace-aware splitting, patterns with commas inside braces work correctly
@@ -252,12 +264,12 @@ Deno.test("getBranchFilters - should handle glob patterns with braces containing
     // The function now properly handles brace patterns with commas
     assertEquals(result, ["feature/{new,old}/*", "release/{alpha,beta,rc}"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle complex brace patterns with mixed content", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     // Test complex patterns mixing literals and brace expansions
@@ -268,12 +280,12 @@ Deno.test("getBranchFilters - should handle complex brace patterns with mixed co
 
     assertEquals(result, ["main", "feature/{ui,api,db}/*", "release-{v1,v2}.*", "hotfix"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle nested braces", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     // Test nested brace patterns (though less common in practice)
@@ -284,12 +296,12 @@ Deno.test("getBranchFilters - should handle nested braces", () => {
 
     assertEquals(result, ["feature/{new/{ui,api},old/*}"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle braces with whitespace", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     // Test brace patterns with spaces around commas inside braces
@@ -300,12 +312,12 @@ Deno.test("getBranchFilters - should handle braces with whitespace", () => {
 
     assertEquals(result, ["feature/{new, old, legacy}/*", "release/{alpha, beta}"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle glob patterns with braces without commas", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     // Brace patterns work fine when they don't contain commas
@@ -316,12 +328,12 @@ Deno.test("getBranchFilters - should handle glob patterns with braces without co
 
     assertEquals(result, ["feature/{new}/*", "release/{alpha}"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle glob patterns with whitespace around them", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", " feature/* , release/v* , hotfix-* ")
@@ -331,12 +343,12 @@ Deno.test("getBranchFilters - should handle glob patterns with whitespace around
 
     assertEquals(result, ["feature/*", "release/v*", "hotfix-*"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
   }
 })
 
 Deno.test("getBranchFilters - should handle escaped glob characters", () => {
-  const original = setupEnvironment()
+  const original = setupBranchFiltersEnvironment()
 
   try {
     Deno.env.set("INPUT_BRANCH_FILTERS", "feature\\*literal,branch\\?name,release\\[test\\]")
@@ -346,6 +358,87 @@ Deno.test("getBranchFilters - should handle escaped glob characters", () => {
 
     assertEquals(result, ["feature\\*literal", "branch\\?name", "release\\[test\\]"])
   } finally {
-    restoreEnvironment(original)
+    restoreBranchFiltersEnvironment(original)
+  }
+})
+
+Deno.test("getCommitLimit - should return 500 when commit_limit input is not set", () => {
+  const original = setupCommitLimitEnvironment()
+
+  try {
+    // Ensure the environment variable is not set
+    Deno.env.delete("INPUT_COMMIT_LIMIT")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommitLimit()
+
+    assertEquals(result, 500)
+  } finally {
+    restoreCommitLimitEnvironment(original)
+  }
+})
+
+Deno.test("getCommitLimit - should return 500 when commit_limit input is empty string", () => {
+  const original = setupCommitLimitEnvironment()
+
+  try {
+    Deno.env.set("INPUT_COMMIT_LIMIT", "")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommitLimit()
+
+    assertEquals(result, 500)
+  } finally {
+    restoreCommitLimitEnvironment(original)
+  }
+})
+
+Deno.test("getCommitLimit - should return valid number when commit_limit is set", () => {
+  const original = setupCommitLimitEnvironment()
+
+  try {
+    Deno.env.set("INPUT_COMMIT_LIMIT", "100")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommitLimit()
+
+    assertEquals(result, 100)
+  } finally {
+    restoreCommitLimitEnvironment(original)
+  }
+})
+
+Deno.test("getCommitLimit - should return 500 when commit_limit is invalid", () => {
+  const original = setupCommitLimitEnvironment()
+
+  try {
+    Deno.env.set("INPUT_COMMIT_LIMIT", "not-a-number")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommitLimit()
+
+    assertEquals(result, 500)
+  } finally {
+    restoreCommitLimitEnvironment(original)
+  }
+})
+
+Deno.test("getCommitLimit - should return 500 when commit_limit is zero or negative", () => {
+  const original = setupCommitLimitEnvironment()
+
+  try {
+    Deno.env.set("INPUT_COMMIT_LIMIT", "0")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommitLimit()
+
+    assertEquals(result, 500)
+
+    // Test negative number
+    Deno.env.set("INPUT_COMMIT_LIMIT", "-10")
+    const result2 = environment.getCommitLimit()
+    assertEquals(result2, 500)
+  } finally {
+    restoreCommitLimitEnvironment(original)
   }
 })
