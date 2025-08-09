@@ -418,6 +418,14 @@ const setupTestEnvironmentAndRun = async ({
     return { owner: "levibostian", repo: "decaf" }
   })
 
+  // for simplicity, we return default values for these.
+  stub(environment, "getBranchFilters", () => {
+    return []
+  })
+  stub(environment, "getCommitLimit", () => {
+    return 500
+  })
+
   const prepareEnvironmentForTestMode = mock<PrepareTestModeEnvStep>()
   const prepareEnvironmentForTestModeMock = when(prepareEnvironmentForTestMode, "prepareEnvironmentForTestMode", async () => {
     if (!isRunningInPullRequest) return undefined
