@@ -15,6 +15,7 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       "fail_on_deploy_verification",
       "debug",
       "branch_filters",
+      "commit_limit",
     ],
     default: {
       github_token: "",
@@ -28,6 +29,7 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       fail_on_deploy_verification: "true",
       debug: "false",
       branch_filters: "",
+      commit_limit: "",
     },
   })
 
@@ -43,4 +45,5 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
   Deno.env.set("INPUT_FAIL_ON_DEPLOY_VERIFICATION", args.fail_on_deploy_verification)
   Deno.env.set("INPUT_DEBUG", args.debug)
   Deno.env.set("INPUT_BRANCH_FILTERS", args.branch_filters)
+  Deno.env.set("INPUT_COMMIT_LIMIT", args.commit_limit)
 }

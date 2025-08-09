@@ -12,6 +12,7 @@ export interface Environment {
   getCommandForStep({ stepName }: { stepName: AnyStepName }): string | undefined
   getGitConfigInput(): { name: string; email: string } | undefined
   getBranchFilters(): string[]
+  getCommitLimit(): number
   setOutput({ key, value }: { key: string; value: string }): Promise<void>
   // A catch-all method to get inputs that dont match the other methods.
   getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean }
@@ -160,6 +161,28 @@ export class EnvironmentImpl implements Environment {
     }
 
     return branchFilters
+  }
+
+  getCommitLimit(): number {
+    const defaultCommitLimit = 500 // Default fallback value
+
+    try {
+      const input = this.getInput("commit_limit")
+      if (!input) {
+        return defaultCommitLimit // Return default if input is empty
+      }
+
+      const parsed = parseInt(input, 10)
+
+      // Validate the parsed value
+      if (isNaN(parsed) || parsed <= 0) {
+        return defaultCommitLimit // Default fallback
+      }
+
+      return parsed
+    } catch (_error) {
+      return defaultCommitLimit // Default fallback on error
+    }
   }
 
   getGitConfigInput(): { name: string; email: string } | undefined {

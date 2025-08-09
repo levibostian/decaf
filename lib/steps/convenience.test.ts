@@ -22,6 +22,9 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     // Mock exec.run method
     when(mockExec, "run", () => Promise.resolve({ exitCode: 0, stdout: "", output: undefined }))
 
+    // Mock environment methods
+    when(mockEnvironment, "getCommitLimit", () => 500)
+
     convenience = new ConvenienceStepImpl(mockExec, mockEnvironment, mockGit, logger)
   }
 
@@ -189,5 +192,52 @@ Deno.test("ConvenienceStepImpl", async (t) => {
 
     // Verify bugfix/login is not included
     assertEquals(result.gitCommitsAllLocalBranches["bugfix/login"], undefined)
+  })
+
+  await t.step("should pass commit limit to getCommits when specified", async () => {
+    setupMocks()
+
+    const branches = ["main", "develop"]
+    const mockCommits: GitCommit[] = [createMockCommit()]
+    const commitLimit = 100
+
+    when(mockEnvironment, "getGitConfigInput", () => undefined)
+    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
+    when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
+
+    await convenience.runConvenienceCommands([], commitLimit)
+
+    // Verify getCommits was called with the commit limit
+    const getCommitsCalls = (mockGit.getCommits as unknown as { calls: { args: [{ exec: unknown; branch: string; limit: number }] }[] }).calls
+    assertEquals(getCommitsCalls.length, branches.length)
+
+    // Check that each call includes the commit limit
+    getCommitsCalls.forEach((call) => {
+      assertEquals(call.args[0].limit, commitLimit, "getCommits should be called with the specified commit limit")
+    })
+  })
+
+  await t.step("should pass undefined commit limit when not specified", async () => {
+    setupMocks()
+
+    const branches = ["main"]
+    const mockCommits: GitCommit[] = [createMockCommit()]
+
+    when(mockEnvironment, "getGitConfigInput", () => undefined)
+    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
+    when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
+
+    await convenience.runConvenienceCommands([])
+
+    // Verify getCommits was called without a commit limit
+    const getCommitsCalls = (mockGit.getCommits as unknown as { calls: { args: [{ exec: unknown; branch: string; limit?: number }] }[] }).calls
+    assertEquals(getCommitsCalls.length, branches.length)
+
+    // Check that the call doesn't include a commit limit (should be undefined)
+    getCommitsCalls.forEach((call) => {
+      assertEquals(call.args[0].limit, undefined, "getCommits should be called without commit limit when not specified")
+    })
   })
 })

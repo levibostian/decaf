@@ -12,7 +12,7 @@ import globrex from "globrex"
  * One goal of this project is to deploy your code quickly and easily. One way to do that is avoid a lot of the gotchas.
  */
 export interface ConvenienceStep {
-  runConvenienceCommands(branchFilters?: string[]): Promise<{
+  runConvenienceCommands(branchFilters?: string[], commitLimit?: number): Promise<{
     gitCommitsCurrentBranch: GitCommit[]
     gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
   }>
@@ -35,7 +35,7 @@ export class ConvenienceStepImpl implements ConvenienceStep {
     })
   }
 
-  async runConvenienceCommands(branchFilters: string[] = []): Promise<{
+  async runConvenienceCommands(branchFilters: string[] = [], commitLimit?: number): Promise<{
     gitCommitsCurrentBranch: GitCommit[]
     gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
   }> {
@@ -76,8 +76,8 @@ export class ConvenienceStepImpl implements ConvenienceStep {
       const shouldIncludeBranch = branch === currentBranch || this.branchMatchesFilters(branch, branchFilters)
 
       if (shouldIncludeBranch) {
-        this.log.debug(`Processing commits for branch: ${branch}`)
-        const commitsOnBranch = await this.git.getCommits({ exec, branch })
+        this.log.debug(`Processing commits for branch: ${branch}, commit limit: ${commitLimit || "unlimited"}`)
+        const commitsOnBranch = await this.git.getCommits({ exec, branch, limit: commitLimit })
         gitCommitsAllLocalBranches[branch] = commitsOnBranch
       }
     }
