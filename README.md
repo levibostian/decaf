@@ -297,6 +297,48 @@ To do this, it's as easy as running the tool multiple times in the same workflow
         # ... Put rest of your config here.  
 ```
 
+### Performance optimization for large repositories
+
+If you have a large repository (many branches and/or commits), the tool may run slowly with the default configuration. Here are optional settings to improve performance:
+
+**Branch filtering (`branch_filters`)**
+By default, the tool analyzes commits from all local branches. If you have many branches, you can filter which branches to include using glob patterns:
+
+```bash
+# Only analyze main and develop branches
+--branch_filters "main,develop"
+
+# Analyze branches matching patterns
+--branch_filters "main,feature/*,release/*"
+
+# Complex patterns with braces
+--branch_filters "main,{feature,bugfix}/*,release-*"
+```
+
+The fewer branches that match your filters, the faster the tool will run.
+
+**Commit limit (`commit_limit`)**
+By default, the tool looks at the last 500 commits per branch. If you deploy frequently, you may not need to look back that far:
+
+```bash
+# Only look at last 100 commits per branch
+--commit_limit 100
+
+# For very frequent deployments
+--commit_limit 50
+```
+
+The smaller the number, the faster the tool will run.
+
+**Example optimized configuration:**
+```yml
+- uses: levibostian/decaf@<version>
+  with:
+    branch_filters: "main,develop"
+    commit_limit: 100
+    # ... rest of your config
+```
+
 # Why create this tool?
 
 I love tools such as
