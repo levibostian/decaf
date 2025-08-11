@@ -127,7 +127,7 @@ describe("test github actions output", () => {
       pullRequestTargetBranchName: "main",
       currentBranchName: "sweet-feature",
       githubActionEventThatTriggeredTool: "pull_request",
-      commitsSinceLatestRelease: [givenLatestCommitOnBranch],
+      commitsSinceLatestRelease: [...givenCommitsCreatedBySimulatedMerge, givenLatestCommitOnBranch],
       nextReleaseVersion: "1.0.0",
       commitsCreatedBySimulatedMerge: givenCommitsCreatedBySimulatedMerge,
     })
@@ -152,7 +152,7 @@ describe("test github actions output", () => {
       pullRequestTargetBranchName: "main",
       currentBranchName: "sweet-feature",
       githubActionEventThatTriggeredTool: "pull_request",
-      commitsSinceLatestRelease: [],
+      commitsSinceLatestRelease: givenCommitsCreatedBySimulatedMerge, // the only commits we have are the ones created during simulated merge
       nextReleaseVersion: "1.0.0",
       commitsCreatedBySimulatedMerge: givenCommitsCreatedBySimulatedMerge,
     })
@@ -302,6 +302,30 @@ describe("deployment verification after deploy", () => {
   })
 })
 
+describe("input data passed to steps", () => {
+  it("should pass correct input data to determineNextReleaseVersionStep", async () => {
+    const givenCommitsCreatedBySimulatedMerge = new GitCommitFake({
+      message: "Merge commit",
+    })
+    const givenCommitsOnBranch = [
+      givenCommitsCreatedBySimulatedMerge,
+      new GitCommitFake({ message: "feat: commit on branch" }),
+      new GitCommitFake({ message: "feat: another commit on branch" }),
+    ]
+
+    const { determineNextReleaseVersionStepMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: givenCommitsOnBranch,
+      commitsCreatedBySimulatedMerge: [givenCommitsCreatedBySimulatedMerge],
+      nextReleaseVersion: "1.0.0",
+    })
+
+    assertEquals(
+      determineNextReleaseVersionStepMock.calls[0].args[0].gitCommitsSinceLastRelease,
+      givenCommitsOnBranch,
+    )
+  })
+})
+
 const setupTestEnvironmentAndRun = async ({
   latestRelease,
   latestReleaseAfterDeploy,
@@ -311,6 +335,7 @@ const setupTestEnvironmentAndRun = async ({
   pullRequestTargetBranchName,
   currentBranchName,
   commitsCreatedBySimulatedMerge,
+  gitCommitsCurrentBranch,
 }: {
   latestRelease?: GetLatestReleaseStepOutput | null
   latestReleaseAfterDeploy?: GetLatestReleaseStepOutput | null
@@ -320,6 +345,7 @@ const setupTestEnvironmentAndRun = async ({
   pullRequestTargetBranchName?: string
   currentBranchName?: string
   commitsCreatedBySimulatedMerge?: GitCommit[]
+  gitCommitsCurrentBranch?: GitCommit[]
 }) => {
   // Set some defaults.
   const pullRequestTargetBranch = pullRequestTargetBranchName || "main" // assume we are running a pull_request event that merges into main
@@ -331,7 +357,7 @@ const setupTestEnvironmentAndRun = async ({
 
   const convenienceStep = mock<ConvenienceStep>()
   when(convenienceStep, "runConvenienceCommands", async () => {
-    return { gitCommitsAllLocalBranches: {}, gitCommitsCurrentBranch: [] }
+    return { gitCommitsAllLocalBranches: { "latest": [] }, gitCommitsCurrentBranch: gitCommitsCurrentBranch || [] }
   })
 
   const stepRunner = {} as StepRunner
