@@ -27,13 +27,13 @@ export const run = async ({
   environment: Environment
   log: Logger
 }): Promise<
-  { nextReleaseVersion: string; commitsSinceLastRelease: GitHubCommit[]; latestRelease: GetLatestReleaseStepOutput | null } | undefined
+  { nextReleaseVersion: string | null; commitsSinceLastRelease: GitHubCommit[]; latestRelease: GetLatestReleaseStepOutput | null } | null
 > => {
   if (environment.getEventThatTriggeredThisRun() !== "push" && environment.getEventThatTriggeredThisRun() !== "pull_request") {
     log.error(
       `Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${environment.getEventThatTriggeredThisRun()}. Bye bye...`,
     )
-    return
+    return null
   }
 
   log.notice(`👋 Hello! I am a tool called decaf. I help you deploy your projects.`)
@@ -127,7 +127,7 @@ export const run = async ({
     log.warning(
       `Looks like zero commits have been created since the latest release. This means there is no new code created and therefore, the deployment process stops here. Bye-bye 👋!`,
     )
-    return
+    return { nextReleaseVersion: null, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
   }
   log.debug(`Newest commit found: ${JSON.stringify(listOfCommits[0])}`)
   log.debug(
@@ -161,7 +161,7 @@ export const run = async ({
     log.warning(
       `After analyzing all of the git commits, none of the commits need to be deployed. Therefore, the deployment process stops here with no new release to be made. Bye-bye 👋!`,
     )
-    return
+    return { nextReleaseVersion: null, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
   }
   log.message(
     `After analyzing all of the git commits, I have determined the next release version will be: ${nextReleaseVersion}`,
