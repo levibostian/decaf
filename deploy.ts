@@ -8,6 +8,7 @@ import { GitHubCommit } from "./lib/github-api.ts"
 import { StepRunner } from "./lib/step-runner.ts"
 import { ConvenienceStep } from "./lib/steps/convenience.ts"
 import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
+import { GitCommit } from "./lib/types/git.ts"
 
 export const run = async ({
   convenienceStep,
@@ -26,13 +27,13 @@ export const run = async ({
   environment: Environment
   log: Logger
 }): Promise<
-  { nextReleaseVersion: string; commitsSinceLastRelease: GitHubCommit[]; latestRelease: GetLatestReleaseStepOutput | null } | undefined
+  { nextReleaseVersion: string | null; commitsSinceLastRelease: GitHubCommit[]; latestRelease: GetLatestReleaseStepOutput | null } | null
 > => {
   if (environment.getEventThatTriggeredThisRun() !== "push" && environment.getEventThatTriggeredThisRun() !== "pull_request") {
     log.error(
       `Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${environment.getEventThatTriggeredThisRun()}. Bye bye...`,
     )
-    return
+    return null
   }
 
   log.notice(`👋 Hello! I am a tool called decaf. I help you deploy your projects.`)
@@ -51,7 +52,6 @@ export const run = async ({
 
   const pullRequestInfo = environment.isRunningInPullRequest()
   const runInTestMode = pullRequestInfo !== undefined
-  let commitsCreatedDuringSimulatedMerges: GitHubCommit[] = []
   if (runInTestMode) {
     log.notice(
       `🧪 I see that I got triggered to run from a pull request event. In pull requests, I run in test mode which means that I will run the deployment process but I will not actually deploy anything.`,
@@ -67,7 +67,6 @@ export const run = async ({
 
     const pullRequestBranchBeforeSimulatedMerges = currentBranch
     currentBranch = prepareEnvironmentForTestModeResults?.currentGitBranch || currentBranch
-    commitsCreatedDuringSimulatedMerges = prepareEnvironmentForTestModeResults?.commitsCreatedDuringSimulatedMerges || []
 
     log.notice(
       `🧪 Simulated merges complete. You will notice that for the remainder of the deployment process, the current branch will be ${currentBranch} instead of the pull request branch ${pullRequestBranchBeforeSimulatedMerges}.`,
@@ -76,7 +75,10 @@ export const run = async ({
 
   await environment.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
 
-  await convenienceStep.runConvenienceCommands()
+  const { gitCommitsAllLocalBranches, gitCommitsCurrentBranch } = await convenienceStep.runConvenienceCommands(
+    environment.getBranchFilters(),
+    environment.getCommitLimit(),
+  )
 
   log.notice(
     `👀 I see that the git branch ${currentBranch} is checked out. We will begin the deployment process from the latest commit of this branch.`,
@@ -91,6 +93,8 @@ export const run = async ({
     gitRepoOwner: owner,
     gitRepoName: repo,
     testMode: runInTestMode,
+    gitCommitsCurrentBranch,
+    gitCommitsAllLocalBranches,
   })
 
   log.debug(`Latest release on branch ${currentBranch} is: ${JSON.stringify(lastRelease)}`)
@@ -119,15 +123,11 @@ export const run = async ({
       latestRelease: lastRelease,
     })
 
-  // if we are running in test mode and ran simulated merges, add those created commits to list of commits to have analyzed.
-  // add commits to beginning of list as newest commits should be first in list, like `git log`
-  listOfCommits.unshift(...commitsCreatedDuringSimulatedMerges)
-
   if (listOfCommits.length === 0) {
     log.warning(
       `Looks like zero commits have been created since the latest release. This means there is no new code created and therefore, the deployment process stops here. Bye-bye 👋!`,
     )
-    return
+    return { nextReleaseVersion: null, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
   }
   log.debug(`Newest commit found: ${JSON.stringify(listOfCommits[0])}`)
   log.debug(
@@ -151,6 +151,8 @@ export const run = async ({
     testMode: runInTestMode,
     gitCommitsSinceLastRelease: listOfCommits,
     lastRelease,
+    gitCommitsAllLocalBranches,
+    gitCommitsCurrentBranch,
   }
 
   const nextReleaseVersion = (await stepRunner.determineNextReleaseVersionStep(determineNextReleaseVersionEnvironment))?.version
@@ -159,7 +161,7 @@ export const run = async ({
     log.warning(
       `After analyzing all of the git commits, none of the commits need to be deployed. Therefore, the deployment process stops here with no new release to be made. Bye-bye 👋!`,
     )
-    return
+    return { nextReleaseVersion: null, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
   }
   log.message(
     `After analyzing all of the git commits, I have determined the next release version will be: ${nextReleaseVersion}`,
@@ -184,6 +186,8 @@ export const run = async ({
     gitRepoOwner: owner,
     gitRepoName: repo,
     testMode: runInTestMode,
+    gitCommitsCurrentBranch,
+    gitCommitsAllLocalBranches,
   })
   log.debug(`Latest release after deploy: ${JSON.stringify(latestReleaseAfterDeploy)}`)
 

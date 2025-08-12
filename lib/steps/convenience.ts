@@ -1,6 +1,9 @@
-import { Exec } from "../exec.ts"
+import { Exec, exec } from "../exec.ts"
 import { Environment } from "../environment.ts"
 import { Logger } from "../log.ts"
+import { GitCommit } from "../types/git.ts"
+import { Git } from "../git.ts"
+import globrex from "globrex"
 
 /**
  * To make life easier for the user, we perform some prep to avoid common issues that can happen when running commands on
@@ -9,13 +12,33 @@ import { Logger } from "../log.ts"
  * One goal of this project is to deploy your code quickly and easily. One way to do that is avoid a lot of the gotchas.
  */
 export interface ConvenienceStep {
-  runConvenienceCommands(): Promise<void>
+  runConvenienceCommands(branchFilters?: string[], commitLimit?: number): Promise<{
+    gitCommitsCurrentBranch: GitCommit[]
+    gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
+  }>
 }
 
 export class ConvenienceStepImpl implements ConvenienceStep {
-  constructor(private exec: Exec, private environment: Environment, private log: Logger) {}
+  constructor(private exec: Exec, private environment: Environment, private git: Git, private log: Logger) {}
 
-  async runConvenienceCommands(): Promise<void> {
+  /**
+   * Check if a branch name matches any of the provided filters
+   */
+  private branchMatchesFilters(branchName: string, filters: string[]): boolean {
+    if (filters.length === 0) {
+      return true // No filters means include all branches
+    }
+
+    return filters.some((filter) => {
+      const regex = globrex(filter).regex
+      return regex.test(branchName)
+    })
+  }
+
+  async runConvenienceCommands(branchFilters: string[] = [], commitLimit?: number): Promise<{
+    gitCommitsCurrentBranch: GitCommit[]
+    gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
+  }> {
     this.log.debug(`Running convenience commands...`)
 
     // Perform a git fetch to allow user to checkout a branch in their deployment commands.
@@ -39,6 +62,31 @@ export class ConvenienceStepImpl implements ConvenienceStep {
         command: `git config user.email "${userProvidedGitCommitterConfig.email}"`,
         input: undefined,
       })
+    }
+
+    this.log.debug(`Getting commits for all branches and parsing commits...`)
+    this.log.debug(`Branch filters provided: ${JSON.stringify(branchFilters)}`)
+
+    const gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] } = {}
+    const allLocalBranches = await this.git.getLocalBranches({ exec })
+    const currentBranch = await this.git.getCurrentBranch({ exec })
+
+    for (const branch of allLocalBranches) {
+      // Always include current branch for safety, regardless of filters
+      const shouldIncludeBranch = branch === currentBranch || this.branchMatchesFilters(branch, branchFilters)
+
+      if (shouldIncludeBranch) {
+        this.log.debug(`Processing commits for branch: ${branch}, commit limit: ${commitLimit || "unlimited"}`)
+        const commitsOnBranch = await this.git.getCommits({ exec, branch, limit: commitLimit })
+        gitCommitsAllLocalBranches[branch] = commitsOnBranch
+      }
+    }
+
+    const gitCommitsCurrentBranch = gitCommitsAllLocalBranches[currentBranch]
+
+    return {
+      gitCommitsCurrentBranch,
+      gitCommitsAllLocalBranches,
     }
   }
 }

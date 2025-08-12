@@ -1,7 +1,6 @@
-import { exec } from "./exec.ts"
 import { Exec } from "./exec.ts"
-import { GitHubCommit } from "./github-api.ts"
 import * as log from "./log.ts"
+import { GitCommit } from "./types/git.ts"
 
 export interface Git {
   checkoutBranch: (
@@ -32,10 +31,12 @@ export interface Git {
   rebase: (
     { exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string },
   ) => Promise<void>
-  getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitHubCommit }): Promise<GitHubCommit[]>
-  getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitHubCommit>
+  getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitCommit }): Promise<GitCommit[]>
+  getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitCommit>
   createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
-  getCommits: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<GitHubCommit[]>
+  getCommits: ({ exec, branch, limit }: { exec: Exec; branch: string; limit?: number }) => Promise<GitCommit[]>
+  getCurrentBranch: ({ exec }: { exec: Exec }) => Promise<string>
+  getLocalBranches: ({ exec }: { exec: Exec }) => Promise<string[]>
 }
 
 const checkoutBranch = async (
@@ -63,10 +64,7 @@ const merge = async (
 }
 
 const pull = async ({ exec }: { exec: Exec }): Promise<void> => {
-  const currentBranchName = (await exec.run({
-    command: `git branch --show-current`,
-    input: undefined,
-  })).stdout.trim()
+  const currentBranchName = await getCurrentBranch({ exec })
 
   await exec.run({
     command: `git pull origin ${currentBranchName}`,
@@ -132,31 +130,31 @@ const rebase = async (
 }
 
 const getLatestCommitsSince = async (
-  { exec, commit }: { exec: Exec; commit: GitHubCommit },
-): Promise<GitHubCommit[]> => {
-  const { stdout } = await exec.run({
-    command: `git log --pretty=format:"%H|%s|%ci" ${commit.sha}..HEAD`,
-    input: undefined,
-  })
+  { exec, commit }: { exec: Exec; commit: GitCommit },
+): Promise<GitCommit[]> => {
+  const currentBranchName = await getCurrentBranch({ exec })
 
-  return stdout.trim().split("\n").map((commitString) => {
-    const [sha, message, dateString] = commitString.split("|")
+  const allCommits = await getCommits({ exec, branch: currentBranchName })
 
-    return { sha, message, date: new Date(dateString) }
-  })
+  // Find the index of the commit we're looking for
+  const commitIndex = allCommits.findIndex((c) => c.sha === commit.sha)
+
+  // Return all commits that come after the specified commit (commits since)
+  return commitIndex === -1 ? allCommits : allCommits.slice(0, commitIndex)
 }
 
 const getLatestCommitOnBranch = async (
   { exec, branch }: { exec: Exec; branch: string },
-): Promise<GitHubCommit> => {
-  const { stdout } = await exec.run({
-    command: `git log -1 --pretty=format:"%H|%s|%ci" ${branch}`,
-    input: undefined,
-  })
+): Promise<GitCommit> => {
+  const commits = await getCommits({ exec, branch })
 
-  const [sha, message, dateString] = stdout.trim().split("|")
+  // TODO: Make this function return a optional.
+  if (commits.length === 0) {
+    throw new Error(`No commits found on branch ${branch}`)
+  }
 
-  return { sha, message, date: new Date(dateString) }
+  // Return the most recent commit
+  return commits[0]
 }
 
 /**
@@ -170,10 +168,7 @@ const getLatestCommitOnBranch = async (
 const createLocalBranchFromRemote = async (
   { exec, branch }: { exec: Exec; branch: string },
 ): Promise<void> => {
-  const currentBranchName = (await exec.run({
-    command: `git branch --show-current`,
-    input: undefined,
-  })).stdout.trim()
+  const currentBranchName = await getCurrentBranch({ exec })
   const doesBranchExist = (await exec.run({
     command: `git branch --list ${branch}`,
     input: undefined,
@@ -215,29 +210,178 @@ const createLocalBranchFromRemote = async (
 }
 
 const getCommits = async (
-  { exec, branch }: { exec: Exec; branch: string },
-): Promise<GitHubCommit[]> => {
-  const currentBranchName = (await exec.run({
-    command: `git branch --show-current`,
+  { exec, branch, limit }: { exec: Exec; branch: string; limit?: number },
+): Promise<GitCommit[]> => {
+  // The provided branch might be local, might be remote. We must determine which one to use.
+  let branchRef = branch
+  // Check if the local branch exists
+  const localBranchExists = await exec.run({
+    command: `git show-ref --verify --quiet refs/heads/${branch}`,
     input: undefined,
-  })).stdout.trim()
+  }).then(() => true).catch(() => false)
 
-  await checkoutBranch({ exec, branch, createBranchIfNotExist: false })
+  // If local branch doesn't exist, try the remote branch
+  if (!localBranchExists) {
+    const remoteBranchExists = await exec.run({
+      command: `git show-ref --verify --quiet refs/remotes/origin/${branch}`,
+      input: undefined,
+    }).then(() => true).catch(() => false)
 
+    if (remoteBranchExists) {
+      branchRef = `origin/${branch}`
+    }
+  }
+
+  // Use a more detailed pretty format to get more info per commit
+  const limitArg = limit ? `-${limit}` : ""
   const { stdout } = await exec.run({
-    command: `git log --pretty=format:"%H|%s|%ci"`,
+    /**
+     * %H — Commit hash (SHA)
+     * %s — Commit title/subject
+     * %B — Raw body (full commit message)
+     * %an — Author name
+     * %ae — Author email
+     * %cn — Committer name
+     * %ce — Committer email
+     * %ci — Commit date (ISO 8601)
+     * %P — Parent commit hashes (space-separated)
+     * %D — Refs (branches, tags, HEAD) pointing to this commit
+     * --numstat outputs the number of added and deleted lines for each file changed in the commit.
+     *
+     * [[⬛]] is used to separate commits. [⬛] is used to separate fields within a commit.
+     * Newlines are not reliable because the commit message body can contain newlines, written
+     * by the commit author.
+     */
+    command: `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branchRef}`,
     input: undefined,
   })
 
-  const commits = stdout.trim().split("\n").map((commitString) => {
-    const [sha, message, dateString] = commitString.split("|")
+  // Split by commit separator to separate commits. We can't use another method like newlines because the git message body might contain newlines.
+  const rawCommits = stdout.trim().split("[[⬛]]").filter((commitBlock) => commitBlock.trim() !== "")
+  if (rawCommits.length === 0) {
+    log.message(`No commits found on branch ${branch}.`)
+    return []
+  }
 
-    return { sha, message, date: new Date(dateString) }
+  const commits: GitCommit[] = rawCommits.map((commitBlock) => {
+    const parts = commitBlock.split("[⬛]")
+    const [
+      sha,
+      title,
+      message,
+      authorName,
+      authorEmail,
+      committerName,
+      committerEmail,
+      dateString,
+      parentsString,
+      refsAndStatsString,
+    ] = parts
+
+    // Parse file stats - they come after the refs, separated by newlines
+    const filesChanged: string[] = []
+    let additions = 0
+    let deletions = 0
+    const fileStats: Array<{ filename: string; additions: number; deletions: number }> = []
+
+    // Split refs and file stats by newlines
+    const lines = refsAndStatsString ? refsAndStatsString.split("\n") : []
+    const refsString = lines[0] || ""
+    const fileStatsLines = lines.slice(1)
+
+    fileStatsLines.forEach((line) => {
+      const parts = line.trim().split("\t")
+      if (parts.length === 3) {
+        const [add, del, filename] = parts
+        filesChanged.push(filename)
+        const addNum = add === "-" ? 0 : parseInt(add, 10)
+        const delNum = del === "-" ? 0 : parseInt(del, 10)
+        additions += addNum
+        deletions += delNum
+        fileStats.push({ filename, additions: addNum, deletions: delNum })
+      }
+    })
+
+    // ".filter(Boolean)" removes empty strings that can occur from multiple spaces in git output (e.g., "parent1  parent2" → ["parent1", "", "parent2"] -> ["parent1", "parent2"])
+    const parents = parentsString ? parentsString.trim().split(" ").filter(Boolean) : []
+    const refs = refsString ? refsString.split(",").map((r) => r.trim()).filter(Boolean) : []
+    const tags = refs.filter((ref) => ref.startsWith("tag: ")).map((ref) => ref.replace("tag: ", ""))
+
+    // Two-tier branch selection strategy using || for fallback logic:
+    // Tier 1 (preferred): Find local branches only (no slashes, excludes remotes like "origin/main")
+    // Tier 2 (fallback): If no local branches found, accept remote branches (allows slashes)
+    // Both tiers exclude tags ("tag: v1.0.0") and HEAD references ("HEAD -> main")
+    // Examples: ["origin/main", "main"] → picks "main" | ["origin/main"] → picks "origin/main"
+    const branchRef = refs.find((ref) => !ref.startsWith("tag: ") && !ref.startsWith("HEAD") && !ref.includes("/")) ||
+      refs.find((ref) => !ref.startsWith("tag: ") && !ref.startsWith("HEAD"))
+    const branch = branchRef ? branchRef : undefined
+
+    // merge commits are regular git commits but with multiple parents.
+    // 1 commit is the previous commit on that branch.
+    // 1 commit is the new commit that was merged in.
+    const isMergeCommit = parents.length > 1
+    const isRevertCommit = /^revert/i.test(title)
+
+    return {
+      title: title.trim(),
+      sha: sha.trim(),
+      abbreviatedSha: sha.trim().substring(0, 8),
+      message: message.trim(),
+      messageLines: message.trim().split("\n"),
+      author: { name: authorName.trim(), email: authorEmail.trim() },
+      committer: { name: committerName.trim(), email: committerEmail.trim() },
+      date: new Date(dateString.trim()),
+      filesChanged,
+      isMergeCommit,
+      isRevertCommit,
+      parents,
+      branch,
+      tags,
+      refs,
+      stats: { additions, deletions, total: additions + deletions },
+      fileStats,
+    }
   })
-
-  await checkoutBranch({ exec, branch: currentBranchName, createBranchIfNotExist: false })
 
   return commits
+}
+
+const getCurrentBranch = async ({ exec }: { exec: Exec }): Promise<string> => {
+  const { stdout } = await exec.run({
+    command: `git branch --show-current`,
+    input: undefined,
+  })
+  return stdout.trim()
+}
+
+const getLocalBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => {
+  /*
+   * We call "git fetch" before running the tool. fetch does not create a local branch which by default will not show up when you call `git branch`.
+   * The implementation of this function is to get a list of all local and remote branches. So we run multiple commands to get all branches.
+   */
+  const { stdout } = await exec.run({
+    command: `git branch -a --format='%(refname:short)'`,
+    input: undefined,
+  })
+
+  const branches = stdout.trim().split("\n")
+    .map((branch) => branch.trim())
+    .filter((branch) => branch !== "")
+    .map((branch) => {
+      // Remove the 'origin/' prefix from remote branches to get just the branch name
+      if (branch.startsWith("origin/")) {
+        return branch.replace("origin/", "")
+      }
+      return branch
+    })
+    // Remove duplicates (same branch might exist both locally and remotely)
+    .filter((branch, index, array) => array.indexOf(branch) === index)
+    // Filter out HEAD reference
+    .filter((branch) => branch !== "HEAD")
+    // Filter out 'origin' reference, which is not a branch but a remote
+    .filter((branch) => branch !== "origin")
+
+  return branches
 }
 
 export const git: Git = {
@@ -251,4 +395,6 @@ export const git: Git = {
   getLatestCommitsSince,
   getLatestCommitOnBranch,
   createLocalBranchFromRemote,
+  getCurrentBranch,
+  getLocalBranches,
 }

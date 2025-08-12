@@ -13,6 +13,8 @@ const defaultEnvironment: DeployStepInput = {
   nextVersionName: "1.0.0",
   testMode: true,
   lastRelease: null,
+  gitCommitsAllLocalBranches: {},
+  gitCommitsCurrentBranch: [],
 }
 
 describe("run the user given deploy commands", () => {

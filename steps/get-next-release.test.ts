@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert"
+import { GitCommitFake } from "../lib/types/git.test.ts"
 
 async function runStep(input: Record<string, unknown>, config?: Record<string, unknown>) {
   // Write input to a temp file
@@ -29,7 +30,7 @@ Deno.test("given no latest release, expect 1.0.0", async () => {
   const input = {
     lastRelease: null,
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat: add new feature" },
+      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
     ],
     gitCurrentBranch: "main",
     gitRepoOwner: "foo",
@@ -47,7 +48,7 @@ Deno.test("given no latest release, given on prerelease branch, expect 1.0.0-bet
   const input = {
     lastRelease: null,
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat: add new feature" },
+      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
     ],
     gitCurrentBranch: "beta",
     gitRepoOwner: "foo",
@@ -67,7 +68,7 @@ Deno.test("given introducing a breaking change, expect bumps major version", asy
       versionName: "1.0.0",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat!: add new authentication system" },
+      new GitCommitFake({ sha: "1234567890", message: "feat!: add new authentication system" }),
     ],
     gitCurrentBranch: "main",
     gitRepoOwner: "foo",
@@ -87,7 +88,7 @@ Deno.test("given a feature commit, expect bumps minor version", async () => {
       versionName: "1.2.3",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat: add new feature" },
+      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
     ],
     gitCurrentBranch: "main",
     gitRepoOwner: "foo",
@@ -107,7 +108,7 @@ Deno.test("given a fix commit, expect bumps patch version", async () => {
       versionName: "1.2.3",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "fix: resolve issue with login" },
+      new GitCommitFake({ sha: "1234567890", message: "fix: resolve issue with login" }),
     ],
     gitCurrentBranch: "main",
     gitRepoOwner: "foo",
@@ -127,7 +128,7 @@ Deno.test("given a chore commit, expect no next version", async () => {
       versionName: "1.2.3",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "chore: update dependencies" },
+      new GitCommitFake({ sha: "1234567890", message: "chore: update dependencies" }),
     ],
     gitCurrentBranch: "main",
     gitRepoOwner: "foo",
@@ -147,7 +148,7 @@ Deno.test("given latest release is not prerelease and next release is prerelease
       versionName: "1.2.3",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat: add new feature" },
+      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
     ],
     gitCurrentBranch: "beta",
     gitRepoOwner: "foo",
@@ -169,7 +170,7 @@ Deno.test("given latest release is prerelease, next release is prerelease, next 
       versionName: "1.2.3-beta.1",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat!: add new feature" },
+      new GitCommitFake({ sha: "1234567890", message: "feat!: add new feature" }),
     ],
     gitCurrentBranch: "beta",
     gitRepoOwner: "foo",
@@ -191,7 +192,7 @@ Deno.test("given latest version is prerelease and next release is prerelease, ex
       versionName: "1.3.0-beta.1",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat: add new feature" },
+      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
     ],
     gitCurrentBranch: "beta",
     gitRepoOwner: "foo",
@@ -213,7 +214,7 @@ Deno.test("given latest version is prerelease and next release is not prerelease
       versionName: "1.3.0-beta.1",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat: add new feature" },
+      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
     ],
     gitCurrentBranch: "main",
     gitRepoOwner: "foo",
@@ -233,7 +234,7 @@ Deno.test("given latest version is prerelease and next release is prerelease but
       versionName: "1.3.0-alpha.1",
     },
     gitCommitsSinceLastRelease: [
-      { sha: "1234567890", message: "feat: add new feature" },
+      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
     ],
     gitCurrentBranch: "beta",
     gitRepoOwner: "foo",

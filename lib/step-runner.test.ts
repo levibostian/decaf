@@ -5,6 +5,7 @@ import { StepRunnerImpl } from "./step-runner.ts"
 import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepOutput, GetNextReleaseVersionStepOutput } from "./steps/types/output.ts"
 import { logger } from "./log.ts"
+import { GitCommitFake } from "./types/git.test.ts"
 
 /**
  * Tests that are common to all steps in StepRunner.
@@ -36,6 +37,8 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
     gitRepoOwner: "owner",
     gitRepoName: "repo",
     testMode: false,
+    gitCommitsAllLocalBranches: {},
+    gitCommitsCurrentBranch: [],
   })
   assertEquals(actual, expect)
 })
@@ -57,7 +60,7 @@ Deno.test("given output is not valid, expect null is returned", async () => {
 })
 
 Deno.test("supports template engine in command string", async () => {
-  const expect: GetLatestReleaseStepOutput = { versionName: "main", commitSha: "owner" }
+  const expect: GetLatestReleaseStepOutput & { gitRepo: string } = { versionName: "main", commitSha: "abc123", gitRepo: "owner/repo" }
 
   // The command string uses template variables from input
   const environment: Environment = mock()
@@ -66,7 +69,8 @@ Deno.test("supports template engine in command string", async () => {
     "getCommandForStep",
     // The real getCommandForStep takes an object: { stepName: AnyStepName }
     // We'll return a template string that uses input.gitCurrentBranch and input.gitRepoOwner
-    () => `echo '{"versionName": "{{gitCurrentBranch}}", "commitSha": "{{gitRepoOwner}}"}'`,
+    () =>
+      `echo '{"versionName": "{{gitCurrentBranch}}", "gitRepo": "{{gitRepoOwner}}/{{gitRepoName}}", "commitSha": "{{gitCommitsCurrentBranch.0.sha}}" }'`,
   )
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
@@ -75,6 +79,23 @@ Deno.test("supports template engine in command string", async () => {
     gitRepoOwner: "owner",
     gitRepoName: "repo",
     testMode: false,
+    gitCommitsAllLocalBranches: {
+      "branch-1": [
+        new GitCommitFake({
+          sha: "abc123",
+        }),
+      ],
+      "branch-2": [
+        new GitCommitFake({
+          sha: "def456",
+        }),
+      ],
+    },
+    gitCommitsCurrentBranch: [
+      new GitCommitFake({
+        sha: "abc123",
+      }),
+    ],
   })
   assertEquals(actual, expect)
 })

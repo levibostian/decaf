@@ -30,6 +30,12 @@ inputs:
   fail_on_deploy_verification:
     description: 'After deployment commands run, the tool will re-run get latest release command and compare returned version to version just deployed. This option determines if the tool should fail if the versions do not match compared to simply showing a warning. Value is string values "true" or "false". Default is "true". Always "false" in test mode.'
     default: 'true'
+  branch_filters:
+    description: 'Comma-separated list of regex patterns to filter which branches to analyze for commits. Empty string means analyze all branches (default behavior). Example: "main,develop,feature/*,release/*". Branches not matching any pattern will have empty commit arrays in the input data.'
+    default: ''
+  commit_limit:
+    description: 'Maximum number of commits to retrieve and parse for each branch. This helps improve performance for repositories with many commits. Default is 500.'
+    default: ''
 
 outputs:
   new_release_version:
@@ -61,7 +67,9 @@ runs:
           --deploy "${{ inputs.deploy }}" \
           --get_latest_release_current_branch "${{ inputs.get_latest_release_current_branch }}" \
           --get_next_release_version "${{ inputs.get_next_release_version }}" \
-          --simulated_merge_type "${{ inputs.simulated_merge_type }}" 
+          --simulated_merge_type "${{ inputs.simulated_merge_type }}" \
+          --branch_filters "${{ inputs.branch_filters }}" \
+          --commit_limit "${{ inputs.commit_limit }}" 
       shell: bash
 
 

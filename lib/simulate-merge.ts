@@ -1,6 +1,7 @@
 import { Exec } from "./exec.ts"
 import { Git } from "./git.ts"
 import { GitHubCommit } from "./github-api.ts"
+import { GitCommit } from "./types/git.ts"
 
 export interface SimulateMerge {
   performSimulation(
@@ -12,7 +13,7 @@ export interface SimulateMerge {
       pullRequestTitle: string
       pullRequestDescription: string
     },
-  ): Promise<GitHubCommit[]>
+  ): Promise<GitCommit[]>
   merge: (
     { baseBranch, targetBranch, commitTitle, commitMessage }: {
       baseBranch: string
@@ -20,7 +21,7 @@ export interface SimulateMerge {
       commitTitle: string
       commitMessage: string
     },
-  ) => Promise<GitHubCommit[]>
+  ) => Promise<GitCommit[]>
   squash: (
     { baseBranch, targetBranch, commitTitle, commitMessage }: {
       baseBranch: string
@@ -28,7 +29,7 @@ export interface SimulateMerge {
       commitTitle: string
       commitMessage: string
     },
-  ) => Promise<GitHubCommit[]>
+  ) => Promise<GitCommit[]>
   rebase: (
     { baseBranch, targetBranch, commitTitle, commitMessage }: {
       baseBranch: string
@@ -36,7 +37,7 @@ export interface SimulateMerge {
       commitTitle: string
       commitMessage: string
     },
-  ) => Promise<GitHubCommit[]>
+  ) => Promise<GitCommit[]>
 }
 
 export class SimulateMergeImpl implements SimulateMerge {

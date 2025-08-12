@@ -45,7 +45,7 @@ export interface Logger {
 // The way we log is different depending on whether we are running on GitHub Actions or another CI service.
 // We use the env-ci package to detect the CI environment. I dont want the logger to use the DI graph to make
 // using it more complex, so just using env-ci directly here.
-const isOnGitHubActions = envCi().isCI && envCi().service === "github"
+const isOnGitHubActions = envCi().isCi && envCi().service === "github"
 
 // Generic log function that is used by all other logging functions.
 function log(level: keyof LogLevels, message: string) {
