@@ -514,3 +514,66 @@ Deno.test("getLocalBranches - should handle empty repository with no branches", 
 
   assertEquals(result, [])
 })
+
+Deno.test("getLatestCommitOnBranch - should return the latest commit when commits exist on branch", async () => {
+  const gitLogOutput = `[[⬛]]abc1234567890123456789012345678901234567[⬛]feat: latest commit[⬛]feat: latest commit
+
+This is the most recent commit on the branch.[⬛]Jane Doe[⬛]jane@example.com[⬛]Jane Doe[⬛]jane@example.com[⬛]2023-10-15T15:30:00Z[⬛]parent1[⬛]feature-branch
+2	1	src/feature.ts
+[[⬛]]def4567890123456789012345678901234567890[⬛]refactor: older commit[⬛]refactor: older commit
+
+This is an older commit.[⬛]John Smith[⬛]john@example.com[⬛]John Smith[⬛]john@example.com[⬛]2023-10-14T10:00:00Z[⬛]parent2[⬛]feature-branch
+1	0	src/old-feature.ts`
+
+  setupExecMock(gitLogOutput)
+
+  const result = await git.getLatestCommitOnBranch({ exec, branch: "feature-branch" })
+
+  assertEquals(result !== undefined, true, "Expected a commit to be returned")
+  if (result) {
+    assertCommit(result, {
+      sha: "abc1234567890123456789012345678901234567",
+      abbreviatedSha: "abc12345",
+      title: "feat: latest commit",
+      message: "feat: latest commit\n\nThis is the most recent commit on the branch.",
+      author: { name: "Jane Doe", email: "jane@example.com" },
+      branch: "feature-branch",
+      filesChanged: ["src/feature.ts"],
+      stats: { additions: 2, deletions: 1, total: 3 },
+    })
+  }
+})
+
+Deno.test("getLatestCommitOnBranch - should return undefined when no commits exist on branch", async () => {
+  // Mock empty git log output (no commits)
+  setupExecMock("")
+
+  const result = await git.getLatestCommitOnBranch({ exec, branch: "empty-branch" })
+
+  assertEquals(result, undefined, "Expected undefined for empty branch")
+})
+
+Deno.test("getLatestCommitOnBranch - should return the only commit when branch has single commit", async () => {
+  const gitLogOutput = `[[⬛]]abc1234567890123456789012345678901234567[⬛]initial: first commit[⬛]initial: first commit
+
+Initial commit on new branch.[⬛]Alice Developer[⬛]alice@example.com[⬛]Alice Developer[⬛]alice@example.com[⬛]2023-10-10T09:00:00Z[⬛][⬛]new-feature
+3	0	README.md`
+
+  setupExecMock(gitLogOutput)
+
+  const result = await git.getLatestCommitOnBranch({ exec, branch: "new-feature" })
+
+  assertEquals(result !== undefined, true, "Expected a commit to be returned")
+  if (result) {
+    assertCommit(result, {
+      sha: "abc1234567890123456789012345678901234567",
+      abbreviatedSha: "abc12345",
+      title: "initial: first commit",
+      message: "initial: first commit\n\nInitial commit on new branch.",
+      author: { name: "Alice Developer", email: "alice@example.com" },
+      branch: "new-feature",
+      filesChanged: ["README.md"],
+      stats: { additions: 3, deletions: 0, total: 3 },
+    })
+  }
+})
