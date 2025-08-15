@@ -32,7 +32,8 @@ export interface Git {
     { exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string },
   ) => Promise<void>
   getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitCommit }): Promise<GitCommit[]>
-  getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitCommit>
+  // returns undefined when no commits are found on the branch
+  getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitCommit | undefined>
   createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
   getCommits: ({ exec, branch, limit }: { exec: Exec; branch: string; limit?: number }) => Promise<GitCommit[]>
   getCurrentBranch: ({ exec }: { exec: Exec }) => Promise<string>
@@ -145,12 +146,11 @@ const getLatestCommitsSince = async (
 
 const getLatestCommitOnBranch = async (
   { exec, branch }: { exec: Exec; branch: string },
-): Promise<GitCommit> => {
+): Promise<GitCommit | undefined> => {
   const commits = await getCommits({ exec, branch })
 
-  // TODO: Make this function return a optional.
   if (commits.length === 0) {
-    throw new Error(`No commits found on branch ${branch}`)
+    return undefined
   }
 
   // Return the most recent commit
