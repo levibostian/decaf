@@ -1,6 +1,5 @@
 #!/usr/bin/env -S deno run --allow-all
 
-import { versionBumpForCommitBasedOnConventionalCommit } from "../lib/conventional-commits.ts"
 import { GetNextReleaseVersionStepInput } from "../lib/types/environment.ts"
 import * as semver from "@std/semver"
 import { logger } from "../lib/log.ts"
@@ -17,106 +16,59 @@ function exit({ nextReleaseVersion }: { nextReleaseVersion: string | null }): ne
   Deno.exit(0)
 }
 
-// First, parse all commits to determine the version bump for each commit.
-const versionBumpsForEachCommit = input.gitCommitsSinceLastRelease.map((commit) => {
-  const abbreviatedCommitTitle = commit.title.length > 50 ? commit.title.substring(0, 50) + "..." : commit.title
-
-  const versionBumpForCommit = versionBumpForCommitBasedOnConventionalCommit(commit)
-
-  const logPrefix = `${abbreviatedCommitTitle} (${commit.abbreviatedSha})`
-  switch (versionBumpForCommit) {
-    case "major":
-      logger.message(`${logPrefix} => indicates a major release.`)
-      break
-    case "minor":
-      logger.message(`${logPrefix} => indicates a minor release.`)
-      break
-    case "patch":
-      logger.message(`${logPrefix} => indicates a patch release.`)
-      break
-    default:
-      logger.message(`${logPrefix} => does not indicate a release.`)
-      break
-  }
-
-  return versionBumpForCommit
-}).filter((versionBump) => versionBump !== undefined) as ("patch" | "major" | "minor")[]
-
-// If none of the commits indicate a release should be made, exit early.
-if (versionBumpsForEachCommit.length === 0) {
-  exit({ nextReleaseVersion: null })
-}
-
-interface ConfigOptions {
-  branches?: {
-    branch_name?: string
-    prerelease?: boolean
-    version_suffix?: string
-  }[]
-}
-
-// User passes in config as a JSON string via the CLI. Open to allowing other ways in future.
-const config: ConfigOptions = {
-  "branches": [
-    { "branch_name": "main", "prerelease": false },
-    { "branch_name": "beta", "prerelease": true },
-    { "branch_name": "alpha", "prerelease": true },
-  ],
-}
+/**
+ * This script determines the next release version based on the commits made since the last release.
+ * It analyzes the commit messages to determine the type of release (major, minor, patch)
+ * and increments the version accordingly.
+ *
+ * For pre-release code (before 1.0.0), it will return 0.1.0 as the first release version and increment
+ * from there. This script used to use 1.0.0-alpha.1 type of versioning, but...
+ * 1. this script was more complex then it needed to be, especially because the semver library had different
+ *    opinions on how to increment pre-release versions.
+ * 2. teams I have been on in the past have had opinions or confusion when using the -alpha.1, -beta.1, etc. versions.
+ * 3. the semantic versioning spec is loose on how to handle -alpha, -beta, etc. versions and it does suggest
+ *    to use 0.1.0 as the first release version and you can make breaking changes until 1.0.0 is released.
+ */
 
 const lastReleaseVersion = input.lastRelease?.versionName
-const isNextReleasePrerelease = config?.branches?.find((branch) => branch.branch_name === input.gitCurrentBranch)?.prerelease
-const prereleaseVersionSuffix = config?.branches?.find((branch) => branch.branch_name === input.gitCurrentBranch)?.version_suffix ||
-  input.gitCurrentBranch
-
-// If there was not a last release version, then this is the first release. Return a version to start with.
 if (!lastReleaseVersion) {
-  if (isNextReleasePrerelease) exit({ nextReleaseVersion: `1.0.0-${prereleaseVersionSuffix}.1` })
-  else exit({ nextReleaseVersion: "1.0.0" })
+  logger.debug("No last release found, returning first release version.")
+
+  exit({ nextReleaseVersion: "0.1.0" })
 }
 
-const lastReleaseSemanticVersion = semver.tryParse(lastReleaseVersion)
-if (!lastReleaseSemanticVersion) {
-  throw new Error(
-    `The last release version, ${lastReleaseVersion}, is not a valid semantic version (https://semver.org/). I can only determine the next release version if the latest release is a valid semantic version. Push a new valid version and try again.`,
-  )
-}
+const lastReleaseSemanticVersion = semver.tryParse(lastReleaseVersion)!
 
-// return the next release version based on the type of bump indicated by the commits. Prioritize major, then minor, then patch.
-let nextReleaseBump: "major" | "minor" | "patch" | null = null
-if (versionBumpsForEachCommit.includes("major")) {
-  nextReleaseBump = "major"
-} else if (versionBumpsForEachCommit.includes("minor")) {
-  nextReleaseBump = "minor"
-} else if (versionBumpsForEachCommit.includes("patch")) {
-  nextReleaseBump = "patch"
-}
+// Parse all commits to determine the version bump for each commit.
+const versionBumpsForEachCommit: ("major" | "minor" | "patch")[] = input.gitCommitsSinceLastRelease.map((commit) => {
+  const abbreviatedCommitTitle = commit.title.length > 50 ? commit.title.substring(0, 50) + "..." : commit.title
 
-if (!nextReleaseBump) {
+  if (/.*!:.*/.test(abbreviatedCommitTitle)) {
+    logger.message(`${abbreviatedCommitTitle} => indicates a major release.`)
+    return "major"
+  } else if (abbreviatedCommitTitle.startsWith("feat:")) {
+    logger.message(`${abbreviatedCommitTitle} => indicates a minor release.`)
+    return "minor"
+  } else if (abbreviatedCommitTitle.startsWith("fix:")) {
+    logger.message(`${abbreviatedCommitTitle} => indicates a patch release.`)
+    return "patch"
+  } else {
+    logger.message(`${abbreviatedCommitTitle} => does not indicate a release.`)
+    return undefined
+  }
+})
+  .filter((versionBump) => versionBump !== undefined)
+  // Sort the version bumps by priority: major > minor > patch
+  .sort((a, b) => {
+    const priority = { "major": 0, "minor": 1, "patch": 2 }
+    return priority[a] - priority[b]
+  })
+const nextReleaseBump = versionBumpsForEachCommit[0] // highest priority bump, since the list is sorted
+
+if (versionBumpsForEachCommit.length === 0) {
+  logger.message(`No commits indicate a release should be made. Exiting without a new release version.`)
   exit({ nextReleaseVersion: null })
 }
 
-// Code to get the next semantic version for a given bump type.
-// Code is heavily inspired by semantic-release's implementation to get the next version.
-// https://github.com/semantic-release/semantic-release/blob/45bf9d601591bf7649926e54a9459c643136b485/lib/get-next-version.js
-// the unit tests for this file is the best reference to understand this code.
-if (isNextReleasePrerelease) {
-  const isLatestReleaseSameSuffix = lastReleaseSemanticVersion.prerelease && lastReleaseSemanticVersion.prerelease.length > 0 &&
-    lastReleaseSemanticVersion.prerelease[0] === prereleaseVersionSuffix
-
-  // If there is the same suffix, we have 2 use cases to handle.
-  // 1. Given 1.1.0-beta.2 and bump is minor or patch, we should increment the prerelease version to 1.1.0-beta.3
-  // 2. Given 1.1.0-beta.2 and bump is major, we should increment the major version to 2.0.0-beta.1
-  if (isLatestReleaseSameSuffix) {
-    // Generate both of these use cases and return the greater version which resolves the conflict.
-    const version1 = semver.increment(lastReleaseSemanticVersion, "prerelease")
-    const version2 = semver.parse(`${semver.format(semver.increment(lastReleaseSemanticVersion, nextReleaseBump))}-${prereleaseVersionSuffix}.1`)
-
-    exit({ nextReleaseVersion: semver.format(semver.greaterThan(version1, version2) ? version1 : version2) })
-  } else {
-    // if the suffix changes, we perform the version bump, add new suffix, and reset the prerelease version to 1.
-    exit({ nextReleaseVersion: `${semver.format(semver.increment(lastReleaseSemanticVersion, nextReleaseBump))}-${prereleaseVersionSuffix}.1` })
-  }
-} else {
-  exit({ nextReleaseVersion: semver.format(semver.increment(lastReleaseSemanticVersion, nextReleaseBump)) })
-}
+const nextReleaseVersion = semver.format(semver.increment(lastReleaseSemanticVersion, nextReleaseBump))
+exit({ nextReleaseVersion })

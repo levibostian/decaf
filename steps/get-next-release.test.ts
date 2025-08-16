@@ -25,7 +25,7 @@ async function runStep(input: Record<string, unknown>, config?: Record<string, u
   return { code, outputFileContents, inputFileContents }
 }
 
-Deno.test("given no latest release, expect 1.0.0", async () => {
+Deno.test("given no latest release, expect 0.1.0", async () => {
   // Using an archived repo to avoid the version name ever changing.
   const input = {
     lastRelease: null,
@@ -41,31 +41,33 @@ Deno.test("given no latest release, expect 1.0.0", async () => {
   const { code, outputFileContents } = await runStep(input)
 
   assertEquals(code, 0)
-  assertEquals(outputFileContents, `{"version":"1.0.0"}`)
+  assertEquals(outputFileContents, `{"version":"0.1.0"}`)
 })
 
-Deno.test("given no latest release, given on prerelease branch, expect 1.0.0-beta.1", async () => {
+Deno.test("given introducing a breaking change from pre-1.0 version, expect 1.0.0", async () => {
   const input = {
-    lastRelease: null,
+    lastRelease: {
+      versionName: "0.5.0",
+    },
     gitCommitsSinceLastRelease: [
-      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
+      new GitCommitFake({ sha: "1234567890", message: "feat!: add new authentication system" }),
     ],
-    gitCurrentBranch: "beta",
+    gitCurrentBranch: "main",
     gitRepoOwner: "foo",
     gitRepoName: "repo-name",
     testMode: false,
   }
 
-  const { code, outputFileContents } = await runStep(input, { branches: [{ branch_name: "beta", prerelease: true, version_suffix: "beta" }] })
+  const { code, outputFileContents } = await runStep(input)
 
   assertEquals(code, 0)
-  assertEquals(outputFileContents, `{"version":"1.0.0-beta.1"}`)
+  assertEquals(outputFileContents, `{"version":"1.0.0"}`)
 })
 
-Deno.test("given introducing a breaking change, expect bumps major version", async () => {
+Deno.test("given introducing a breaking change from post-1.0 version, expect bumps major version", async () => {
   const input = {
     lastRelease: {
-      versionName: "1.0.0",
+      versionName: "1.5.2",
     },
     gitCommitsSinceLastRelease: [
       new GitCommitFake({ sha: "1234567890", message: "feat!: add new authentication system" }),
@@ -82,7 +84,27 @@ Deno.test("given introducing a breaking change, expect bumps major version", asy
   assertEquals(outputFileContents, `{"version":"2.0.0"}`)
 })
 
-Deno.test("given a feature commit, expect bumps minor version", async () => {
+Deno.test("given a feature commit from pre-1.0 version, expect bumps minor version", async () => {
+  const input = {
+    lastRelease: {
+      versionName: "0.2.3",
+    },
+    gitCommitsSinceLastRelease: [
+      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
+    ],
+    gitCurrentBranch: "main",
+    gitRepoOwner: "foo",
+    gitRepoName: "repo-name",
+    testMode: false,
+  }
+
+  const { code, outputFileContents } = await runStep(input)
+
+  assertEquals(code, 0)
+  assertEquals(outputFileContents, `{"version":"0.3.0"}`)
+})
+
+Deno.test("given a feature commit from post-1.0 version, expect bumps minor version", async () => {
   const input = {
     lastRelease: {
       versionName: "1.2.3",
@@ -102,7 +124,27 @@ Deno.test("given a feature commit, expect bumps minor version", async () => {
   assertEquals(outputFileContents, `{"version":"1.3.0"}`)
 })
 
-Deno.test("given a fix commit, expect bumps patch version", async () => {
+Deno.test("given a fix commit from pre-1.0 version, expect bumps patch version", async () => {
+  const input = {
+    lastRelease: {
+      versionName: "0.2.3",
+    },
+    gitCommitsSinceLastRelease: [
+      new GitCommitFake({ sha: "1234567890", message: "fix: resolve issue with login" }),
+    ],
+    gitCurrentBranch: "main",
+    gitRepoOwner: "foo",
+    gitRepoName: "repo-name",
+    testMode: false,
+  }
+
+  const { code, outputFileContents } = await runStep(input)
+
+  assertEquals(code, 0)
+  assertEquals(outputFileContents, `{"version":"0.2.4"}`)
+})
+
+Deno.test("given a fix commit from post-1.0 version, expect bumps patch version", async () => {
   const input = {
     lastRelease: {
       versionName: "1.2.3",
@@ -125,7 +167,7 @@ Deno.test("given a fix commit, expect bumps patch version", async () => {
 Deno.test("given a chore commit, expect no next version", async () => {
   const input = {
     lastRelease: {
-      versionName: "1.2.3",
+      versionName: "0.2.3",
     },
     gitCommitsSinceLastRelease: [
       new GitCommitFake({ sha: "1234567890", message: "chore: update dependencies" }),
@@ -142,79 +184,16 @@ Deno.test("given a chore commit, expect no next version", async () => {
   assertEquals(outputFileContents, "")
 })
 
-Deno.test("given latest release is not prerelease and next release is prerelease, expect bump and add prerelease suffix", async () => {
+Deno.test("given multiple commits with all bump types, expect major bump takes priority", async () => {
   const input = {
     lastRelease: {
-      versionName: "1.2.3",
+      versionName: "0.8.5",
     },
     gitCommitsSinceLastRelease: [
-      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
-    ],
-    gitCurrentBranch: "beta",
-    gitRepoOwner: "foo",
-    gitRepoName: "repo-name",
-    testMode: false,
-  }
-
-  const { code, outputFileContents } = await runStep(input, {
-    branches: [{ branch_name: "beta", prerelease: true, version_suffix: "beta" }],
-  })
-
-  assertEquals(code, 0)
-  assertEquals(outputFileContents, `{"version":"1.3.0-beta.1"}`)
-})
-
-Deno.test("given latest release is prerelease, next release is prerelease, next release is major bump, expect next prerelease version with new major version", async () => {
-  const input = {
-    lastRelease: {
-      versionName: "1.2.3-beta.1",
-    },
-    gitCommitsSinceLastRelease: [
-      new GitCommitFake({ sha: "1234567890", message: "feat!: add new feature" }),
-    ],
-    gitCurrentBranch: "beta",
-    gitRepoOwner: "foo",
-    gitRepoName: "repo-name",
-    testMode: false,
-  }
-
-  const { code, outputFileContents } = await runStep(input, {
-    branches: [{ branch_name: "beta", prerelease: true, version_suffix: "beta" }],
-  })
-
-  assertEquals(code, 0)
-  assertEquals(outputFileContents, `{"version":"2.0.0-beta.1"}`)
-})
-
-Deno.test("given latest version is prerelease and next release is prerelease, expect next prerelease version", async () => {
-  const input = {
-    lastRelease: {
-      versionName: "1.3.0-beta.1",
-    },
-    gitCommitsSinceLastRelease: [
-      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
-    ],
-    gitCurrentBranch: "beta",
-    gitRepoOwner: "foo",
-    gitRepoName: "repo-name",
-    testMode: false,
-  }
-
-  const { code, outputFileContents } = await runStep(input, {
-    branches: [{ branch_name: "beta", prerelease: true, version_suffix: "beta" }],
-  })
-
-  assertEquals(code, 0)
-  assertEquals(outputFileContents, `{"version":"1.3.0-beta.2"}`)
-})
-
-Deno.test("given latest version is prerelease and next release is not prerelease, expect next non-prelease version", async () => {
-  const input = {
-    lastRelease: {
-      versionName: "1.3.0-beta.1",
-    },
-    gitCommitsSinceLastRelease: [
-      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
+      new GitCommitFake({ sha: "1111111111", message: "fix: resolve login bug" }),
+      new GitCommitFake({ sha: "2222222222", message: "feat: add new dashboard" }),
+      new GitCommitFake({ sha: "3333333333", message: "feat!: restructure user authentication" }),
+      new GitCommitFake({ sha: "4444444444", message: "fix: handle edge case" }),
     ],
     gitCurrentBranch: "main",
     gitRepoOwner: "foo",
@@ -225,27 +204,29 @@ Deno.test("given latest version is prerelease and next release is not prerelease
   const { code, outputFileContents } = await runStep(input)
 
   assertEquals(code, 0)
-  assertEquals(outputFileContents, `{"version":"1.3.0"}`)
+  // Should be a major version bump (1.0.0) even though there are minor and patch commits too
+  assertEquals(outputFileContents, `{"version":"1.0.0"}`)
 })
 
-Deno.test("given latest version is prerelease and next release is prerelease but different suffix, expect next prerelease version with new suffix", async () => {
+Deno.test("given minor and patch commits, expect minor bump takes priority", async () => {
   const input = {
     lastRelease: {
-      versionName: "1.3.0-alpha.1",
+      versionName: "0.5.2",
     },
     gitCommitsSinceLastRelease: [
-      new GitCommitFake({ sha: "1234567890", message: "feat: add new feature" }),
+      new GitCommitFake({ sha: "5555555555", message: "fix: resolve critical bug" }),
+      new GitCommitFake({ sha: "6666666666", message: "feat: add user preferences" }),
+      new GitCommitFake({ sha: "7777777777", message: "fix: handle null values" }),
     ],
-    gitCurrentBranch: "beta",
+    gitCurrentBranch: "main",
     gitRepoOwner: "foo",
     gitRepoName: "repo-name",
     testMode: false,
   }
 
-  const { code, outputFileContents } = await runStep(input, {
-    branches: [{ branch_name: "beta", prerelease: true, version_suffix: "beta" }],
-  })
+  const { code, outputFileContents } = await runStep(input)
 
   assertEquals(code, 0)
-  assertEquals(outputFileContents, `{"version":"1.3.0-beta.1"}`)
+  // Should be a minor version bump (0.6.0) even though there are patch commits too
+  assertEquals(outputFileContents, `{"version":"0.6.0"}`)
 })
