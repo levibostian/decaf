@@ -125,8 +125,6 @@ const run = async (
   )
 
   const code = (await child.status).code
-  if (capturedStdout) log.debug(capturedStdout)
-  if (capturedStderr) log.debug(capturedStderr)
 
   let commandOutput: Record<string, unknown> | undefined = undefined
 
@@ -156,7 +154,7 @@ const run = async (
   }
 
   if (code !== 0 && shouldThrowError) {
-    throw new Error(`Command: ${command}, failed with exit code: ${code}, output: ${capturedStdout}, stderr: ${capturedStderr}`)
+    throw new Error(`Command: ${command}, failed with exit code: ${code}`)
   }
 
   return {
