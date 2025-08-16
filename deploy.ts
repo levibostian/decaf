@@ -1,5 +1,4 @@
 import { Logger } from "./lib/log.ts"
-import { DeployStep } from "./lib/steps/deploy.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
 import { DeployStepInput, GetNextReleaseVersionStepInput } from "./lib/types/environment.ts"
 import { Environment } from "./lib/environment.ts"
@@ -8,14 +7,12 @@ import { GitHubCommit } from "./lib/github-api.ts"
 import { StepRunner } from "./lib/step-runner.ts"
 import { ConvenienceStep } from "./lib/steps/convenience.ts"
 import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
-import { GitCommit } from "./lib/types/git.ts"
 
 export const run = async ({
   convenienceStep,
   stepRunner,
   prepareEnvironmentForTestMode,
   getCommitsSinceLatestReleaseStep,
-  deployStep,
   environment,
   log,
 }: {
@@ -23,7 +20,6 @@ export const run = async ({
   stepRunner: StepRunner
   prepareEnvironmentForTestMode: PrepareTestModeEnvStep
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep
-  deployStep: DeployStep
   environment: Environment
   log: Logger
 }): Promise<
@@ -173,9 +169,7 @@ export const run = async ({
 
   const deployEnvironment: DeployStepInput = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
 
-  await deployStep.runDeploymentCommands({
-    environment: deployEnvironment,
-  })
+  await stepRunner.runDeployStep(deployEnvironment)
 
   // Re-run get-latest-release step to verify the new release
   log.notice(
