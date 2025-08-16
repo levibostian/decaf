@@ -1,6 +1,5 @@
 import { run } from "./deploy.ts"
 import { GitHubApiImpl } from "./lib/github-api.ts"
-import { DeployStepImpl } from "./lib/steps/deploy.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
 import { exec } from "./lib/exec.ts"
 import { git } from "./lib/git.ts"
@@ -41,7 +40,6 @@ try {
     stepRunner: new StepRunnerImpl(environment, exec, logger),
     prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec), git, exec),
     getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec),
-    deployStep: new DeployStepImpl(exec),
     log: logger,
     environment,
   })

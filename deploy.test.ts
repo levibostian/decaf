@@ -4,7 +4,6 @@ import { restore, stub } from "@std/testing/mock"
 import { assertSnapshot } from "@std/testing/snapshot"
 import { run } from "./deploy.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
-import { DeployStep } from "./lib/steps/deploy.ts"
 import { getLogMock } from "./lib/log.test.ts"
 import { Environment } from "./lib/environment.ts"
 import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
@@ -394,8 +393,7 @@ const setupTestEnvironmentAndRun = async ({
     },
   )
 
-  const deployStep = {} as DeployStep
-  const deployStepMock = stub(deployStep, "runDeploymentCommands", async () => {
+  const deployStepMock = stub(stepRunner, "runDeployStep", async () => {
     return
   })
 
@@ -464,7 +462,6 @@ const setupTestEnvironmentAndRun = async ({
     stepRunner,
     prepareEnvironmentForTestMode,
     getCommitsSinceLatestReleaseStep,
-    deployStep,
     log: logMock,
     environment,
   })
@@ -472,8 +469,8 @@ const setupTestEnvironmentAndRun = async ({
   return {
     runGetLatestOnCurrentBranchReleaseStepMock,
     getCommitsSinceLatestReleaseStepMock,
-    deployStepMock,
     determineNextReleaseVersionStepMock,
+    deployStepMock,
     logMock,
     setOutputMock,
     environmentIsRunningInPullRequestMock,

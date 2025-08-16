@@ -1,7 +1,3 @@
-// Purposely making properties optional for convenience.
-// deno-lint-ignore no-empty-interface
-export interface DeployCommandOutput {}
-
 export interface GetLatestReleaseStepOutput {
   versionName: string
   commitSha: string
