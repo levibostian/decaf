@@ -96,7 +96,7 @@ const run = async (
   child.stdout.pipeTo(
     new WritableStream({
       write(chunk) {
-        const decodedChunk = new TextDecoder().decode(chunk)
+        const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
         if (displayLogs) {
           log.message(decodedChunk)
@@ -104,14 +104,14 @@ const run = async (
           log.debug(decodedChunk)
         }
 
-        capturedStdout += decodedChunk.trimEnd()
+        capturedStdout += decodedChunk
       },
     }),
   )
   child.stderr.pipeTo(
     new WritableStream({
       write(chunk) {
-        const decodedChunk = new TextDecoder().decode(chunk)
+        const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
         if (displayLogs) {
           log.message(decodedChunk)
@@ -119,7 +119,7 @@ const run = async (
           log.debug(decodedChunk)
         }
 
-        capturedStderr += decodedChunk.trimEnd()
+        capturedStderr += decodedChunk
       },
     }),
   )
