@@ -350,6 +350,67 @@ and frustration in certain situations when this tool (as well as similar tools)
 fall short. Taking my experience using this tool, reading the source code, and
 interacting with the community, I decided to try and build something better.
 
+# Troubleshooting
+
+If you encounter issues while using decaf, the best place to start is by viewing the tool's debug logs. These debug logs are intended to be helpful only if there are issues with the decaf tool itself, not identifying issues with your step scripts you write. It's highly recommended to add logging to your step scripts and/or write automated tests against your step scripts to ensure they work as expected. 
+
+## Getting Debug Logs
+
+There are several ways to obtain debug logs depending on your setup:
+
+### GitHub Actions
+
+**Option 1: Using the `debug_file` argument**
+
+Add the `debug_file` parameter to your workflow and upload the debug file as an artifact:
+
+```yaml
+- uses: levibostian/decaf@<version>
+  with:
+    # ... your other configuration
+    debug_file: '/tmp/decaf-debug.log'
+
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: debug-logs
+    path: /tmp/decaf-debug.log
+```
+
+After the workflow runs, you can download the debug logs from the "Artifacts" section in your GitHub Actions run.
+
+**Option 2: Re-run with debug logging enabled**
+
+1. Go to your failed workflow run in GitHub Actions
+2. Click "Re-run jobs" and select "Re-run jobs with debug logging"  
+3. The debug information will be displayed directly in the workflow logs
+
+### Other CI Providers
+
+Use the `debug_file` CLI argument and configure your CI provider to store the debug file as an artifact:
+
+```bash
+./decaf \
+  ... 
+  --debug_file "/tmp/decaf-debug.log"
+```
+
+**CircleCI example:**
+
+```yaml
+- run:
+    name: Run CLI Tool
+    command: |
+      ./decaf \
+        --debug_file "/tmp/decaf-debug.log" \
+        # ... rest of your arguments
+
+- store_artifacts:
+    path: /tmp/decaf-debug.log
+    destination: debug-logs
+    when: always
+```
+
 # Development
 
 When developing, it's recommended to write automated tests and run them to
