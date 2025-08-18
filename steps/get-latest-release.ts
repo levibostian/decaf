@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-all
+#!/usr/bin/env -S deno run --quiet --allow-all
 
 /**
  * This script retrieves the latest release of the project.
