@@ -49,36 +49,34 @@ const isOnGitHubActions = envCi().isCi && envCi().service === "github"
 
 // Generic log function that is used by all other logging functions.
 function log(level: keyof LogLevels, message: string) {
-  message.split("\n").forEach((line) => {
-    const isDebugMessage = level === "debug"
+  const isDebugMessage = level === "debug"
 
-    // Show if:
-    // - The message is not a debug message
-    // - user enabled debug logs via CLI argument
-    // - we are running in github actions. since github actions will hide debug messages unless you enable debug mode in the web UI.
-    const shouldPrintMessageToConsole = !isDebugMessage || Deno.env.get("INPUT_DEBUG") === "true" || isOnGitHubActions
+  // Show if:
+  // - The message is not a debug message
+  // - user enabled debug logs via CLI argument
+  // - we are running in github actions. since github actions will hide debug messages unless you enable debug mode in the web UI.
+  const shouldPrintMessageToConsole = !isDebugMessage || Deno.env.get("INPUT_DEBUG") === "true" || isOnGitHubActions
 
-    if (shouldPrintMessageToConsole) {
-      const consoleLogLine = isOnGitHubActions ? `${githubActionLevels[level]}${line}` : `${otherCILevels[level]}${line}`
+  if (shouldPrintMessageToConsole) {
+    const consoleLogLine = isOnGitHubActions ? `${githubActionLevels[level]}${message}` : `${otherCILevels[level]}${message}`
 
-      console.log(consoleLogLine)
+    console.log(consoleLogLine)
+  }
+
+  const debugFilePath = Deno.env.get("INPUT_DEBUG_FILE")?.trim()
+  const shouldWriteToDebugFile = debugFilePath && debugFilePath !== ""
+
+  if (shouldWriteToDebugFile) {
+    try {
+      const timestamp = new Date().toISOString()
+      const logEntry = `[${timestamp}] [${level.toUpperCase()}] ${message}\n`
+      Deno.writeTextFileSync(debugFilePath, logEntry, { append: true })
+    } catch (error) {
+      // If we can't write to the debug file, don't crash the program
+      // Just log the error to console without recursing
+      console.error(`Failed to write to debug file: ${error}`)
     }
-
-    const debugFilePath = Deno.env.get("INPUT_DEBUG_FILE")?.trim()
-    const shouldWriteToDebugFile = debugFilePath && debugFilePath !== ""
-
-    if (shouldWriteToDebugFile) {
-      try {
-        const timestamp = new Date().toISOString()
-        const logEntry = `[${timestamp}] [${level.toUpperCase()}] ${message}\n`
-        Deno.writeTextFileSync(debugFilePath, logEntry, { append: true })
-      } catch (error) {
-        // If we can't write to the debug file, don't crash the program
-        // Just log the error to console without recursing
-        console.error(`Failed to write to debug file: ${error}`)
-      }
-    }
-  })
+  }
 }
 
 /**
