@@ -96,7 +96,7 @@ const run = async (
   child.stdout.pipeTo(
     new WritableStream({
       write(chunk) {
-        const decodedChunk = new TextDecoder().decode(chunk)
+        const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
         if (displayLogs) {
           log.message(decodedChunk)
@@ -104,14 +104,14 @@ const run = async (
           log.debug(decodedChunk)
         }
 
-        capturedStdout += decodedChunk.trimEnd()
+        capturedStdout += decodedChunk
       },
     }),
   )
   child.stderr.pipeTo(
     new WritableStream({
       write(chunk) {
-        const decodedChunk = new TextDecoder().decode(chunk)
+        const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
         if (displayLogs) {
           log.message(decodedChunk)
@@ -119,14 +119,12 @@ const run = async (
           log.debug(decodedChunk)
         }
 
-        capturedStderr += decodedChunk.trimEnd()
+        capturedStderr += decodedChunk
       },
     }),
   )
 
   const code = (await child.status).code
-  if (capturedStdout) log.debug(capturedStdout)
-  if (capturedStderr) log.debug(capturedStderr)
 
   let commandOutput: Record<string, unknown> | undefined = undefined
 
@@ -156,7 +154,7 @@ const run = async (
   }
 
   if (code !== 0 && shouldThrowError) {
-    throw new Error(`Command: ${command}, failed with exit code: ${code}, output: ${capturedStdout}, stderr: ${capturedStderr}`)
+    throw new Error(`Command: ${command}, failed with exit code: ${code}`)
   }
 
   return {

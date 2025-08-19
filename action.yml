@@ -36,6 +36,9 @@ inputs:
   commit_limit:
     description: 'Maximum number of commits to retrieve and parse for each branch. This helps improve performance for repositories with many commits. Default is 500.'
     default: ''
+  debug_file:
+    description: 'Path to a file where log messages will be written. If not provided, log messages will not be written to a file.'
+    default: ''
 
 outputs:
   new_release_version:
@@ -69,7 +72,8 @@ runs:
           --get_next_release_version "${{ inputs.get_next_release_version }}" \
           --simulated_merge_type "${{ inputs.simulated_merge_type }}" \
           --branch_filters "${{ inputs.branch_filters }}" \
-          --commit_limit "${{ inputs.commit_limit }}" 
+          --commit_limit "${{ inputs.commit_limit }}" \
+          --debug_file "${{ inputs.debug_file }}"
       shell: bash
 
 

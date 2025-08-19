@@ -4,8 +4,8 @@ const stringTemplating = new Template({
   isEscape: false,
 })
 import { Environment } from "./environment.ts"
-import { Exec, RunResult } from "./exec.ts"
-import { AnyStepInput, GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "./types/environment.ts"
+import { Exec } from "./exec.ts"
+import { AnyStepInput, DeployStepInput, GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "./types/environment.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
 import {
   GetLatestReleaseStepOutput,
@@ -19,6 +19,7 @@ import { Logger } from "./log.ts"
 export interface StepRunner {
   runGetLatestOnCurrentBranchReleaseStep: (input: GetLatestReleaseStepInput) => Promise<GetLatestReleaseStepOutput | null>
   determineNextReleaseVersionStep: (input: GetNextReleaseVersionStepInput) => Promise<GetNextReleaseVersionStepOutput | null>
+  runDeployStep: (input: DeployStepInput) => Promise<void>
 }
 
 export class StepRunnerImpl implements StepRunner {
@@ -32,6 +33,12 @@ export class StepRunnerImpl implements StepRunner {
     return this.getCommandFromUserAndRun({ step: "get_next_release_version", input, outputCheck: isGetNextReleaseVersionStepOutput })
   }
 
+  async runDeployStep(input: DeployStepInput): Promise<void> {
+    // Deploy step doesn't require any specific output format, so we use a function that always returns true
+    // This allows the step to complete successfully regardless of what (if anything) the deployment script outputs
+    await this.getCommandFromUserAndRun({ step: "deploy", input, outputCheck: () => true })
+  }
+
   async getCommandFromUserAndRun<Output>(
     { step, input, outputCheck }: { step: AnyStepName; input: AnyStepInput; outputCheck: (output: unknown) => boolean },
   ): Promise<Output | null> {
@@ -43,8 +50,8 @@ export class StepRunnerImpl implements StepRunner {
     if (!commandToRun) return null
 
     this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
-    const runResult = await this.exec.run({ command: commandToRun, input: input })
-    this.logger.debug(`Step ${step} completed. Result: ${JSON.stringify(runResult)}`)
+    const runResult = await this.exec.run({ command: commandToRun, input: input, displayLogs: true })
+    this.logger.debug(`Step ${step} completed. step output: ${runResult.output}`)
 
     if (outputCheck(runResult.output)) {
       return runResult.output as Output

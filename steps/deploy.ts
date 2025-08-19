@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-all
+#!/usr/bin/env -S deno run --quiet --allow-all
 
 import { DeployStepInput } from "../lib/types/environment.ts"
 import $ from "@david/dax"

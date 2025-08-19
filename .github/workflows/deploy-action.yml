@@ -40,6 +40,12 @@ jobs:
         get_latest_release_current_branch: './steps/get-latest-release.ts'
         get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
+        debug_file: '/tmp/debug-merge.log' 
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: merge-method-logs
+        path: /tmp/debug-merge.log
 
     - uses: actions/checkout@v4
     - name: Compile binary 
@@ -57,6 +63,12 @@ jobs:
         get_latest_release_current_branch: './steps/get-latest-release.ts'
         get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
+        debug_file: '/tmp/debug-squash.log' # Optional, but useful for debugging.
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: squash-method-logs
+        path: /tmp/debug-squash.log
 
     - uses: actions/checkout@v4
     - name: Compile binary 
@@ -74,3 +86,10 @@ jobs:
         get_latest_release_current_branch: './steps/get-latest-release.ts'
         get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
+        debug_file: '/tmp/debug-rebase.log' # Optional, but useful for debugging.
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: rebase-method-logs
+        path: /tmp/debug-rebase.log
+

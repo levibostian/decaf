@@ -6,6 +6,7 @@ import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepOutput, GetNextReleaseVersionStepOutput } from "./steps/types/output.ts"
 import { logger } from "./log.ts"
 import { GitCommitFake } from "./types/git.test.ts"
+import { DeployStepInput } from "./types/environment.ts"
 
 /**
  * Tests that are common to all steps in StepRunner.
@@ -132,4 +133,27 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
 
   const actual = await stepRunner.determineNextReleaseVersionStep({} as any)
   assertEquals(actual, expect)
+})
+
+Deno.test("runDeployStep - given deploy command, expect to run successfully without error", async () => {
+  const environment: Environment = mock()
+  when(environment, "getCommandForStep", (args) => {
+    assertEquals(args.stepName, "deploy")
+    return `echo 'deployment complete'`
+  })
+  const stepRunner = new StepRunnerImpl(environment, exec, logger)
+
+  const deployInput: DeployStepInput = {
+    gitCurrentBranch: "main",
+    gitRepoOwner: "owner",
+    gitRepoName: "repo",
+    testMode: false,
+    gitCommitsCurrentBranch: [],
+    gitCommitsAllLocalBranches: {},
+    lastRelease: null,
+    gitCommitsSinceLastRelease: [],
+    nextVersionName: "1.0.0",
+  }
+
+  await stepRunner.runDeployStep(deployInput)
 })
