@@ -33,7 +33,7 @@ export function pipe<T, U>(value: T, fn: (input: T) => U): U
 export function pipe<T, U, V>(value: T, fn1: (input: T) => U, fn2: (input: U) => V): V
 export function pipe<T, U, V, W>(value: T, fn1: (input: T) => U, fn2: (input: U) => V, fn3: (input: V) => W): W
 export function pipe<T, U, V, W, X>(value: T, fn1: (input: T) => U, fn2: (input: U) => V, fn3: (input: V) => W, fn4: (input: W) => X): X
-export function pipe(value: any, ...fns: Array<(input: any) => any>): any {
+export function pipe(value: unknown, ...fns: Array<(input: unknown) => unknown>): unknown {
   return fns.reduce((result, fn) => fn(result), value)
 }
 

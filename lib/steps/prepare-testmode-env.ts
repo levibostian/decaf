@@ -1,7 +1,7 @@
 import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
 import { Environment } from "../environment.ts"
-import { GitHubApi, GitHubCommit } from "../github-api.ts"
+import { GitHubApi } from "../github-api.ts"
 import { logger } from "../log.ts"
 import { SimulateMerge } from "../simulate-merge.ts"
 import { GitCommit } from "../types/git.ts"

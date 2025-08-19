@@ -1,4 +1,4 @@
-import { Exec, exec } from "./exec.ts"
+import { exec } from "./exec.ts"
 import { Environment } from "./environment.ts"
 import { mock, when } from "./mock/mock.ts"
 import { StepRunnerImpl } from "./step-runner.ts"
@@ -6,7 +6,7 @@ import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepOutput, GetNextReleaseVersionStepOutput } from "./steps/types/output.ts"
 import { logger } from "./log.ts"
 import { GitCommitFake } from "./types/git.test.ts"
-import { DeployStepInput } from "./types/environment.ts"
+import { DeployStepInput, GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "./types/environment.ts"
 
 /**
  * Tests that are common to all steps in StepRunner.
@@ -21,7 +21,15 @@ Deno.test("given output is in stdout, expect return latest step", async () => {
   when(environment, "getCommandForStep", () => `echo '${JSON.stringify(expect)}'`)
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
-  const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({} as any)
+  const testInput: GetLatestReleaseStepInput = {
+    gitCurrentBranch: "main",
+    gitRepoOwner: "test",
+    gitRepoName: "test",
+    testMode: false,
+    gitCommitsCurrentBranch: [],
+    gitCommitsAllLocalBranches: {},
+  }
+  const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput)
   assertEquals(actual, expect)
 })
 
@@ -49,7 +57,15 @@ Deno.test("given no command for step, expect return null", async () => {
   when(environment, "getCommandForStep", () => undefined)
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
-  assertEquals(null, await stepRunner.runGetLatestOnCurrentBranchReleaseStep({} as any))
+  const testInput: GetLatestReleaseStepInput = {
+    gitCurrentBranch: "main",
+    gitRepoOwner: "test",
+    gitRepoName: "test",
+    testMode: false,
+    gitCommitsCurrentBranch: [],
+    gitCommitsAllLocalBranches: {},
+  }
+  assertEquals(null, await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput))
 })
 
 Deno.test("given output is not valid, expect null is returned", async () => {
@@ -57,7 +73,15 @@ Deno.test("given output is not valid, expect null is returned", async () => {
   when(environment, "getCommandForStep", () => `echo 'not json'`)
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
-  assertEquals(null, await stepRunner.runGetLatestOnCurrentBranchReleaseStep({} as any))
+  const testInput: GetLatestReleaseStepInput = {
+    gitCurrentBranch: "main",
+    gitRepoOwner: "test",
+    gitRepoName: "test",
+    testMode: false,
+    gitCommitsCurrentBranch: [],
+    gitCommitsAllLocalBranches: {},
+  }
+  assertEquals(null, await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput))
 })
 
 Deno.test("supports template engine in command string", async () => {
@@ -117,7 +141,15 @@ Deno.test("runGetLatestOnCurrentBranchReleaseStep - given return latest release 
   })
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
-  const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({} as any)
+  const testInput: GetLatestReleaseStepInput = {
+    gitCurrentBranch: "main",
+    gitRepoOwner: "test",
+    gitRepoName: "test",
+    testMode: false,
+    gitCommitsCurrentBranch: [],
+    gitCommitsAllLocalBranches: {},
+  }
+  const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput)
   assertEquals(actual, expect)
 })
 
@@ -131,7 +163,17 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
   })
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
-  const actual = await stepRunner.determineNextReleaseVersionStep({} as any)
+  const testInput: GetNextReleaseVersionStepInput = {
+    gitCurrentBranch: "main",
+    gitRepoOwner: "test",
+    gitRepoName: "test",
+    testMode: false,
+    gitCommitsCurrentBranch: [],
+    gitCommitsAllLocalBranches: {},
+    lastRelease: null,
+    gitCommitsSinceLastRelease: [],
+  }
+  const actual = await stepRunner.determineNextReleaseVersionStep(testInput)
   assertEquals(actual, expect)
 })
 

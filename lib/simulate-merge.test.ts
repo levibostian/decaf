@@ -1,7 +1,7 @@
-import { assertEquals, assertFalse, assertRejects, assertStringIncludes } from "@std/assert"
-import { afterEach, before, beforeEach, describe, it } from "@std/testing/bdd"
+import { assertEquals } from "@std/assert"
+import { afterEach, beforeEach, describe, it } from "@std/testing/bdd"
 import { assertSpyCall, restore, Stub, stub } from "@std/testing/mock"
-import { exec, RunResult } from "./exec.ts"
+import { exec } from "./exec.ts"
 import { SimulateMerge, SimulateMergeImpl } from "./simulate-merge.ts"
 import { Git, git } from "./git.ts"
 import { Exec } from "./exec.ts"
@@ -124,7 +124,7 @@ describe("unit tests for commits returned by simulation methods", () => {
       const newCommit2 = createMockCommit("merge789", "merge commit 2")
 
       // Mock git functions
-      const getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(existingCommit))
+      const _getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(existingCommit))
       const getLatestCommitsSinceStub = when(git, "getLatestCommitsSince", () => Promise.resolve([newCommit1, newCommit2]))
 
       const result = await simulateMerge.merge({
@@ -150,7 +150,7 @@ describe("unit tests for commits returned by simulation methods", () => {
       const newCommit2 = createMockCommit("merge789", "merge commit 2")
 
       // Mock git functions
-      const getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(undefined))
+      const _getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(undefined))
       const getCommitsStub = when(git, "getCommits", () => Promise.resolve([newCommit1, newCommit2]))
 
       const result = await simulateMerge.merge({
@@ -178,7 +178,7 @@ describe("unit tests for commits returned by simulation methods", () => {
       const squashCommit = createMockCommit("squash456", "squashed commit")
 
       // Mock git functions
-      const getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(existingCommit))
+      const _getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(existingCommit))
       const getLatestCommitsSinceStub = when(git, "getLatestCommitsSince", () => Promise.resolve([squashCommit]))
 
       const result = await simulateMerge.squash({
@@ -203,7 +203,7 @@ describe("unit tests for commits returned by simulation methods", () => {
       const squashCommit = createMockCommit("squash456", "squashed commit")
 
       // Mock git functions
-      const getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(undefined))
+      const _getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(undefined))
       const getCommitsStub = when(git, "getCommits", () => Promise.resolve([squashCommit]))
 
       const result = await simulateMerge.squash({
@@ -232,7 +232,7 @@ describe("unit tests for commits returned by simulation methods", () => {
       const rebaseCommit2 = createMockCommit("rebase789", "rebased commit 2")
 
       // Mock git functions
-      const getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(existingCommit))
+      const _getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(existingCommit))
       const getLatestCommitsSinceStub = when(git, "getLatestCommitsSince", () => Promise.resolve([rebaseCommit1, rebaseCommit2]))
 
       const result = await simulateMerge.rebase({
@@ -258,7 +258,7 @@ describe("unit tests for commits returned by simulation methods", () => {
       const rebaseCommit2 = createMockCommit("rebase789", "rebased commit 2")
 
       // Mock git functions
-      const getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(undefined))
+      const _getLatestCommitOnBranchStub = when(git, "getLatestCommitOnBranch", () => Promise.resolve(undefined))
       const getCommitsStub = when(git, "getCommits", () => Promise.resolve([rebaseCommit1, rebaseCommit2]))
 
       const result = await simulateMerge.rebase({

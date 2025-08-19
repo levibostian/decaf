@@ -9,7 +9,7 @@ export interface LogMock extends Logger {
 
 export const getLogMock = () => {
   const loggerObject = {} as LogMock
-  ;(loggerObject as any).messages = []
+  loggerObject.messages = []
 
   stub(loggerObject, "debug", (args) => {
     loggerObject.messages.push({ level: "debug", message: args })
