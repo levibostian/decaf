@@ -11,7 +11,7 @@ describe("checkoutBranch", () => {
   })
 
   it("should execute the expected command", async () => {
-    const execMock = stub(exec, "run", async (args) => {
+    const execMock = stub(exec, "run", async (_args) => {
       return { exitCode: 0, stdout: "success", output: undefined }
     })
 
@@ -30,7 +30,7 @@ describe("checkoutBranch", () => {
   })
 
   it("should throw an error, given the command fails", async () => {
-    stub(exec, "run", async (args) => {
+    stub(exec, "run", async (_args) => {
       throw new Error("error")
     })
 
@@ -68,7 +68,7 @@ describe("createLocalBranchFromRemote", () => {
   })
 
   it("should throw an error, given a command fails", async () => {
-    stub(exec, "run", async (args) => {
+    stub(exec, "run", async (_args) => {
       throw new Error("")
     })
 
@@ -80,7 +80,7 @@ describe("createLocalBranchFromRemote", () => {
 
 const setupExecMock = (stdout: string) => {
   restore() // Reset any existing mocks before creating a new one
-  stub(exec, "run", async (args) => {
+  stub(exec, "run", async (_args) => {
     return { exitCode: 0, stdout, output: undefined }
   })
 }

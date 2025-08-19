@@ -23,6 +23,11 @@
     "include": ["**/*.ts"],
     "exclude": ["**/*.json", "**/*.md", "**/*.yml", "**/*.yml", "**/*.lock"]
   },
+  "lint": {
+    "rules": {
+      "exclude": ["require-await"]
+    }
+  },
   "lock": {
     "path": "./deno.lock",
     "frozen": true

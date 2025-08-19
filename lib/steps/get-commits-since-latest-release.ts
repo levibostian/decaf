@@ -1,6 +1,5 @@
-import { Exec, exec } from "../exec.ts"
+import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
-import { GitHubApi } from "../github-api.ts"
 import { GitCommit } from "../types/git.ts"
 import { GetLatestReleaseStepOutput } from "./types/output.ts"
 
@@ -16,13 +15,13 @@ export interface GetCommitsSinceLatestReleaseStep {
 export class GetCommitsSinceLatestReleaseStepImpl implements GetCommitsSinceLatestReleaseStep {
   constructor(private git: Git, private exec: Exec) {}
 
-  async getAllCommitsSinceGivenCommit({ owner, repo, branch, latestRelease }: {
+  async getAllCommitsSinceGivenCommit({ owner: _owner, repo: _repo, branch, latestRelease }: {
     owner: string
     repo: string
     branch: string
     latestRelease: GetLatestReleaseStepOutput | null
   }): Promise<GitCommit[]> {
-    let returnResult: GitCommit[] = []
+    const returnResult: GitCommit[] = []
 
     const commits = await this.git.getCommits({
       exec: this.exec,
