@@ -62,7 +62,7 @@ query($owner: String!, $repo: String!, $endCursor: String, $numberOfResults: Int
 }
 `
 
-  let pullRequests: GitHubPullRequest[] = []
+  const pullRequests: GitHubPullRequest[] = []
 
   await githubGraphqlRequestPaging<{
     data: {

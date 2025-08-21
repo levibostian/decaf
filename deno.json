@@ -15,13 +15,19 @@
   "tasks": {
     "test": "deno test --allow-all --junit-path reports/junit.xml --coverage=reports/coverage/",
     "test-update": "deno task test -- --update",
-    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts"
+    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts",
+    "lint": "deno lint --fix"
   },
   "fmt": {
     "lineWidth": 150,
     "semiColons": false,
     "include": ["**/*.ts"],
     "exclude": ["**/*.json", "**/*.md", "**/*.yml", "**/*.yml", "**/*.lock"]
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["require-await"]
+    }
   },
   "lock": {
     "path": "./deno.lock",

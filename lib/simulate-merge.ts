@@ -1,6 +1,5 @@
 import { Exec } from "./exec.ts"
 import { Git } from "./git.ts"
-import { GitHubCommit } from "./github-api.ts"
 import { GitCommit } from "./types/git.ts"
 
 export interface SimulateMerge {

@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects, assertThrows } from "@std/assert"
+import { assertEquals, assertRejects } from "@std/assert"
 import { afterEach, describe, it } from "@std/testing/bdd"
 import { restore, stub } from "@std/testing/mock"
 import { assertSnapshot } from "@std/testing/snapshot"
