@@ -51,12 +51,15 @@ outputs:
 runs:
   using: "composite"
   steps:  
+    # If someone runs this action, we need to install the compiled binary. 
     - name: Download deployment tool binary
-      if: ${{ inputs.local_binary_path == '' }}
-      # Run the install script that is packed with the tool. Because we want to install the version of the tool that is associated with the git tag that the action is running from. 
-      # When this file runs, it was more then likely run from a github release tag. So a specific version of the tool is meant to be run. 
-      # We need to know at runtime what version of the tool to run. Because github actions downloads all the code for a git tag, we can get the version from the install script.
-      run: ./install 
+      if: ${{ inputs.local_binary_path == '' }}      
+      # chmod so we can execute the install script. 
+      # run install script, but with the version that is hard-coded to this github action that gets downloaded. 
+      # GITHUB_ACTION_PATH gives you the directory to this action on the CI. 
+      run: |
+        chmod +x ${GITHUB_ACTION_PATH}/install
+        ${GITHUB_ACTION_PATH}/install $(cat ${GITHUB_ACTION_PATH}/version.txt)
       shell: bash
 
     - name: Run deployment tool 

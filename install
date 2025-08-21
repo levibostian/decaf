@@ -4,10 +4,8 @@ set -euo pipefail
 REPO="levibostian/decaf"
 BINARY_NAME="decaf"
 
-# Script has a hardcoded version that is checked into version control. 
-# If you always run this script from the HEAD of the repo, this will always be the latest version.
-# If you checkout a git tag and run, this will be the version of that tag.
-LATEST=$(cat version.txt)
+echo "Fetching latest release version from GitHub..."
+LATEST=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name":' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
 
 # Detect platform
 OS=$(uname -s)
