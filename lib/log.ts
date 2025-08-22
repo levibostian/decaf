@@ -58,9 +58,11 @@ function log(level: keyof LogLevels, message: string) {
   const shouldPrintMessageToConsole = !isDebugMessage || Deno.env.get("INPUT_DEBUG") === "true" || isOnGitHubActions
 
   if (shouldPrintMessageToConsole) {
-    const consoleLogLine = isOnGitHubActions ? `${githubActionLevels[level]}${message}` : `${otherCILevels[level]}${message}`
-
-    console.log(consoleLogLine)
+    // github actions works better to print line by line otherwise some debug logs may show up in non-debug mode.
+    message.split("\n").forEach((line) => {
+      const consoleLogLine = isOnGitHubActions ? `${githubActionLevels[level]}${line}` : `${otherCILevels[level]}${line}`
+      console.log(consoleLogLine)
+    })
   }
 
   const debugFilePath = Deno.env.get("INPUT_DEBUG_FILE")?.trim()
