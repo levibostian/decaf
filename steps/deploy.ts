@@ -49,7 +49,7 @@ await compileBinary({
 // Hard-code the version into a file so that when someone pulls a git tag, that code knows what version it is.
 // This script is designed to modify a file that no other branch has a chance of modifying. This is opposed to modifying a file such as `action.yml` file.
 // This is because we want to prevent merge conflicts whenever we have the `latest` branch modifying a file, but other branch is also modifying that file.
-await $`echo "${input.nextVersionName}" > version.txt`
+await Deno.writeTextFile("version.txt", input.nextVersionName)
 
 // Commit the changes to version.txt
 // Do not throw on error because there is a scenario where we previously made this commit but we failed and retried the deployment.
