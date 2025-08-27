@@ -130,6 +130,8 @@ jobs:
 
 You are responsible for writing the scripts that perform each deployment step. This includes determining the next version, updating the version number in metadata files, and pushing code to a server. You can use *any* language or tools you prefer 😍!
 
+> **💡 Pro tip:** Use the [decaf SDK](https://github.com/levibostian/decaf-sdk-deno/) to make writing your step scripts easier! The SDK provides helpful utilities and handles the input/output contract for you. It supports Deno, Node.js, and Bun.
+
 Below are instructions for each required step. The `steps/` directory in this repository contains example scripts for deploying this codebase, but you should write your own scripts for your project. Use the examples only for reference.
 
 ### 1. Get latest release

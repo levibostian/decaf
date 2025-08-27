@@ -24,9 +24,9 @@ inputs:
   make_pull_request_comment:
     description: 'If a pull request comment should be made. Value is string values "true" or "false".'
     default: 'true'
-  local_binary_path:
-    description: 'If you want to use a local binary instead of downloading the latest release from GitHub. Value is path to the binary.'
-    default: ''
+  compile_binary:
+    description: 'If you want to compile & run the tool instead of downloading the latest release from GitHub. This is used to test pre-release versions of the tool. Value is string values "true" or "false".'
+    default: 'false'
   fail_on_deploy_verification:
     description: 'After deployment commands run, the tool will re-run get latest release command and compare returned version to version just deployed. This option determines if the tool should fail if the versions do not match compared to simply showing a warning. Value is string values "true" or "false". Default is "true". Always "false" in test mode.'
     default: 'true'
@@ -53,7 +53,7 @@ runs:
   steps:  
     # If someone runs this action, we need to install the compiled binary. 
     - name: Download deployment tool binary
-      if: ${{ inputs.local_binary_path == '' }}      
+      if: ${{ inputs.compile_binary == 'false' }}
       # chmod so we can execute the install script. 
       # run install script, but with the version that is hard-coded to this github action that gets downloaded. 
       # GITHUB_ACTION_PATH gives you the directory to this action on the CI. 
@@ -61,6 +61,29 @@ runs:
         chmod +x ${GITHUB_ACTION_PATH}/install
         ${GITHUB_ACTION_PATH}/install $(cat ${GITHUB_ACTION_PATH}/version.txt)
       shell: bash
+
+    - name: Set up Deno
+      if: ${{ inputs.compile_binary == 'true' }}
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: v2.x
+
+    - name: Compile binary
+      if: ${{ inputs.compile_binary == 'true' }}
+      working-directory: ${{ github.action_path }}
+      run: OUTPUT_FILE_NAME=decaf DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+      shell: bash
+
+    # when this action is being executed by *this decaf project*, we dont want to run this cp command because 
+    # the decaf binary will already exist in our workspace directory. But if I want to run a pre-production version of this tool 
+    # from a different project, not this one, I need to cp the compiled binary created above into the relative path so we can call it. 
+    - name: Copy compiled binary to workspace
+      if: ${{ inputs.compile_binary == 'true' }}
+      shell: bash
+      run: |
+        if [ ! -f "${{ github.workspace }}/decaf" ]; then
+          cp ${{ github.action_path }}/decaf ${{ github.workspace }}/decaf
+        fi
 
     - name: Run deployment tool 
       # Deno's runtime permissions are a great feature. It would be nice to take advantage of it, however, it may not be possible with future features like running plugins. 
