@@ -43,7 +43,7 @@ export class ConvenienceStepImpl implements ConvenienceStep {
 
     // Perform a git fetch to allow user to checkout a branch in their deployment commands.
     await this.exec.run({
-      command: `git fetch`,
+      command: `git fetch --tags`,
       input: undefined,
     })
 

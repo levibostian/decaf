@@ -43,8 +43,8 @@ Deno.test("ConvenienceStepImpl", async (t) => {
 
     // Verify git fetch was called
     const execCalls = (mockExec.run as unknown as { calls: { args: [{ command: string }] }[] }).calls
-    const fetchCall = execCalls.find((call) => call.args[0].command === "git fetch")
-    assertEquals(fetchCall !== undefined, true, "git fetch should be executed")
+    const fetchCall = execCalls.find((call) => call.args[0].command === "git fetch --tags")
+    assertEquals(fetchCall !== undefined, true, "git fetch --tags should be executed")
   })
 
   await t.step("should set git config when user provides git committer config", async () => {

@@ -176,7 +176,7 @@ const createLocalBranchFromRemote = async (
 
   // Perform a fetch, otherwise you might get errors about origin branch not being found.
   await exec.run({
-    command: `git fetch origin`,
+    command: `git fetch --tags origin`,
     input: undefined,
   })
 
