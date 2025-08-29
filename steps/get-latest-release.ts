@@ -12,6 +12,8 @@
  * `DATA_FILE_PATH="/tmp/foo.txt" ./steps/get-latest-release.ts && cat /tmp/foo.txt`
  */
 
+Deno.exit(1)
+
 import { GetLatestReleaseStepOutput } from "../lib/steps/types/output.ts"
 import $ from "@david/dax"
 import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
