@@ -70,9 +70,15 @@ Commits since last release:<br>
   }
 } catch (error) {
   if (shouldPostStatusUpdatesOnPullRequest) {
+    let message = `...🟩 **${simulatedMergeType}** 🟩 merge method... ⚠️ There was an error during deployment run.`
+    if (buildInfo.buildUrl) {
+      message += ` [See logs to learn more and fix the issue](${buildInfo.buildUrl}).`
+    } else {
+      message += ` See CI server logs to learn more and fix the issue.`
+    }
+
     await githubApi.postStatusUpdateOnPullRequest({
-      message:
-        `...🟩 **${simulatedMergeType}** 🟩 merge method... ⚠️ There was an error during deployment run. [See logs to learn more and fix the issue](${buildInfo.buildUrl}).`,
+      message,
       owner,
       repo,
       prNumber: pullRequestInfo.prNumber,
