@@ -354,8 +354,10 @@ const setupTestEnvironmentAndRun = async ({
   Deno.env.set("GITHUB_REF", `refs/heads/${currentBranch}`)
   Deno.env.set("GITHUB_REPOSITORY", "levibostian/decaf")
 
+  let hasRanConvenienceCommandsAfterDeployment = false
   const convenienceStep = mock<ConvenienceStep>()
   when(convenienceStep, "runConvenienceCommands", async () => {
+    if (hasRanDeployStep) hasRanConvenienceCommandsAfterDeployment = true
     return { gitCommitsAllLocalBranches: { "latest": [] }, gitCommitsCurrentBranch: gitCommitsCurrentBranch || [] }
   })
 
@@ -364,8 +366,7 @@ const setupTestEnvironmentAndRun = async ({
     stepRunner,
     "runGetLatestOnCurrentBranchReleaseStep",
     async () => {
-      // if we ran a deployment, return a different value since latest release might have changed.
-      if (deployStepMock.calls.length > 0) {
+      if (hasRanConvenienceCommandsAfterDeployment) {
         if (latestReleaseAfterDeploy) return latestReleaseAfterDeploy
         if (nextReleaseVersion) return { versionName: nextReleaseVersion, commitSha: "deploy-sha" }
       }
@@ -393,7 +394,9 @@ const setupTestEnvironmentAndRun = async ({
     },
   )
 
+  let hasRanDeployStep = false
   const deployStepMock = stub(stepRunner, "runDeployStep", async () => {
+    hasRanDeployStep = true
     return
   })
 
