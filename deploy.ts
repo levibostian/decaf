@@ -175,13 +175,23 @@ export const run = async ({
   log.notice(
     `🔄 Verifying that the new release was created by re-running the get-latest-release step...`,
   )
+  // Re-run convenience commands to ensure any git changes done in deployment commands are included. This will
+  // run a git fetch again and parse commits all over again.
+  const {
+    gitCommitsAllLocalBranches: gitCommitsAllLocalBranchesAfterDeploy,
+    gitCommitsCurrentBranch: gitCommitsCurrentBranchAfterDeploy,
+  } = await convenienceStep.runConvenienceCommands(
+    environment.getBranchFilters(),
+    environment.getCommitLimit(),
+  )
+
   const latestReleaseAfterDeploy = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
     gitCurrentBranch: currentBranch,
     gitRepoOwner: owner,
     gitRepoName: repo,
     testMode: runInTestMode,
-    gitCommitsCurrentBranch,
-    gitCommitsAllLocalBranches,
+    gitCommitsCurrentBranch: gitCommitsCurrentBranchAfterDeploy,
+    gitCommitsAllLocalBranches: gitCommitsAllLocalBranchesAfterDeploy,
   })
   log.debug(`Latest release after deploy: ${JSON.stringify(latestReleaseAfterDeploy)}`)
 
