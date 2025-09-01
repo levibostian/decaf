@@ -22,6 +22,10 @@ const simulatedMergeType = environment.getSimulatedMergeType()
 const shouldPostStatusUpdatesOnPullRequest = environment.getUserConfigurationOptions().makePullRequestComment && pullRequestInfo !== undefined
 const { owner, repo } = environment.getRepository()
 
+// Before we do anything, run a complete git fetch.
+// Many git commands in this tool depend on it, so run it early to avoid any issues.
+await git.fetch({ exec })
+
 if (shouldPostStatusUpdatesOnPullRequest) {
   await githubApi.postStatusUpdateOnPullRequest({
     message: `## decaf
@@ -41,6 +45,8 @@ try {
     prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec), git, exec),
     getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec),
     log: logger,
+    git,
+    exec,
     environment,
   })
   const newReleaseVersion = runResult?.nextReleaseVersion

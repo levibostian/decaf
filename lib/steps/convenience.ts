@@ -41,12 +41,6 @@ export class ConvenienceStepImpl implements ConvenienceStep {
   }> {
     this.log.debug(`Running convenience commands...`)
 
-    // Perform a git fetch to allow user to checkout a branch in their deployment commands.
-    await this.exec.run({
-      command: `git fetch --tags`,
-      input: undefined,
-    })
-
     // Set the git user name and email so the user can create commits in their deployment commands.
     const userProvidedGitCommitterConfig = this.environment.getGitConfigInput()
     if (userProvidedGitCommitterConfig) {
