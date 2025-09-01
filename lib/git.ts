@@ -373,6 +373,9 @@ const getLocalBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => 
   const branches = stdout.trim().split("\n")
     .map((branch) => branch.trim())
     .filter((branch) => branch !== "")
+    // Only give us branch names that begin with "origin/". This filters out a lot of items in the list that are actually not branches. like...
+    // HEAD, origin, pull/80/merge
+    .filter((branch) => branch.startsWith("origin/"))
     .map((branch) => {
       // Remove the 'origin/' prefix from remote branches to get just the branch name
       if (branch.startsWith("origin/")) {
@@ -380,12 +383,10 @@ const getLocalBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => 
       }
       return branch
     })
+    // Filter out special refs that aren't actual branches
+    .filter((branch) => branch !== "HEAD")
     // Remove duplicates (same branch might exist both locally and remotely)
     .filter((branch, index, array) => array.indexOf(branch) === index)
-    // Filter out HEAD reference
-    .filter((branch) => branch !== "HEAD")
-    // Filter out 'origin' reference, which is not a branch but a remote
-    .filter((branch) => branch !== "origin")
 
   return branches
 }
