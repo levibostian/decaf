@@ -59,7 +59,6 @@ describe("createLocalBranchFromRemote", () => {
     assertEquals(execMock.calls.map((call) => call.args[0].command), [
       "git branch --show-current",
       "git branch --list branch-to-pull",
-      "git fetch --tags origin",
       "git branch --track branch-to-pull origin/branch-to-pull",
       "git checkout branch-to-pull",
       "git pull --no-rebase origin branch-to-pull",
@@ -452,7 +451,7 @@ Deno.test("getCurrentBranch - should handle whitespace in branch name", async ()
 })
 
 Deno.test("getLocalBranches - should return list of local branches", async () => {
-  setupExecMock("main\nfeature-branch\ndevelop")
+  setupExecMock("origin/main\norigin/feature-branch\norigin/develop")
 
   const result = await git.getLocalBranches({ exec })
 
@@ -460,7 +459,7 @@ Deno.test("getLocalBranches - should return list of local branches", async () =>
 })
 
 Deno.test("getLocalBranches - should return list of local and remote branches", async () => {
-  setupExecMock("main\nfeature-branch\norigin/develop\norigin/hotfix")
+  setupExecMock("origin/main\norigin/feature-branch\norigin/develop\norigin/hotfix")
 
   const result = await git.getLocalBranches({ exec })
 
@@ -476,7 +475,7 @@ Deno.test("getLocalBranches - should remove duplicates when same branch exists l
 })
 
 Deno.test("getLocalBranches - should filter out HEAD and origin references", async () => {
-  setupExecMock("main\norigin/HEAD\norigin/main\nfeature-branch\norigin")
+  setupExecMock("origin/main\nHEAD\norigin/HEAD\norigin/feature-branch\norigin")
 
   const result = await git.getLocalBranches({ exec })
 
@@ -492,7 +491,7 @@ Deno.test("getLocalBranches - should handle only remote branches", async () => {
 })
 
 Deno.test("getLocalBranches - should handle mixed local and remote branches with complex names", async () => {
-  setupExecMock("main\nfeature/user-auth\norigin/main\norigin/hotfix/critical-bug\norigin/release/v2.0\nbugfix/memory-leak")
+  setupExecMock("origin/main\norigin/feature/user-auth\norigin/hotfix/critical-bug\norigin/release/v2.0\norigin/bugfix/memory-leak")
 
   const result = await git.getLocalBranches({ exec })
 
@@ -500,7 +499,7 @@ Deno.test("getLocalBranches - should handle mixed local and remote branches with
 })
 
 Deno.test("getLocalBranches - should handle single branch", async () => {
-  setupExecMock("main")
+  setupExecMock("origin/main")
 
   const result = await git.getLocalBranches({ exec })
 
@@ -513,6 +512,14 @@ Deno.test("getLocalBranches - should handle empty repository with no branches", 
   const result = await git.getLocalBranches({ exec })
 
   assertEquals(result, [])
+})
+
+Deno.test("getLocalBranches - should filter out pull request merge refs", async () => {
+  setupExecMock("origin/main\norigin/develop\npull/88/merge\npull/90/head\norigin/feature-branch\nremote/pr/123")
+
+  const result = await git.getLocalBranches({ exec })
+
+  assertEquals(result, ["main", "develop", "feature-branch"])
 })
 
 Deno.test("getLatestCommitOnBranch - should return the latest commit when commits exist on branch", async () => {
