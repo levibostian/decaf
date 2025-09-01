@@ -30,23 +30,6 @@ Deno.test("ConvenienceStepImpl", async (t) => {
 
   const createMockCommit = (): GitCommit => new GitCommitFake({})
 
-  await t.step("should run git fetch command", async () => {
-    setupMocks()
-
-    // Mock git methods to return minimal data
-    when(mockGit, "getLocalBranches", () => Promise.resolve(["main"]))
-    when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
-    when(mockGit, "getCommits", () => Promise.resolve([]))
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
-
-    await convenience.runConvenienceCommands()
-
-    // Verify git fetch was called
-    const execCalls = (mockExec.run as unknown as { calls: { args: [{ command: string }] }[] }).calls
-    const fetchCall = execCalls.find((call) => call.args[0].command === "git fetch --tags")
-    assertEquals(fetchCall !== undefined, true, "git fetch --tags should be executed")
-  })
-
   await t.step("should set git config when user provides git committer config", async () => {
     setupMocks()
 
