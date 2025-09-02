@@ -35,7 +35,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
 
     const gitConfig = { name: "Test User", email: "test@example.com" }
     when(mockEnvironment, "getGitConfigInput", () => gitConfig)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(["main"]))
+    when(mockGit, "getBranches", () => Promise.resolve(["main"]))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve([]))
 
@@ -53,7 +53,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     setupMocks()
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(["main"]))
+    when(mockGit, "getBranches", () => Promise.resolve(["main"]))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve([]))
 
@@ -72,7 +72,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branches))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -98,7 +98,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branches))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -123,7 +123,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branches))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -143,7 +143,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     setupMocks()
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve([]))
+    when(mockGit, "getBranches", () => Promise.resolve([]))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
 
     const result = await convenience.runConvenienceCommands()
@@ -159,7 +159,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branches))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -185,7 +185,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     const commitLimit = 100
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branches))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -208,7 +208,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branches))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
