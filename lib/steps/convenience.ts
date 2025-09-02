@@ -62,7 +62,7 @@ export class ConvenienceStepImpl implements ConvenienceStep {
     this.log.debug(`Branch filters provided: ${JSON.stringify(branchFilters)}`)
 
     const gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] } = {}
-    const allLocalBranches = await this.git.getLocalBranches({ exec })
+    const allLocalBranches = await this.git.getBranches({ exec })
     const currentBranch = await this.git.getCurrentBranch({ exec })
 
     for (const branch of allLocalBranches) {

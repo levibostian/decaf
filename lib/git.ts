@@ -38,7 +38,7 @@ export interface Git {
   createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
   getCommits: ({ exec, branch, limit }: { exec: Exec; branch: string; limit?: number }) => Promise<GitCommit[]>
   getCurrentBranch: ({ exec }: { exec: Exec }) => Promise<string>
-  getLocalBranches: ({ exec }: { exec: Exec }) => Promise<string[]>
+  getBranches: ({ exec }: { exec: Exec }) => Promise<string[]>
 }
 
 const fetch = async ({ exec }: { exec: Exec }): Promise<void> => {
@@ -360,7 +360,7 @@ const getCurrentBranch = async ({ exec }: { exec: Exec }): Promise<string> => {
   return stdout.trim()
 }
 
-const getLocalBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => {
+const getBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => {
   /*
    * We call "git fetch" before running the tool. fetch does not create a local branch which by default will not show up when you call `git branch`.
    * The implementation of this function is to get a list of all local and remote branches. So we run multiple commands to get all branches.
@@ -404,5 +404,5 @@ export const git: Git = {
   getLatestCommitOnBranch,
   createLocalBranchFromRemote,
   getCurrentBranch,
-  getLocalBranches,
+  getBranches,
 }
