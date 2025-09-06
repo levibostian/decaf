@@ -7,6 +7,8 @@ import { GitHubCommit } from "./lib/github-api.ts"
 import { StepRunner } from "./lib/step-runner.ts"
 import { ConvenienceStep } from "./lib/steps/convenience.ts"
 import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
+import { Exec } from "./lib/exec.ts"
+import { Git } from "./lib/git.ts"
 
 export const run = async ({
   convenienceStep,
@@ -14,6 +16,8 @@ export const run = async ({
   prepareEnvironmentForTestMode,
   getCommitsSinceLatestReleaseStep,
   environment,
+  git,
+  exec,
   log,
 }: {
   convenienceStep: ConvenienceStep
@@ -21,6 +25,8 @@ export const run = async ({
   prepareEnvironmentForTestMode: PrepareTestModeEnvStep
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep
   environment: Environment
+  git: Git
+  exec: Exec
   log: Logger
 }): Promise<
   { nextReleaseVersion: string | null; commitsSinceLastRelease: GitHubCommit[]; latestRelease: GetLatestReleaseStepOutput | null } | null
@@ -177,6 +183,8 @@ export const run = async ({
   )
   // Re-run convenience commands to ensure any git changes done in deployment commands are included. This will
   // run a git fetch again and parse commits all over again.
+  await git.fetch({ exec })
+
   const {
     gitCommitsAllLocalBranches: gitCommitsAllLocalBranchesAfterDeploy,
     gitCommitsCurrentBranch: gitCommitsCurrentBranchAfterDeploy,

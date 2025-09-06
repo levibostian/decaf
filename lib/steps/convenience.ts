@@ -41,12 +41,6 @@ export class ConvenienceStepImpl implements ConvenienceStep {
   }> {
     this.log.debug(`Running convenience commands...`)
 
-    // Perform a git fetch to allow user to checkout a branch in their deployment commands.
-    await this.exec.run({
-      command: `git fetch --tags`,
-      input: undefined,
-    })
-
     // Set the git user name and email so the user can create commits in their deployment commands.
     const userProvidedGitCommitterConfig = this.environment.getGitConfigInput()
     if (userProvidedGitCommitterConfig) {
@@ -67,26 +61,26 @@ export class ConvenienceStepImpl implements ConvenienceStep {
     this.log.debug(`Getting commits for all branches and parsing commits...`)
     this.log.debug(`Branch filters provided: ${JSON.stringify(branchFilters)}`)
 
-    const gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] } = {}
-    const allLocalBranches = await this.git.getLocalBranches({ exec })
+    const gitCommitsAllBranches: { [branchName: string]: GitCommit[] } = {}
+    const allBranchNames = await this.git.getBranches({ exec })
     const currentBranch = await this.git.getCurrentBranch({ exec })
 
-    for (const branch of allLocalBranches) {
+    for (const [branchName, branchInfo] of allBranchNames) {
       // Always include current branch for safety, regardless of filters
-      const shouldIncludeBranch = branch === currentBranch || this.branchMatchesFilters(branch, branchFilters)
+      const shouldIncludeBranch = branchName === currentBranch || this.branchMatchesFilters(branchName, branchFilters)
 
       if (shouldIncludeBranch) {
-        this.log.debug(`Processing commits for branch: ${branch}, commit limit: ${commitLimit || "unlimited"}`)
-        const commitsOnBranch = await this.git.getCommits({ exec, branch, limit: commitLimit })
-        gitCommitsAllLocalBranches[branch] = commitsOnBranch
+        this.log.debug(`Processing commits for branch: ${branchName}, commit limit: ${commitLimit || "unlimited"}`)
+        const commitsOnBranch = await this.git.getCommits({ exec, branch: branchInfo, limit: commitLimit })
+        gitCommitsAllBranches[branchName] = commitsOnBranch
       }
     }
 
-    const gitCommitsCurrentBranch = gitCommitsAllLocalBranches[currentBranch]
+    const gitCommitsCurrentBranch = gitCommitsAllBranches[currentBranch]
 
     return {
       gitCommitsCurrentBranch,
-      gitCommitsAllLocalBranches,
+      gitCommitsAllLocalBranches: gitCommitsAllBranches,
     }
   }
 }

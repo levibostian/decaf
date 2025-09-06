@@ -25,7 +25,7 @@ export class GetCommitsSinceLatestReleaseStepImpl implements GetCommitsSinceLate
 
     const commits = await this.git.getCommits({
       exec: this.exec,
-      branch,
+      branch: { ref: branch },
     })
 
     for (const commit of commits) {
