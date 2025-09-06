@@ -165,7 +165,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: "main" }],
+        args: [{ exec, branch: { ref: "main" } }],
       })
     })
   })
@@ -218,7 +218,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: "main" }],
+        args: [{ exec, branch: { ref: "main" } }],
       })
     })
   })
@@ -273,7 +273,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: "main" }],
+        args: [{ exec, branch: { ref: "main" } }],
       })
     })
   })
