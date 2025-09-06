@@ -74,7 +74,7 @@ export class SimulateMergeImpl implements SimulateMerge {
       commitMessage: string
     },
   ) {
-    const commitReference = await this.git.getLatestCommitOnBranch({ exec: this.exec, branch: targetBranch })
+    const commitReference = await this.git.getLatestCommitOnBranch({ exec: this.exec, branch: { ref: targetBranch } })
 
     await this.prepareForMerge({ baseBranch, targetBranch })
 
@@ -85,7 +85,7 @@ export class SimulateMergeImpl implements SimulateMerge {
     // if commit reference is undefined, it means that the target branch was empty. So, get all commits
     // which will include all the commits that were just created by the merge.
     if (commitReference === undefined) {
-      return await this.git.getCommits({ exec: this.exec, branch: targetBranch })
+      return await this.git.getCommits({ exec: this.exec, branch: { ref: targetBranch } })
     } else {
       return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
     }
@@ -99,7 +99,7 @@ export class SimulateMergeImpl implements SimulateMerge {
       commitMessage: string
     },
   ) {
-    const commitReference = await this.git.getLatestCommitOnBranch({ exec: this.exec, branch: targetBranch })
+    const commitReference = await this.git.getLatestCommitOnBranch({ exec: this.exec, branch: { ref: targetBranch } })
 
     await this.prepareForMerge({ baseBranch, targetBranch })
 
@@ -120,7 +120,7 @@ export class SimulateMergeImpl implements SimulateMerge {
     // if commit reference is undefined, it means that the target branch was empty. So, get all commits
     // which will include all the commits that were just created by the squash.
     if (commitReference === undefined) {
-      return await this.git.getCommits({ exec: this.exec, branch: targetBranch })
+      return await this.git.getCommits({ exec: this.exec, branch: { ref: targetBranch } })
     } else {
       return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
     }
@@ -135,7 +135,7 @@ export class SimulateMergeImpl implements SimulateMerge {
       commitMessage: string
     },
   ) {
-    const commitReference = await this.git.getLatestCommitOnBranch({ exec: this.exec, branch: targetBranch })
+    const commitReference = await this.git.getLatestCommitOnBranch({ exec: this.exec, branch: { ref: targetBranch } })
 
     await this.prepareForMerge({ baseBranch, targetBranch })
 
@@ -147,7 +147,7 @@ export class SimulateMergeImpl implements SimulateMerge {
     // if commit reference is undefined, it means that the target branch was empty. So, get all commits
     // which will include all the commits that were just created by the rebase.
     if (commitReference === undefined) {
-      return await this.git.getCommits({ exec: this.exec, branch: targetBranch })
+      return await this.git.getCommits({ exec: this.exec, branch: { ref: targetBranch } })
     } else {
       return await this.git.getLatestCommitsSince({ exec: this.exec, commit: commitReference })
     }
