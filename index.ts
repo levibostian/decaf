@@ -1,10 +1,10 @@
 import { run } from "./deploy.ts"
-import { GitHubApiImpl } from "./lib/github-api.ts"
+import * as githubApiModule from "./lib/github-api.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
 import { exec } from "./lib/exec.ts"
-import { git } from "./lib/git.ts"
+import * as gitModule from "./lib/git.ts"
 import { logger } from "./lib/log.ts"
-import { EnvironmentImpl } from "./lib/environment.ts"
+import * as environmentModule from "./lib/environment.ts"
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
 import { StepRunnerImpl } from "./lib/step-runner.ts"
@@ -14,8 +14,9 @@ import { processCommandLineArgs } from "./cli.ts"
 // After args are processed, they are available to the environment module.
 processCommandLineArgs(Deno.args)
 
-const githubApi = GitHubApiImpl
-const environment = new EnvironmentImpl()
+const githubApi = githubApiModule.impl()
+const environment = environmentModule.impl()
+const git = gitModule.impl()
 const pullRequestInfo = environment.isRunningInPullRequest()
 const buildInfo = environment.getBuild()
 const simulatedMergeType = environment.getSimulatedMergeType()
