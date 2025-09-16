@@ -411,18 +411,24 @@ const getBranches = async ({ exec }: { exec: Exec }): Promise<Map<string, { ref:
   return branchMap
 }
 
-export const git: Git = {
-  fetch,
-  checkoutBranch,
-  merge,
-  pull,
-  setUser,
-  squash,
-  rebase,
-  getCommits,
-  getLatestCommitsSince,
-  getLatestCommitOnBranch,
-  createLocalBranchFromRemote,
-  getCurrentBranch,
-  getBranches,
+let gitStub: Git | undefined = undefined
+export const overrideGit = (stub: Git) => {
+  gitStub = stub
 }
+
+export const impl = (): Git =>
+  gitStub || {
+    fetch,
+    checkoutBranch,
+    merge,
+    pull,
+    setUser,
+    squash,
+    rebase,
+    getCommits,
+    getLatestCommitsSince,
+    getLatestCommitOnBranch,
+    createLocalBranchFromRemote,
+    getCurrentBranch,
+    getBranches,
+  }
