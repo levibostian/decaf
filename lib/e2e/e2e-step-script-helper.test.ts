@@ -10,7 +10,7 @@ import { GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "../ty
  */
 
 export const getBashCommandToRunThisScript = (): string => {
-  return `${new URL(".", import.meta.url).pathname}e2e-step-script.test.ts`
+  return `${new URL(".", import.meta.url).pathname}e2e-step-script.ts`
 }
 
 export const setGetLatestReleaseStepOutput = (output: GetLatestReleaseStepOutput | null) => {

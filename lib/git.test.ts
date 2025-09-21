@@ -2,8 +2,14 @@ import { assertEquals, assertRejects } from "@std/assert"
 import { afterEach, describe, it } from "@std/testing/bdd"
 import { assertSpyCall, restore, stub } from "@std/testing/mock"
 import { exec } from "./exec.ts"
-import { git } from "./git.ts"
+import * as gitModule from "./git.ts"
 import { GitCommit } from "./types/git.ts"
+
+let git: gitModule.Git
+Deno.test.beforeEach(() => {
+  gitModule.clearOverride()
+  git = gitModule.impl()
+})
 
 describe("checkoutBranch", () => {
   afterEach(() => {

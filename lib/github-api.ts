@@ -1,5 +1,5 @@
 import * as log from "./log.ts"
-import * as cathy from "npm:cathy"
+import * as cathy from "cathy"
 
 export interface GitHubRelease {
   tag: {
@@ -358,6 +358,9 @@ export interface GitHubApi {
 let stub: GitHubApi | undefined = undefined
 export const overrideGitHubApi = (override: GitHubApi) => {
   stub = override
+}
+export const clearOverride = () => {
+  stub = undefined
 }
 
 export const impl = (): GitHubApi =>

@@ -415,6 +415,9 @@ let gitStub: Git | undefined = undefined
 export const overrideGit = (stub: Git) => {
   gitStub = stub
 }
+export const clearOverride = () => {
+  gitStub = undefined
+}
 
 export const impl = (): Git =>
   gitStub || {
