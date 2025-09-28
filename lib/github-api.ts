@@ -355,17 +355,10 @@ export interface GitHubApi {
   postStatusUpdateOnPullRequest: typeof postStatusUpdateOnPullRequest
 }
 
-let stub: GitHubApi | undefined = undefined
-export const overrideGitHubApi = (override: GitHubApi) => {
-  stub = override
-}
-export const clearOverride = () => {
-  stub = undefined
-}
-
-export const impl = (): GitHubApi =>
-  stub || {
+export const impl = (): GitHubApi => {
+  return {
     getCommitsForBranch,
     getPullRequestStack,
     postStatusUpdateOnPullRequest,
   }
+}

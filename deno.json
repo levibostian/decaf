@@ -10,7 +10,8 @@
     "cathy": "npm:cathy@^1.4.0",
     "env-ci": "npm:env-ci@^11.1.1",
     "globrex": "npm:globrex@^0.1.2",
-    "shell-quote": "npm:shell-quote@^1.8.2"
+    "shell-quote": "npm:shell-quote@^1.8.2",
+    "tiny-di": "https://raw.githubusercontent.com/levibostian/tiny-di-deno/refs/heads/main/mod.ts"
   },
   "tasks": {
     "test": "deno test --allow-all --junit-path reports/junit.xml --coverage=reports/coverage/",

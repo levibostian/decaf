@@ -6,15 +6,15 @@
 
 import { assertEquals } from "@std/assert/equals"
 import { EnvironmentStub, GitRemoteRepositoryMock, GitStub } from "./e2e-stubs.test.ts"
-import { overrideGit } from "../git.ts"
 import { GitCommitFake } from "../types/git.test.ts"
 import { GitCommit } from "../types/git.ts"
 import * as e2eStepScript from "./e2e-step-script-helper.test.ts"
-import { Environment, overrideEnvironment } from "../environment.ts"
+import { Environment } from "../environment.ts"
 import { mock, when } from "../mock/mock.ts"
-import { GitHubApi, GitHubPullRequest, overrideGitHubApi } from "../github-api.ts"
+import { GitHubApi, GitHubPullRequest } from "../github-api.ts"
 import { assertObjectMatch } from "@std/assert"
 import { assertSnapshot } from "@std/testing/snapshot"
+import * as di from "../di.ts"
 
 Deno.test("when running a deployment, given CI only cloned 1 commit on current branch, expect to receive all parsed commits for branch", async (t) => {
   // when running on github actions with actions/checkout and it's default config, you will only have 1 checked out commit.
@@ -114,6 +114,7 @@ Deno.test("when running in test mode in a stacked pull request, expect the step 
   // assert that the input data given to the step scripts is what we expect.
   // we expect that decaf got all of the commits from the remote repo.
   assertObjectMatch(e2eStepScript.getGetLatestReleaseInput(), {
+    // expect that we are on the main branch when the step runs.
     gitCurrentBranch: "main",
     testMode: true,
   })
@@ -124,6 +125,18 @@ Deno.test("when running in test mode in a stacked pull request, expect the step 
 })
 
 // helper functions
+
+let diGraph: typeof di.productionDiGraph
+
+Deno.test.beforeEach(() => {
+  di.clearOverride()
+
+  diGraph = di.getGraph().createChild()
+})
+
+Deno.test.afterEach(() => {
+  di.clearOverride()
+})
 
 const setupGitRepo = (
   { checkedOutBranch, localCommits, remoteCommits, remotePullRequests }: {
@@ -140,13 +153,14 @@ const setupGitRepo = (
     remoteTags: new Map(),
   }
 
-  overrideGit(new GitStub({ currentBranch: checkedOutBranch, remoteRepo: remoteRepository, commits: localCommits }))
+  // Override the services with test implementations
+  diGraph = diGraph.override("git", () => new GitStub({ currentBranch: checkedOutBranch, remoteRepo: remoteRepository, commits: localCommits }))
 
   githubApiMock = mock()
   when(githubApiMock, "getPullRequestStack", async (_args) => {
     return remotePullRequests
   })
-  overrideGitHubApi(githubApiMock)
+  diGraph = diGraph.override("github", () => githubApiMock)
 
   return { remoteRepository }
 }
@@ -174,8 +188,11 @@ const run = async ({ testMode }: { testMode: boolean }) => {
       },
     })
   }
-  overrideEnvironment(environmentMock)
+  diGraph = diGraph.override("environment", () => environmentMock)
 
-  // Force module re-execution by using a unique timestamp parameter
+  // Finalize the DI graph with overrides
+  di.overrideStore(diGraph)
+
+  // Import the module and call its main function
   await import(`../../index.ts?t=${Date.now()}`)
 }

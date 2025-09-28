@@ -7,7 +7,6 @@ import { GitCommit } from "./types/git.ts"
 
 let git: gitModule.Git
 Deno.test.beforeEach(() => {
-  gitModule.clearOverride()
   git = gitModule.impl()
 })
 

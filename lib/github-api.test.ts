@@ -5,7 +5,6 @@ import type { GitHubCommit, GitHubRelease } from "./github-api.ts"
 
 let githubApi: githubApiModule.GitHubApi
 Deno.test.beforeEach(() => {
-  githubApiModule.clearOverride()
   githubApi = githubApiModule.impl()
 })
 
