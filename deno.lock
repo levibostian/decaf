@@ -232,7 +232,7 @@
     "https://deno.land/std@0.224.0/internal/diff.ts": "6234a4b493ebe65dc67a18a0eb97ef683626a1166a1906232ce186ae9f65f4e6",
     "https://deno.land/std@0.224.0/internal/format.ts": "0a98ee226fd3d43450245b1844b47003419d34d210fa989900861c79820d21c2",
     "https://deno.land/std@0.224.0/internal/mod.ts": "534125398c8e7426183e12dc255bb635d94e06d0f93c60a297723abe69d3b22e",
-    "https://raw.githubusercontent.com/levibostian/tiny-di-deno/refs/heads/main/mod.ts": "218b564b55ca5303099c77545e409fbfe81f36ece5802454198650acc64bd721"
+    "https://raw.githubusercontent.com/levibostian/tiny-di-deno/40a25149ad667c9d7f7d96c2b6b2a499ede56beb/mod.ts": "35b6f7b9a92aa7b3592755e3d2b547a9b27660008e3100fcc42f70b686a93b85",
   },
   "workspace": {
     "dependencies": [
