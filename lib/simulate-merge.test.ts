@@ -12,7 +12,6 @@ import { mock, when } from "./mock/mock.ts"
 
 let git: gitModule.Git
 Deno.test.beforeEach(() => {
-  gitModule.clearOverride()
   git = gitModule.impl()
 })
 

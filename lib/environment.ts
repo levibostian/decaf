@@ -242,10 +242,3 @@ export class EnvironmentImpl implements Environment {
     )
   }
 }
-
-let environmentStub: Environment | undefined = undefined
-export const overrideEnvironment = (stub: Environment) => {
-  environmentStub = stub
-}
-
-export const impl = (): Environment => environmentStub || new EnvironmentImpl()
