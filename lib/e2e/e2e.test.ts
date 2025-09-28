@@ -55,27 +55,25 @@ Deno.test("when running a deployment, given CI only cloned 1 commit on current b
   await assertSnapshot(t, actualMainBranchCommits)
 })
 
-Deno.test("when running in test mode in a stacked pull request, expect the step scripts receive the simulated merge commits", async (t) => {
-  // when running on github actions with actions/checkout and it's default config, you will only have 1 checked out commit.
-  const mainBranchCommits = [new GitCommitFake({ message: "latest local commit on main branch" })]
+Deno.test("when running in test mode in a stacked pull request, expect the step scripts receive the simulated merge commits", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "latest commit on main branch", sha: "main-sha-1" })]
   const feature1BranchCommits = [
     ...mainBranchCommits,
-    new GitCommitFake({ message: "latest local commit on feature-1 branch" }),
+    new GitCommitFake({ message: "latest commit on feature-1 branch", sha: "feature-1-sha-1" }),
   ]
   const feature2BranchCommits = [
     ...feature1BranchCommits,
-    new GitCommitFake({ message: "latest local commit on feature-2 branch" }),
+    new GitCommitFake({ message: "latest commit on feature-2 branch", sha: "feature-2-sha-1" }),
   ]
 
   const givenLocalCommits = new Map<string, GitCommit[]>([
+    // only 1 commit is checked out locally on the current branch to simulate a CI shallow clone
     ["feature-2", feature2BranchCommits],
   ])
 
   const givenRemoteCommits = new Map<string, GitCommit[]>(
     [
-      ["main", [
-        new GitCommitFake({ message: "latest remote commit on main branch" }),
-      ]],
+      ["main", mainBranchCommits],
       ["feature-1", feature1BranchCommits],
       ["feature-2", feature2BranchCommits],
     ],
@@ -119,9 +117,13 @@ Deno.test("when running in test mode in a stacked pull request, expect the step 
     testMode: true,
   })
 
-  const commitsReceivedInStep = e2eStepScript.getGetLatestReleaseInput().gitCommitsAllLocalBranches
-
-  await assertSnapshot(t, commitsReceivedInStep)
+  assertEquals([
+    "Merge pull request #123 from feature-1",
+    "Merge pull request #124 from feature-2",
+    "latest commit on feature-2 branch",
+    "latest commit on feature-1 branch",
+    "latest commit on main branch",
+  ], e2eStepScript.getGetLatestReleaseInput().gitCommitsCurrentBranch.map((commit) => commit.title))
 })
 
 // helper functions
