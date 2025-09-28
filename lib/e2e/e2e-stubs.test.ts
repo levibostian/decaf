@@ -140,10 +140,12 @@ export class GitStub implements Git {
       throw new Error("Cannot fast-forward merge - branches have diverged")
     }
 
+    let updatedCommits: GitCommit[]
+
     if (fastForward !== "--no-ff" && canFastForward) {
       // Fast-forward merge: just add the new commits
       const newCommits = branchToMergeCommits.filter((commit) => !currentBranchCommits.some((existing) => existing.sha === commit.sha))
-      this.localBranchCommits.set(this.currentBranch, [...currentBranchCommits, ...newCommits])
+      updatedCommits = [...currentBranchCommits, ...newCommits]
     } else {
       // Create merge commit
       const mergeCommit: GitCommit = {
@@ -168,9 +170,12 @@ export class GitStub implements Git {
 
       // Add commits from branch being merged that aren't already in current branch
       const newCommits = branchToMergeCommits.filter((commit) => !currentBranchCommits.some((existing) => existing.sha === commit.sha))
-
-      this.localBranchCommits.set(this.currentBranch, [...currentBranchCommits, ...newCommits, mergeCommit])
+      updatedCommits = [...currentBranchCommits, ...newCommits, mergeCommit]
     }
+
+    // Update both local and fetched commits to keep them in sync
+    this.localBranchCommits.set(this.currentBranch, updatedCommits)
+    this.commitsFetched.set(this.currentBranch, updatedCommits)
 
     return Promise.resolve()
   }
@@ -312,9 +317,34 @@ export class GitStub implements Git {
       throw new Error(`Remote branch '${branch}' does not exist`)
     }
 
-    // Create local branch with commits from remote
-    this.localBranchCommits.set(branch, [...remoteCommits])
-    this.branches.push(branch)
+    // Check if local branch already exists (like real implementation)
+    const localBranchExists = this.localBranchCommits.has(branch)
+
+    // Only create local branch if it doesn't exist (like real implementation)
+    if (!localBranchExists) {
+      // Create local branch with commits from remote
+      this.localBranchCommits.set(branch, [...remoteCommits])
+
+      // Add to branches list if not already there
+      if (!this.branches.includes(branch)) {
+        this.branches.push(branch)
+      }
+    }
+
+    // Add remote branch reference to branches if not already there (simulates fetch behavior)
+    const remoteBranchRef = `origin/${branch}`
+    if (!this.branches.includes(remoteBranchRef)) {
+      this.branches.push(remoteBranchRef)
+    }
+
+    // Simulate "pull" - merge any new remote commits that aren't in local branch
+    const localCommits = this.localBranchCommits.get(branch) || []
+    const localShas = new Set(localCommits.map((c) => c.sha))
+    const newRemoteCommits = remoteCommits.filter((commit) => !localShas.has(commit.sha))
+
+    if (newRemoteCommits.length > 0) {
+      this.localBranchCommits.set(branch, [...localCommits, ...newRemoteCommits])
+    }
 
     return Promise.resolve()
   }
