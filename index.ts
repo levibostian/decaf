@@ -1,26 +1,33 @@
 import { run } from "./deploy.ts"
-import { GitHubApiImpl } from "./lib/github-api.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
 import { exec } from "./lib/exec.ts"
-import { git } from "./lib/git.ts"
 import { logger } from "./lib/log.ts"
-import { EnvironmentImpl } from "./lib/environment.ts"
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
 import { StepRunnerImpl } from "./lib/step-runner.ts"
 import { ConvenienceStepImpl } from "./lib/steps/convenience.ts"
 import { processCommandLineArgs } from "./cli.ts"
+import * as di from "./lib/di.ts"
 
 // After args are processed, they are available to the environment module.
 processCommandLineArgs(Deno.args)
 
-const githubApi = GitHubApiImpl
-const environment = new EnvironmentImpl()
+// DI resolution happens here, after any test overrides have been applied
+const diGraph = di.getGraph()
+const githubApi = diGraph.get("github")
+const environment = diGraph.get("environment")
+const git = diGraph.get("git")
+
 const pullRequestInfo = environment.isRunningInPullRequest()
 const buildInfo = environment.getBuild()
 const simulatedMergeType = environment.getSimulatedMergeType()
 const shouldPostStatusUpdatesOnPullRequest = environment.getUserConfigurationOptions().makePullRequestComment && pullRequestInfo !== undefined
+
 const { owner, repo } = environment.getRepository()
+
+// Before we do anything, run a complete git fetch.
+// Many git commands in this tool depend on it, so run it early to avoid any issues.
+await git.fetch({ exec })
 
 if (shouldPostStatusUpdatesOnPullRequest) {
   await githubApi.postStatusUpdateOnPullRequest({
@@ -41,6 +48,8 @@ try {
     prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec), git, exec),
     getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec),
     log: logger,
+    git,
+    exec,
     environment,
   })
   const newReleaseVersion = runResult?.nextReleaseVersion

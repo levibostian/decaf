@@ -2,8 +2,13 @@ import { assertEquals, assertRejects } from "@std/assert"
 import { afterEach, describe, it } from "@std/testing/bdd"
 import { assertSpyCall, restore, stub } from "@std/testing/mock"
 import { exec } from "./exec.ts"
-import { git } from "./git.ts"
+import * as gitModule from "./git.ts"
 import { GitCommit } from "./types/git.ts"
+
+let git: gitModule.Git
+Deno.test.beforeEach(() => {
+  git = gitModule.impl()
+})
 
 describe("checkoutBranch", () => {
   afterEach(() => {
@@ -59,7 +64,6 @@ describe("createLocalBranchFromRemote", () => {
     assertEquals(execMock.calls.map((call) => call.args[0].command), [
       "git branch --show-current",
       "git branch --list branch-to-pull",
-      "git fetch --tags origin",
       "git branch --track branch-to-pull origin/branch-to-pull",
       "git checkout branch-to-pull",
       "git pull --no-rebase origin branch-to-pull",
@@ -105,7 +109,7 @@ This is a merge commit with multiple parents.[⬛]John Doe[⬛]john@example.com[
 10	0	src/file2.ts`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -131,7 +135,7 @@ Testing that abbreviated SHA is correctly extracted.[⬛]Test Author[⬛]test@ex
 1	0	test.ts`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -150,7 +154,7 @@ The feature was causing issues in production.[⬛]Alice Smith[⬛]alice@example.
 3	5	src/feature.ts`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -170,7 +174,7 @@ Deno.test("getCommits - should parse commits with no file stats", async () => {
 This is the very first commit with no files changed.[⬛]Bob Wilson[⬛]bob@example.com[⬛]Bob Wilson[⬛]bob@example.com[⬛]2023-10-01T09:00:00Z[⬛] [⬛]main`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -194,7 +198,7 @@ Includes unit tests and documentation.[⬛]Carol Davis[⬛]carol@example.com[⬛
 -	-	assets/logo.png`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -218,7 +222,7 @@ Release version 2.1.0 with new features and bug fixes.[⬛]Release Bot[⬛]relea
 10	5	CHANGELOG.md`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -235,7 +239,7 @@ Fixed a small issue in error handling.[⬛]Dev User[⬛]dev@example.com[⬛]Dev 
 1	1	src/error.ts`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -266,7 +270,7 @@ This reverts commit broken123.[⬛]Carol Maintainer[⬛]carol@example.com[⬛]Ca
 10	20	src/revert.ts`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 4)
 
@@ -323,7 +327,7 @@ Added screenshots and diagrams for documentation.[⬛]Doc Writer[⬛]docs@exampl
 15	0	docs/usage.md`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -359,7 +363,7 @@ Co-authored-by: Jane Doe <jane@example.com>[⬛]Main Author[⬛]main@example.com
 15	5	tests/auth.test.ts`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -381,7 +385,7 @@ Updated all packages to latest versions.[⬛]Maintainer[⬛]maintainer@example.c
 100	50	package-lock.json`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -392,7 +396,7 @@ Updated all packages to latest versions.[⬛]Maintainer[⬛]maintainer@example.c
 
 Deno.test("getCommits - should return empty array for no commits", async () => {
   setupExecMock("")
-  const result = await git.getCommits({ exec, branch: "empty-branch" })
+  const result = await git.getCommits({ exec, branch: { ref: "empty-branch" } })
   assertEquals(result, [])
 })
 
@@ -405,7 +409,7 @@ Cleanup: removed old, unused files.[⬛]Cleaner[⬛]clean@example.com[⬛]Cleane
 0	10	deprecated.md`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -425,7 +429,7 @@ Testing date parsing functionality.[⬛]Date Tester[⬛]date@example.com[⬛]Dat
 1	0	test.ts`
 
   setupExecMock(gitLogOutput)
-  const result = await git.getCommits({ exec, branch: "main" })
+  const result = await git.getCommits({ exec, branch: { ref: "main" } })
 
   assertEquals(result.length, 1)
   assertFirstCommit(result, {
@@ -451,68 +455,147 @@ Deno.test("getCurrentBranch - should handle whitespace in branch name", async ()
   assertEquals(result, "develop")
 })
 
-Deno.test("getLocalBranches - should return list of local branches", async () => {
-  setupExecMock("main\nfeature-branch\ndevelop")
+Deno.test("getBranches - should return list of local branches", async () => {
+  setupExecMock("origin/main\norigin/feature-branch\norigin/develop")
 
-  const result = await git.getLocalBranches({ exec })
+  const result = await git.getBranches({ exec })
 
-  assertEquals(result, ["main", "feature-branch", "develop"])
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "origin/main" }],
+      ["feature-branch", { ref: "origin/feature-branch" }],
+      ["develop", { ref: "origin/develop" }],
+    ]),
+  )
 })
 
-Deno.test("getLocalBranches - should return list of local and remote branches", async () => {
-  setupExecMock("main\nfeature-branch\norigin/develop\norigin/hotfix")
+Deno.test("getBranches - should return list of local and remote branches", async () => {
+  setupExecMock("origin/main\norigin/feature-branch\norigin/develop\norigin/hotfix")
 
-  const result = await git.getLocalBranches({ exec })
+  const result = await git.getBranches({ exec })
 
-  assertEquals(result, ["main", "feature-branch", "develop", "hotfix"])
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "origin/main" }],
+      ["feature-branch", { ref: "origin/feature-branch" }],
+      ["develop", { ref: "origin/develop" }],
+      ["hotfix", { ref: "origin/hotfix" }],
+    ]),
+  )
 })
 
-Deno.test("getLocalBranches - should remove duplicates when same branch exists locally and remotely", async () => {
+Deno.test("getBranches - should remove duplicates when same branch exists locally and remotely", async () => {
   setupExecMock("main\nfeature-branch\norigin/main\norigin/feature-branch\norigin/develop")
 
-  const result = await git.getLocalBranches({ exec })
+  const result = await git.getBranches({ exec })
 
-  assertEquals(result, ["main", "feature-branch", "develop"])
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "main" }],
+      ["feature-branch", { ref: "feature-branch" }],
+      ["develop", { ref: "origin/develop" }],
+    ]),
+  )
 })
 
-Deno.test("getLocalBranches - should filter out HEAD and origin references", async () => {
-  setupExecMock("main\norigin/HEAD\norigin/main\nfeature-branch\norigin")
+Deno.test("getBranches - should filter out HEAD and origin references", async () => {
+  setupExecMock("origin/main\nHEAD\norigin/HEAD\norigin/feature-branch\norigin")
 
-  const result = await git.getLocalBranches({ exec })
+  const result = await git.getBranches({ exec })
 
-  assertEquals(result, ["main", "feature-branch"])
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "origin/main" }],
+      ["feature-branch", { ref: "origin/feature-branch" }],
+    ]),
+  )
 })
 
-Deno.test("getLocalBranches - should handle only remote branches", async () => {
+Deno.test("getBranches - should handle only remote branches", async () => {
   setupExecMock("origin/main\norigin/develop\norigin/feature-auth")
 
-  const result = await git.getLocalBranches({ exec })
+  const result = await git.getBranches({ exec })
 
-  assertEquals(result, ["main", "develop", "feature-auth"])
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "origin/main" }],
+      ["develop", { ref: "origin/develop" }],
+      ["feature-auth", { ref: "origin/feature-auth" }],
+    ]),
+  )
 })
 
-Deno.test("getLocalBranches - should handle mixed local and remote branches with complex names", async () => {
-  setupExecMock("main\nfeature/user-auth\norigin/main\norigin/hotfix/critical-bug\norigin/release/v2.0\nbugfix/memory-leak")
+Deno.test("getBranches - should handle mixed local and remote branches with complex names", async () => {
+  setupExecMock("origin/main\norigin/feature/user-auth\norigin/hotfix/critical-bug\norigin/release/v2.0\norigin/bugfix/memory-leak")
 
-  const result = await git.getLocalBranches({ exec })
+  const result = await git.getBranches({ exec })
 
-  assertEquals(result, ["main", "feature/user-auth", "hotfix/critical-bug", "release/v2.0", "bugfix/memory-leak"])
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "origin/main" }],
+      ["feature/user-auth", { ref: "origin/feature/user-auth" }],
+      ["hotfix/critical-bug", { ref: "origin/hotfix/critical-bug" }],
+      ["release/v2.0", { ref: "origin/release/v2.0" }],
+      ["bugfix/memory-leak", { ref: "origin/bugfix/memory-leak" }],
+    ]),
+  )
 })
 
-Deno.test("getLocalBranches - should handle single branch", async () => {
-  setupExecMock("main")
+Deno.test("getBranches - should handle single branch", async () => {
+  setupExecMock("origin/main")
 
-  const result = await git.getLocalBranches({ exec })
+  const result = await git.getBranches({ exec })
 
-  assertEquals(result, ["main"])
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "origin/main" }],
+    ]),
+  )
 })
 
-Deno.test("getLocalBranches - should handle empty repository with no branches", async () => {
+Deno.test("getBranches - should handle empty repository with no branches", async () => {
   setupExecMock("")
 
-  const result = await git.getLocalBranches({ exec })
+  const result = await git.getBranches({ exec })
 
-  assertEquals(result, [])
+  assertEquals(result, new Map())
+})
+
+Deno.test("getBranches - should filter out pull request merge refs", async () => {
+  setupExecMock("origin/main\norigin/develop\npull/88/merge\npull/90/head\norigin/feature-branch\nremote/pr/123")
+
+  const result = await git.getBranches({ exec })
+
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "origin/main" }],
+      ["develop", { ref: "origin/develop" }],
+      ["feature-branch", { ref: "origin/feature-branch" }],
+    ]),
+  )
+})
+
+Deno.test("getBranches - should prefer local branches over remote branches when both exist", async () => {
+  setupExecMock("main\norigin/main\nfeature-branch\norigin/feature-branch\norigin/develop")
+
+  const result = await git.getBranches({ exec })
+
+  assertEquals(
+    result,
+    new Map([
+      ["main", { ref: "main" }],
+      ["feature-branch", { ref: "feature-branch" }],
+      ["develop", { ref: "origin/develop" }],
+    ]),
+  )
 })
 
 Deno.test("getLatestCommitOnBranch - should return the latest commit when commits exist on branch", async () => {
@@ -527,7 +610,7 @@ This is an older commit.[⬛]John Smith[⬛]john@example.com[⬛]John Smith[⬛]
 
   setupExecMock(gitLogOutput)
 
-  const result = await git.getLatestCommitOnBranch({ exec, branch: "feature-branch" })
+  const result = await git.getLatestCommitOnBranch({ exec, branch: { ref: "feature-branch" } })
 
   assertEquals(result !== undefined, true, "Expected a commit to be returned")
   if (result) {
@@ -548,7 +631,7 @@ Deno.test("getLatestCommitOnBranch - should return undefined when no commits exi
   // Mock empty git log output (no commits)
   setupExecMock("")
 
-  const result = await git.getLatestCommitOnBranch({ exec, branch: "empty-branch" })
+  const result = await git.getLatestCommitOnBranch({ exec, branch: { ref: "empty-branch" } })
 
   assertEquals(result, undefined, "Expected undefined for empty branch")
 })
@@ -561,7 +644,7 @@ Initial commit on new branch.[⬛]Alice Developer[⬛]alice@example.com[⬛]Alic
 
   setupExecMock(gitLogOutput)
 
-  const result = await git.getLatestCommitOnBranch({ exec, branch: "new-feature" })
+  const result = await git.getLatestCommitOnBranch({ exec, branch: { ref: "new-feature" } })
 
   assertEquals(result !== undefined, true, "Expected a commit to be returned")
   if (result) {

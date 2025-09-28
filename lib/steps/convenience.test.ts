@@ -30,29 +30,12 @@ Deno.test("ConvenienceStepImpl", async (t) => {
 
   const createMockCommit = (): GitCommit => new GitCommitFake({})
 
-  await t.step("should run git fetch command", async () => {
-    setupMocks()
-
-    // Mock git methods to return minimal data
-    when(mockGit, "getLocalBranches", () => Promise.resolve(["main"]))
-    when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
-    when(mockGit, "getCommits", () => Promise.resolve([]))
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
-
-    await convenience.runConvenienceCommands()
-
-    // Verify git fetch was called
-    const execCalls = (mockExec.run as unknown as { calls: { args: [{ command: string }] }[] }).calls
-    const fetchCall = execCalls.find((call) => call.args[0].command === "git fetch --tags")
-    assertEquals(fetchCall !== undefined, true, "git fetch --tags should be executed")
-  })
-
   await t.step("should set git config when user provides git committer config", async () => {
     setupMocks()
 
     const gitConfig = { name: "Test User", email: "test@example.com" }
     when(mockEnvironment, "getGitConfigInput", () => gitConfig)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(["main"]))
+    when(mockGit, "getBranches", () => Promise.resolve(new Map([["main", { ref: "origin/main" }]])))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve([]))
 
@@ -70,7 +53,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     setupMocks()
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(["main"]))
+    when(mockGit, "getBranches", () => Promise.resolve(new Map([["main", { ref: "origin/main" }]])))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve([]))
 
@@ -86,10 +69,15 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     setupMocks()
 
     const branches = ["main", "feature", "develop"]
+    const branchesMap = new Map([
+      ["main", { ref: "origin/main" }],
+      ["feature", { ref: "origin/feature" }],
+      ["develop", { ref: "origin/develop" }],
+    ])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -111,11 +99,16 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   await t.step("should filter branches based on provided filters", async () => {
     setupMocks()
 
-    const branches = ["main", "feature/test", "hotfix/urgent", "develop"]
+    const branchesMap = new Map([
+      ["main", { ref: "origin/main" }],
+      ["feature/test", { ref: "origin/feature/test" }],
+      ["hotfix/urgent", { ref: "origin/hotfix/urgent" }],
+      ["develop", { ref: "origin/develop" }],
+    ])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -136,11 +129,15 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   await t.step("should always include current branch even when it doesn't match filters", async () => {
     setupMocks()
 
-    const branches = ["main", "feature/test", "develop"]
+    const branchesMap = new Map([
+      ["main", { ref: "origin/main" }],
+      ["feature/test", { ref: "origin/feature/test" }],
+      ["develop", { ref: "origin/develop" }],
+    ])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -160,7 +157,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     setupMocks()
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve([]))
+    when(mockGit, "getBranches", () => Promise.resolve(new Map()))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
 
     const result = await convenience.runConvenienceCommands()
@@ -172,11 +169,17 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   await t.step("should handle glob patterns in branch filters", async () => {
     setupMocks()
 
-    const branches = ["main", "release/v1.0", "release/v2.0", "feature/auth", "bugfix/login"]
+    const branchesMap = new Map([
+      ["main", { ref: "origin/main" }],
+      ["release/v1.0", { ref: "origin/release/v1.0" }],
+      ["release/v2.0", { ref: "origin/release/v2.0" }],
+      ["feature/auth", { ref: "origin/feature/auth" }],
+      ["bugfix/login", { ref: "origin/bugfix/login" }],
+    ])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -198,11 +201,15 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     setupMocks()
 
     const branches = ["main", "develop"]
+    const branchesMap = new Map([
+      ["main", { ref: "origin/main" }],
+      ["develop", { ref: "origin/develop" }],
+    ])
     const mockCommits: GitCommit[] = [createMockCommit()]
     const commitLimit = 100
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
@@ -222,10 +229,11 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     setupMocks()
 
     const branches = ["main"]
+    const branchesMap = new Map([["main", { ref: "origin/main" }]])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getLocalBranches", () => Promise.resolve(branches))
+    when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 

@@ -3,6 +3,7 @@ import * as log from "./log.ts"
 import { GitCommit } from "./types/git.ts"
 
 export interface Git {
+  fetch: ({ exec }: { exec: Exec }) => Promise<void>
   checkoutBranch: (
     { exec, branch, createBranchIfNotExist }: { exec: Exec; branch: string; createBranchIfNotExist: boolean },
   ) => Promise<void>
@@ -33,11 +34,39 @@ export interface Git {
   ) => Promise<void>
   getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitCommit }): Promise<GitCommit[]>
   // returns undefined when no commits are found on the branch
-  getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: string }): Promise<GitCommit | undefined>
+  getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: { ref: string } }): Promise<GitCommit | undefined>
   createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
-  getCommits: ({ exec, branch, limit }: { exec: Exec; branch: string; limit?: number }) => Promise<GitCommit[]>
+  getCommits: ({ exec, branch, limit }: { exec: Exec; branch: { ref: string }; limit?: number }) => Promise<GitCommit[]>
   getCurrentBranch: ({ exec }: { exec: Exec }) => Promise<string>
-  getLocalBranches: ({ exec }: { exec: Exec }) => Promise<string[]>
+  /**
+   * Gets a Map of all branches. Key = the name of the branch, local or remote.
+   * Value is an object with 'ref' being the full reference of the branch. Example: if the branch
+   * is available locally, the ref is <branch-name>. If the branch is only available remotely, the ref is
+   * 'origin/<branch-name>'.
+   */
+  getBranches: ({ exec }: { exec: Exec }) => Promise<Map<string, { ref: string }>>
+}
+
+const fetch = async ({ exec }: { exec: Exec }): Promise<void> => {
+  // A *complete* fetch that gets all branches, all commits, all tags.
+
+  // First, try to unshallow if the repository is shallow.
+  // will be shallow if we use the default actions/checkout configuration.
+  try {
+    await exec.run({
+      command: `git fetch --unshallow --tags --all`,
+      input: undefined,
+    })
+  } catch (_error) {
+    // If repo is not shallow, it will throw exception "fatal: --unshallow on a complete repository does not make sense"
+    // Fall back to non-shallow fetch command if ths happens.
+    await exec.run({
+      // --tags ensures that we get all tags from the remote repository.
+      // --all ensures that we get all branches from the origin remote.
+      command: `git fetch --tags --all`,
+      input: undefined,
+    })
+  }
 }
 
 const checkoutBranch = async (
@@ -135,7 +164,7 @@ const getLatestCommitsSince = async (
 ): Promise<GitCommit[]> => {
   const currentBranchName = await getCurrentBranch({ exec })
 
-  const allCommits = await getCommits({ exec, branch: currentBranchName })
+  const allCommits = await getCommits({ exec, branch: { ref: currentBranchName } })
 
   // Find the index of the commit we're looking for
   const commitIndex = allCommits.findIndex((c) => c.sha === commit.sha)
@@ -145,7 +174,7 @@ const getLatestCommitsSince = async (
 }
 
 const getLatestCommitOnBranch = async (
-  { exec, branch }: { exec: Exec; branch: string },
+  { exec, branch }: { exec: Exec; branch: { ref: string } },
 ): Promise<GitCommit | undefined> => {
   const commits = await getCommits({ exec, branch })
 
@@ -173,13 +202,6 @@ const createLocalBranchFromRemote = async (
     command: `git branch --list ${branch}`,
     input: undefined,
   })).stdout.trim() !== ""
-
-  // Perform a fetch, otherwise you might get errors about origin branch not being found.
-  await exec.run({
-    command: `git fetch --tags origin`,
-    input: undefined,
-  })
-
   // Only run if it doesn't exist locally. This is to avoid a error that crashes the tool: "fatal: a branch named '<branch-name>' already exists"
   if (!doesBranchExist) {
     await exec.run({
@@ -209,29 +231,14 @@ const createLocalBranchFromRemote = async (
   })
 }
 
+/**
+ * Able to get all commits for a given branch.
+ *
+ * **NOTE**: Be sure that `git fetch` is called before calling this command!! Otherwise, the commit history you get might be incomplete.
+ */
 const getCommits = async (
-  { exec, branch, limit }: { exec: Exec; branch: string; limit?: number },
+  { exec, branch, limit }: { exec: Exec; branch: { ref: string }; limit?: number },
 ): Promise<GitCommit[]> => {
-  // The provided branch might be local, might be remote. We must determine which one to use.
-  let branchRef = branch
-  // Check if the local branch exists
-  const localBranchExists = await exec.run({
-    command: `git show-ref --verify --quiet refs/heads/${branch}`,
-    input: undefined,
-  }).then(() => true).catch(() => false)
-
-  // If local branch doesn't exist, try the remote branch
-  if (!localBranchExists) {
-    const remoteBranchExists = await exec.run({
-      command: `git show-ref --verify --quiet refs/remotes/origin/${branch}`,
-      input: undefined,
-    }).then(() => true).catch(() => false)
-
-    if (remoteBranchExists) {
-      branchRef = `origin/${branch}`
-    }
-  }
-
   // Use a more detailed pretty format to get more info per commit
   const limitArg = limit ? `-${limit}` : ""
   const { stdout } = await exec.run({
@@ -252,7 +259,7 @@ const getCommits = async (
      * Newlines are not reliable because the commit message body can contain newlines, written
      * by the commit author.
      */
-    command: `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branchRef}`,
+    command: `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branch.ref}`,
     input: undefined,
   })
 
@@ -354,7 +361,7 @@ const getCurrentBranch = async ({ exec }: { exec: Exec }): Promise<string> => {
   return stdout.trim()
 }
 
-const getLocalBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => {
+const getBranches = async ({ exec }: { exec: Exec }): Promise<Map<string, { ref: string }>> => {
   /*
    * We call "git fetch" before running the tool. fetch does not create a local branch which by default will not show up when you call `git branch`.
    * The implementation of this function is to get a list of all local and remote branches. So we run multiple commands to get all branches.
@@ -364,37 +371,60 @@ const getLocalBranches = async ({ exec }: { exec: Exec }): Promise<string[]> => 
     input: undefined,
   })
 
+  const branchMap = new Map<string, { ref: string }>()
+
   const branches = stdout.trim().split("\n")
     .map((branch) => branch.trim())
     .filter((branch) => branch !== "")
-    .map((branch) => {
-      // Remove the 'origin/' prefix from remote branches to get just the branch name
-      if (branch.startsWith("origin/")) {
-        return branch.replace("origin/", "")
-      }
-      return branch
-    })
-    // Remove duplicates (same branch might exist both locally and remotely)
-    .filter((branch, index, array) => array.indexOf(branch) === index)
-    // Filter out HEAD reference
-    .filter((branch) => branch !== "HEAD")
-    // Filter out 'origin' reference, which is not a branch but a remote
+    // filter out github pull request branches. Example: pull/80/merge
+    .filter((branch) => !branch.startsWith("pull/"))
+    // filter out remote pull request branches. Example: remote/pr/123
+    .filter((branch) => !branch.startsWith("remote/"))
+    // Filter out HEAD reference (both local and remote)
+    .filter((branch) => branch !== "HEAD" && !branch.endsWith("/HEAD"))
+    // Filter out 'origin' reference, which is not a branch
     .filter((branch) => branch !== "origin")
 
-  return branches
+  // Process branches in two passes:
+  // 1. First, add all local branches (no 'origin/' prefix)
+  // 2. Then, add remote branches only if no local version exists
+
+  // Pass 1: Add local branches
+  branches.forEach((fullBranchRef) => {
+    if (!fullBranchRef.startsWith("origin/")) {
+      // This is a local branch
+      branchMap.set(fullBranchRef, { ref: fullBranchRef })
+    }
+  })
+
+  // Pass 2: Add remote branches only if local version doesn't exist
+  branches.forEach((fullBranchRef) => {
+    if (fullBranchRef.startsWith("origin/")) {
+      const branchName = fullBranchRef.replace("origin/", "")
+      // Only add if we don't already have a local version
+      if (!branchMap.has(branchName)) {
+        branchMap.set(branchName, { ref: fullBranchRef })
+      }
+    }
+  })
+
+  return branchMap
 }
 
-export const git: Git = {
-  checkoutBranch,
-  merge,
-  pull,
-  setUser,
-  squash,
-  rebase,
-  getCommits,
-  getLatestCommitsSince,
-  getLatestCommitOnBranch,
-  createLocalBranchFromRemote,
-  getCurrentBranch,
-  getLocalBranches,
+export const impl = (): Git => {
+  return {
+    fetch,
+    checkoutBranch,
+    merge,
+    pull,
+    setUser,
+    squash,
+    rebase,
+    getCommits,
+    getLatestCommitsSince,
+    getLatestCommitOnBranch,
+    createLocalBranchFromRemote,
+    getCurrentBranch,
+    getBranches,
+  }
 }

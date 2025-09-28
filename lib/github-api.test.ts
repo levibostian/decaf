@@ -1,6 +1,12 @@
 import { assertEquals } from "@std/assert"
 import { describe, it } from "@std/testing/bdd"
-import { GitHubApiImpl, GitHubCommit, GitHubRelease } from "./github-api.ts"
+import * as githubApiModule from "./github-api.ts"
+import type { GitHubCommit, GitHubRelease } from "./github-api.ts"
+
+let githubApi: githubApiModule.GitHubApi
+Deno.test.beforeEach(() => {
+  githubApi = githubApiModule.impl()
+})
 
 export const GitHubReleaseFake: GitHubRelease = {
   tag: {
@@ -55,7 +61,7 @@ describe("getPullRequestStack", () => {
   it("should return null for pull request that does not exist", async () => {
     if (!assertTokenSet()) return
 
-    const actualPRStack = await GitHubApiImpl.getPullRequestStack({
+    const actualPRStack = await githubApi.getPullRequestStack({
       owner: "levibostian",
       repo: "decaf",
       startingPrNumber: 999999, // a PR that does not exist
@@ -67,7 +73,7 @@ describe("getPullRequestStack", () => {
   it("should return full stack, in order, given a branch", async () => {
     if (!assertTokenSet()) return
 
-    const actualPRStack = await GitHubApiImpl.getPullRequestStack({
+    const actualPRStack = await githubApi.getPullRequestStack({
       owner: "levibostian",
       repo: "decaf",
       startingPrNumber: 1,
@@ -84,7 +90,7 @@ describe("getCommitsForBranch", () => {
 
     let allCommits: GitHubCommit[] = []
 
-    await GitHubApiImpl.getCommitsForBranch({
+    await githubApi.getCommitsForBranch({
       owner: "levibostian",
       repo: "Wendy-iOS",
       branch: "main",

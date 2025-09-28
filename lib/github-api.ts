@@ -1,5 +1,5 @@
 import * as log from "./log.ts"
-import * as cathy from "npm:cathy"
+import * as cathy from "cathy"
 
 export interface GitHubRelease {
   tag: {
@@ -355,8 +355,10 @@ export interface GitHubApi {
   postStatusUpdateOnPullRequest: typeof postStatusUpdateOnPullRequest
 }
 
-export const GitHubApiImpl: GitHubApi = {
-  getCommitsForBranch,
-  getPullRequestStack,
-  postStatusUpdateOnPullRequest,
+export const impl = (): GitHubApi => {
+  return {
+    getCommitsForBranch,
+    getPullRequestStack,
+    postStatusUpdateOnPullRequest,
+  }
 }

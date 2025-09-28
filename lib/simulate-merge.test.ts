@@ -3,12 +3,17 @@ import { afterEach, beforeEach, describe, it } from "@std/testing/bdd"
 import { assertSpyCall, restore, Stub, stub } from "@std/testing/mock"
 import { exec } from "./exec.ts"
 import { SimulateMerge, SimulateMergeImpl } from "./simulate-merge.ts"
-import { Git, git } from "./git.ts"
+import * as gitModule from "./git.ts"
 import { Exec } from "./exec.ts"
 import { assertSnapshot } from "@std/testing/snapshot"
 import { GitCommit } from "./types/git.ts"
 import { GitCommitFake } from "./types/git.test.ts"
 import { mock, when } from "./mock/mock.ts"
+
+let git: gitModule.Git
+Deno.test.beforeEach(() => {
+  git = gitModule.impl()
+})
 
 describe("snapshot test all of the merge options", () => {
   let simulateMerge: SimulateMerge
@@ -93,7 +98,7 @@ describe("snapshot test all of the merge options", () => {
 
 describe("unit tests for commits returned by simulation methods", () => {
   let simulateMerge: SimulateMerge
-  let git: Git
+  let git: gitModule.Git
 
   // Setup for unit testing with git module mocks (not exec mocks)
   const setupUnitTest = () => {
@@ -165,7 +170,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: "main" }],
+        args: [{ exec, branch: { ref: "main" } }],
       })
     })
   })
@@ -218,7 +223,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: "main" }],
+        args: [{ exec, branch: { ref: "main" } }],
       })
     })
   })
@@ -273,7 +278,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: "main" }],
+        args: [{ exec, branch: { ref: "main" } }],
       })
     })
   })
