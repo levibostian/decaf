@@ -1,6 +1,7 @@
 import { Exec } from "./exec.ts"
 import * as log from "./log.ts"
 import { GitCommit } from "./types/git.ts"
+import * as shellQuote from "shell-quote"
 
 export interface Git {
   fetch: ({ exec }: { exec: Exec }) => Promise<void>
@@ -87,8 +88,11 @@ const merge = async (
     fastForward?: "--no-ff" | "--ff-only"
   },
 ): Promise<void> => {
+  // Use shell-quote to properly escape the commit message to prevent shell injection and parsing errors
+  const escapedCommitTitle = shellQuote.quote([commitTitle])
+  const escapedCommitMessage = shellQuote.quote([commitMessage])
   await exec.run({
-    command: `git merge ${branchToMergeIn} -m "${commitTitle}" -m "${commitMessage}" ${fastForward || ""}`,
+    command: `git merge ${branchToMergeIn} -m ${escapedCommitTitle} -m ${escapedCommitMessage} ${fastForward || ""}`,
     input: undefined,
   })
 }
@@ -144,8 +148,12 @@ const squash = async (
     command: `git reset --soft HEAD~${numberOfCommitsAheadOfBranchMergingInto}`,
     input: undefined,
   })
+
+  // Use shell-quote to properly escape the commit message to prevent shell injection and parsing errors
+  const escapedCommitTitle = shellQuote.quote([commitTitle])
+  const escapedCommitMessage = shellQuote.quote([commitMessage])
   await exec.run({
-    command: `git commit -m "${commitTitle}" -m "${commitMessage}"`,
+    command: `git commit -m ${escapedCommitTitle} -m ${escapedCommitMessage}`,
     input: undefined,
   })
 }

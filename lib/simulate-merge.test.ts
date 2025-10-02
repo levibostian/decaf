@@ -53,8 +53,8 @@ describe("snapshot test all of the merge options", () => {
       baseBranch: "feature",
       targetBranch: "main",
       pullRequestNumber: 123,
-      pullRequestTitle: "title-here",
-      pullRequestDescription: "message-here",
+      pullRequestTitle: "title here",
+      pullRequestDescription: "message here, with $special characters! and \"quotes\" 'too'",
     })
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command))
@@ -67,8 +67,8 @@ describe("snapshot test all of the merge options", () => {
       baseBranch: "feature",
       targetBranch: "main",
       pullRequestNumber: 123,
-      pullRequestTitle: "title-here",
-      pullRequestDescription: "message-here",
+      pullRequestTitle: "title here",
+      pullRequestDescription: "message here, with $special characters! and \"quotes\" 'too'",
     })
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command))
@@ -81,8 +81,8 @@ describe("snapshot test all of the merge options", () => {
       baseBranch: "feature",
       targetBranch: "main",
       pullRequestNumber: 123,
-      pullRequestTitle: "title-here",
-      pullRequestDescription: "message-here",
+      pullRequestTitle: "title here",
+      pullRequestDescription: "message here, with $special characters! and \"quotes\" 'too'",
     })
 
     await assertSnapshot(t, execMock.calls.map((call) => call.args[0].command))

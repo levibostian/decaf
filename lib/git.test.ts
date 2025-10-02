@@ -7,6 +7,7 @@ import { GitCommit } from "./types/git.ts"
 
 let git: gitModule.Git
 Deno.test.beforeEach(() => {
+  restore()
   git = gitModule.impl()
 })
 
@@ -659,4 +660,51 @@ Initial commit on new branch.[⬛]Alice Developer[⬛]alice@example.com[⬛]Alic
       stats: { additions: 3, deletions: 0, total: 3 },
     })
   }
+})
+
+Deno.test("squash - should properly escape commit messages with special characters", async () => {
+  const gitCommitCommandsExecuted: string[] = []
+
+  // Mock git commands that squash function will call
+  stub(exec, "run", async (args) => {
+    // Mock git rev-list command (returns number of commits)
+    if (args.command.includes("git rev-list")) {
+      return { exitCode: 0, stdout: "2", output: undefined }
+    }
+    // Mock git reset command
+    if (args.command.includes("git reset")) {
+      return { exitCode: 0, stdout: "", output: undefined }
+    }
+    // Mock git commit command
+    if (args.command.includes("git commit")) {
+      gitCommitCommandsExecuted.push(args.command)
+
+      return { exitCode: 0, stdout: "", output: undefined }
+    }
+    return { exitCode: 0, stdout: "", output: undefined }
+  })
+
+  // Test commit message with quotes, newlines, and special characters like the one from the error log
+  const complexCommitMessage = `> [!NOTE]
+> Mend has cancelled [the proposed renaming](https://example.com) of the Renovate GitHub app.
+> 
+> This notice will be removed on 2025-10-07.
+
+<hr>
+
+This PR contains "quoted text" and 'single quotes' and $variables.`
+
+  await git.squash({
+    exec,
+    branchToSquash: "feature-branch",
+    branchMergingInto: "main",
+    commitTitle: "chore(deps): update action to v2",
+    commitMessage: complexCommitMessage,
+  })
+
+  assertEquals(gitCommitCommandsExecuted.length, 1, "Expected one git commit command to be executed")
+  assertEquals(
+    gitCommitCommandsExecuted[0],
+    `git commit -m 'chore(deps): update action to v2' -m "> [\\!NOTE]\n> Mend has cancelled [the proposed renaming](https://example.com) of the Renovate GitHub app.\n> \n> This notice will be removed on 2025-10-07.\n\n<hr>\n\nThis PR contains \\"quoted text\\" and 'single quotes' and \\$variables."`,
+  )
 })
