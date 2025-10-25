@@ -33,7 +33,7 @@ jobs:
         get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
         debug_file: '/tmp/debug-merge.log' 
-    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       if: always()
       with:
         name: merge-method-logs
@@ -55,7 +55,7 @@ jobs:
         get_next_release_version: './steps/get-next-release.ts'
         deploy: './steps/deploy.ts'
         debug_file: '/tmp/debug-squash.log' # Optional, but useful for debugging.
-    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       if: always()
       with:
         name: squash-method-logs
@@ -78,7 +78,7 @@ jobs:
         deploy: './steps/deploy.ts'
         debug_file: '/tmp/debug-rebase.log' # Optional, but useful for debugging.
         
-    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       if: always()
       with:
         name: rebase-method-logs
