@@ -1,4 +1,4 @@
-import { defineStore } from "tiny-di"
+import { defineStore } from "@david/service-store"
 import * as githubApi from "./github-api.ts"
 import * as git from "./git.ts"
 import { Environment, EnvironmentImpl } from "./environment.ts"
