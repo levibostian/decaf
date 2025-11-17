@@ -61,27 +61,26 @@ await $`git show HEAD`.printCommand()
 
 const latestGitCommitSha = (await $`git rev-parse HEAD`.text()).trim()
 
-const argsToCreateGithubRelease = [
-  `release`,
-  `create`,
-  input.nextVersionName,
-  `--generate-notes`,
-  `--latest`,
-  `--target`,
-  latestGitCommitSha,
+await $`deno ${[
+  `run`,
+  `--quiet`,
+  `--allow-all`,
+  `jsr:@levibostian/decaf-script-github-releases`,
+  `set-github-release-assets`,
   ...githubReleaseAssets,
-]
-
-if (input.testMode) {
-  console.log("Running in test mode, skipping creating GitHub release.")
-  console.log(`Command to create GitHub release: gh ${argsToCreateGithubRelease.join(" ")}`)
-
-  Deno.exit(0)
-}
+]}`.printCommand()
 
 // Push the commit that was made to action.yml
 await $`git push`.printCommand()
 
-// Create the GitHub release with the compiled binaries
-// https://github.com/dsherret/dax#providing-arguments-to-a-command
-await $`gh ${argsToCreateGithubRelease}`.printCommand()
+await $`deno ${[
+  `run`,
+  `--quiet`,
+  `--allow-all`,
+  `jsr:@levibostian/decaf-script-github-releases`,
+  `set`,
+  `--generate-notes`,
+  `--latest`,
+  `--target`,
+  latestGitCommitSha,
+]}`.printCommand()
