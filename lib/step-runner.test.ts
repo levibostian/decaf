@@ -18,7 +18,7 @@ Deno.test("given output is in stdout, expect return latest step", async () => {
   const expect: GetLatestReleaseStepOutput = { versionName: "1.0.0", commitSha: "abc" }
 
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", () => [`echo '${JSON.stringify(expect)}'`])
+  when(environment, "getCommandsForStep", () => [`echo '${JSON.stringify(expect)}'`])
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
   const testInput: GetLatestReleaseStepInput = {
@@ -37,7 +37,7 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
   const expect: GetLatestReleaseStepOutput = { versionName: "2.0.0", commitSha: "def" }
 
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", () => [`echo '${JSON.stringify(expect)}'`])
+  when(environment, "getCommandsForStep", () => [`echo '${JSON.stringify(expect)}'`])
   const exec = { run: () => Promise.resolve({ output: undefined, stdout: JSON.stringify(expect), exitCode: 0 }) }
   const stepRunner = new StepRunnerImpl(environment, exec as unknown as typeof exec, logger)
 
@@ -54,7 +54,7 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
 
 Deno.test("given no command for step, expect return null", async () => {
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", () => undefined)
+  when(environment, "getCommandsForStep", () => undefined)
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
   const testInput: GetLatestReleaseStepInput = {
@@ -70,7 +70,7 @@ Deno.test("given no command for step, expect return null", async () => {
 
 Deno.test("given output is not valid, expect null is returned", async () => {
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", () => [`echo 'not json'`])
+  when(environment, "getCommandsForStep", () => [`echo 'not json'`])
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 
   const testInput: GetLatestReleaseStepInput = {
@@ -91,8 +91,8 @@ Deno.test("supports template engine in command string", async () => {
   const environment: Environment = mock()
   when(
     environment,
-    "getCommandForStep",
-    // The real getCommandForStep takes an object: { stepName: AnyStepName }
+    "getCommandsForStep",
+    // The real getCommandsForStep takes an object: { stepName: AnyStepName }
     // We'll return a template string that uses input.gitCurrentBranch and input.gitRepoOwner
     () => [
       `echo '{"versionName": "{{gitCurrentBranch}}", "gitRepo": "{{gitRepoOwner}}/{{gitRepoName}}", "commitSha": "{{gitCommitsCurrentBranch.0.sha}}" }'`,
@@ -136,7 +136,7 @@ Deno.test("runGetLatestOnCurrentBranchReleaseStep - given return latest release 
   const expect: GetLatestReleaseStepOutput = { versionName: "1.0.0", commitSha: "abc" }
 
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", (args) => {
+  when(environment, "getCommandsForStep", (args) => {
     assertEquals(args.stepName, "get_latest_release_current_branch")
     return [`echo '${JSON.stringify(expect)}'`]
   })
@@ -158,7 +158,7 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
   const expect: GetNextReleaseVersionStepOutput = { version: "1.2.3" }
 
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", (args) => {
+  when(environment, "getCommandsForStep", (args) => {
     assertEquals(args.stepName, "get_next_release_version")
     return [`echo '${JSON.stringify(expect)}'`]
   })
@@ -180,7 +180,7 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
 
 Deno.test("runDeployStep - given deploy command, expect to run successfully without error", async () => {
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", (args) => {
+  when(environment, "getCommandsForStep", (args) => {
     assertEquals(args.stepName, "deploy")
     return [`echo 'deployment complete'`]
   })
@@ -209,7 +209,7 @@ Deno.test("deploy step runs all commands in order", async () => {
   const executedCommands: string[] = []
 
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", () => ["echo 'first'", "echo 'second'", "echo 'third'"])
+  when(environment, "getCommandsForStep", () => ["echo 'first'", "echo 'second'", "echo 'third'"])
 
   const mockExec = {
     run: (args: { command: string }) => {
@@ -246,7 +246,7 @@ Deno.test("non-deploy step returns output from first command with valid output",
   const secondOutput: GetLatestReleaseStepOutput = { versionName: "2.0.0", commitSha: "def" }
 
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", () => [
+  when(environment, "getCommandsForStep", () => [
     `echo '${JSON.stringify(firstOutput)}'`,
     `echo '${JSON.stringify(secondOutput)}'`,
   ])
@@ -320,7 +320,7 @@ Deno.test("non-deploy step tries next command if first returns invalid output", 
 
 Deno.test("non-deploy step returns null if all commands have invalid output", async () => {
   const environment: Environment = mock()
-  when(environment, "getCommandForStep", () => ["echo 'invalid1'", "echo 'invalid2'", "echo 'invalid3'"])
+  when(environment, "getCommandsForStep", () => ["echo 'invalid1'", "echo 'invalid2'", "echo 'invalid3'"])
 
   const stepRunner = new StepRunnerImpl(environment, exec, logger)
 

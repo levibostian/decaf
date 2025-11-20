@@ -9,7 +9,7 @@ export interface Environment {
   getSimulatedMergeType(): "merge" | "rebase" | "squash"
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
   isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
-  getCommandForStep({ stepName }: { stepName: AnyStepName }): string[] | undefined
+  getCommandsForStep({ stepName }: { stepName: AnyStepName }): string[] | undefined
   getGitConfigInput(): { name: string; email: string } | undefined
   getBranchFilters(): string[]
   getCommitLimit(): number
@@ -214,7 +214,7 @@ export class EnvironmentImpl implements Environment {
     return { name, email }
   }
 
-  getCommandForStep({ stepName }: { stepName: string }): string[] | undefined {
+  getCommandsForStep({ stepName }: { stepName: string }): string[] | undefined {
     try {
       const command = this.getInput(stepName)
       if (!command) return undefined
