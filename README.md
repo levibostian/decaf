@@ -126,6 +126,32 @@ jobs:
             # --make_pull_request_comment true # Enable this if you want PR comments (requires pull-requests:write)
 ```
 
+## Running multiple commands per step
+
+You can provide multiple commands for the `deploy`, `get_latest_release_current_branch`, and `get_next_release_version` steps. The tool will execute them in order.
+
+**Note:** Shell operators like `&&` are not supported. Use the repeatable flag pattern instead.
+
+**GitHub Actions example:**
+```yaml
+- uses: levibostian/decaf@<version>
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    deploy: |
+      npm run build
+      npm run test
+      python scripts/deploy.py
+```
+
+**CLI example:**
+```bash
+./decaf \
+  --github_token "$GH_TOKEN" \
+  --deploy "npm run build" \
+  --deploy "npm run test" \
+  --deploy "python scripts/deploy.py"
+```
+
 # Write your step scripts
 
 You are responsible for writing the scripts that perform each deployment step. This includes determining the next version, updating the version number in metadata files, and pushing code to a server. You can use *any* language or tools you prefer 😍!
