@@ -442,3 +442,143 @@ Deno.test("getCommitLimit - should return 500 when commit_limit is zero or negat
     restoreCommitLimitEnvironment(original)
   }
 })
+
+function setupCommandForStepEnvironment(stepName: string): string | undefined {
+  return Deno.env.get(`INPUT_${stepName.toUpperCase()}`)
+}
+
+function restoreCommandForStepEnvironment(stepName: string, originalValue: string | undefined): void {
+  if (originalValue === undefined) {
+    Deno.env.delete(`INPUT_${stepName.toUpperCase()}`)
+  } else {
+    Deno.env.set(`INPUT_${stepName.toUpperCase()}`, originalValue)
+  }
+}
+
+Deno.test("getCommandForStep - should return undefined when step input is not set", () => {
+  const stepName = "deploy"
+  const original = setupCommandForStepEnvironment(stepName)
+
+  try {
+    Deno.env.delete(`INPUT_${stepName.toUpperCase()}`)
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommandForStep({ stepName })
+
+    assertEquals(result, undefined)
+  } finally {
+    restoreCommandForStepEnvironment(stepName, original)
+  }
+})
+
+Deno.test("getCommandForStep - should return undefined when step input is empty string", () => {
+  const stepName = "deploy"
+  const original = setupCommandForStepEnvironment(stepName)
+
+  try {
+    Deno.env.set(`INPUT_${stepName.toUpperCase()}`, "")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommandForStep({ stepName })
+
+    assertEquals(result, undefined)
+  } finally {
+    restoreCommandForStepEnvironment(stepName, original)
+  }
+})
+
+Deno.test("getCommandForStep - should return single command array when single command is provided", () => {
+  const stepName = "deploy"
+  const original = setupCommandForStepEnvironment(stepName)
+
+  try {
+    Deno.env.set(`INPUT_${stepName.toUpperCase()}`, "npm run deploy")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommandForStep({ stepName })
+
+    assertEquals(result, ["npm run deploy"])
+  } finally {
+    restoreCommandForStepEnvironment(stepName, original)
+  }
+})
+
+Deno.test("getCommandForStep - should return multiple commands when separated by newlines", () => {
+  const stepName = "deploy"
+  const original = setupCommandForStepEnvironment(stepName)
+
+  try {
+    Deno.env.set(`INPUT_${stepName.toUpperCase()}`, "npm run build\nnpm run test\nnpm run deploy")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommandForStep({ stepName })
+
+    assertEquals(result, ["npm run build", "npm run test", "npm run deploy"])
+  } finally {
+    restoreCommandForStepEnvironment(stepName, original)
+  }
+})
+
+Deno.test("getCommandForStep - should trim whitespace from each command", () => {
+  const stepName = "deploy"
+  const original = setupCommandForStepEnvironment(stepName)
+
+  try {
+    Deno.env.set(`INPUT_${stepName.toUpperCase()}`, "  npm run build  \n  npm run test  \n  npm run deploy  ")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommandForStep({ stepName })
+
+    assertEquals(result, ["npm run build", "npm run test", "npm run deploy"])
+  } finally {
+    restoreCommandForStepEnvironment(stepName, original)
+  }
+})
+
+Deno.test("getCommandForStep - should filter out empty lines", () => {
+  const stepName = "deploy"
+  const original = setupCommandForStepEnvironment(stepName)
+
+  try {
+    Deno.env.set(`INPUT_${stepName.toUpperCase()}`, "npm run build\n\nnpm run test\n  \nnpm run deploy")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommandForStep({ stepName })
+
+    assertEquals(result, ["npm run build", "npm run test", "npm run deploy"])
+  } finally {
+    restoreCommandForStepEnvironment(stepName, original)
+  }
+})
+
+Deno.test("getCommandForStep - should return undefined when only whitespace and newlines", () => {
+  const stepName = "deploy"
+  const original = setupCommandForStepEnvironment(stepName)
+
+  try {
+    Deno.env.set(`INPUT_${stepName.toUpperCase()}`, "\n  \n\n  ")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommandForStep({ stepName })
+
+    assertEquals(result, undefined)
+  } finally {
+    restoreCommandForStepEnvironment(stepName, original)
+  }
+})
+
+Deno.test("getCommandForStep - should handle commands with special characters", () => {
+  const stepName = "deploy"
+  const original = setupCommandForStepEnvironment(stepName)
+
+  try {
+    Deno.env.set(`INPUT_${stepName.toUpperCase()}`, "echo 'hello world'\ngit commit -m \"test\"\ncurl https://api.example.com")
+
+    const environment = new EnvironmentImpl()
+    const result = environment.getCommandForStep({ stepName })
+
+    assertEquals(result, ["echo 'hello world'", 'git commit -m "test"', "curl https://api.example.com"])
+  } finally {
+    restoreCommandForStepEnvironment(stepName, original)
+  }
+})
