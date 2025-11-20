@@ -42,7 +42,7 @@ export class StepRunnerImpl implements StepRunner {
   async getCommandFromUserAndRun<Output>(
     { step, input, outputCheck }: { step: AnyStepName; input: AnyStepInput; outputCheck: (output: unknown) => boolean },
   ): Promise<Output | null> {
-    const commands = this.environment.getCommandForStep({ stepName: step })
+    const commands = this.environment.getCommandsForStep({ stepName: step })
 
     if (!commands) return null
 
