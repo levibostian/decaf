@@ -128,19 +128,31 @@ jobs:
 
 ## Running multiple commands per step
 
-You can provide multiple commands for the `deploy`, `get_latest_release_current_branch`, and `get_next_release_version` steps. The tool will execute them in order.
+You can provide multiple commands for the `deploy`, `get_latest_release_current_branch`, and `get_next_release_version` steps.
 
 **Note:** Shell operators like `&&` are not supported. Use the repeatable flag pattern instead.
+
+### Execution behavior
+
+- **`deploy`**: All commands execute in order, every time
+- **`get_latest_release_current_branch` and `get_next_release_version`**: Commands execute sequentially until one returns valid output, then stops
+  - **Order matters!** List commands from most preferred to least preferred
+  - Useful for fallback strategies (e.g., try GitHub API first, fall back to git tags)
 
 **GitHub Actions example:**
 ```yaml
 - uses: levibostian/decaf@<version>
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    # Deploy: all commands run
     deploy: |
       npm run build
       npm run test
       python scripts/deploy.py
+    # Get latest release: stops at first valid output
+    get_latest_release_current_branch: |
+      python scripts/check-github-releases.py
+      python scripts/fallback-git-tags.py
 ```
 
 **CLI example:**
@@ -149,7 +161,9 @@ You can provide multiple commands for the `deploy`, `get_latest_release_current_
   --github_token "$GH_TOKEN" \
   --deploy "npm run build" \
   --deploy "npm run test" \
-  --deploy "python scripts/deploy.py"
+  --deploy "python scripts/deploy.py" \
+  --get_latest_release_current_branch "python scripts/check-github-releases.py" \
+  --get_latest_release_current_branch "python scripts/fallback-git-tags.py"
 ```
 
 # Write your step scripts
