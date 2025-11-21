@@ -59,7 +59,10 @@ await $`git add version.txt && git commit -m "Bump version to ${input.nextVersio
 console.log(`to help with debugging, log the recently created commit including all the file changes made`)
 await $`git show HEAD`.printCommand()
 
-const latestGitCommitSha = (await $`git rev-parse HEAD`.text()).trim()
+if (!input.testMode) {
+  // Push the commit that was made to action.yml
+  await $`git push`.printCommand()
+}
 
 await $`deno ${[
   `run`,
@@ -70,8 +73,7 @@ await $`deno ${[
   ...githubReleaseAssets,
 ]}`.printCommand()
 
-// Push the commit that was made to action.yml
-await $`git push`.printCommand()
+const latestGitCommitSha = (await $`git rev-parse HEAD`.text()).trim()
 
 await $`deno ${[
   `run`,
