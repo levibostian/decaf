@@ -39,13 +39,6 @@ const run = async (
     throwOnNonZeroExitCode?: boolean
   },
 ): Promise<RunResult> => {
-  // If command actually contains 2 commands (using &&), throw an error. The API of this function simply doesn't support that.
-  if (command.includes("&&")) {
-    throw new Error(
-      `The command "${command}" contains multiple commands (uses &&). This is not supported. Please run each command separately.`,
-    )
-  }
-
   if (displayLogs) {
     log.message(` $> ${command}`)
   } else {
@@ -56,6 +49,15 @@ const run = async (
   const execArgs = shellQuote.parse(
     command.replace(new RegExp(`^${execCommand}\\s*`), ""),
   )
+
+  // If command actually contains 2 commands (using &&), throw an error. The API of this function simply doesn't support that.
+  // shell-quote parses operators like && as objects, not strings, so we need to check for non-string elements
+  if (execArgs.some((arg: unknown) => typeof arg !== "string")) {
+    throw new Error(
+      `The command "${command}" contains multiple commands (uses &&). This is not supported. Please run each command separately.`,
+    )
+  }
+
   const environmentVariablesToPassToCommand: { [key: string]: string } = envVars || {}
 
   // For some features to work, we need to communicate with the command. We need to send data to it and read data that it produces.
