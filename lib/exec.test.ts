@@ -24,6 +24,30 @@ const givenPluginInput: DeployStepInput = {
   ],
 }
 
+Deno.test("allow commands that contain && that do not chain commands together", async () => {
+  const { exitCode, stdout } = await exec.run({
+    command: `echo 'foo && bar'`,
+    input: givenPluginInput,
+  })
+
+  assertEquals(exitCode, 0)
+  assertEquals(stdout, "foo && bar")
+})
+
+Deno.test("do not allow commands that contain && that chain commands together", async () => {
+  let caughtError = false
+  try {
+    await exec.run({
+      command: `echo 'foo' && echo 'bar'`,
+      input: givenPluginInput,
+    })
+  } catch {
+    caughtError = true
+  }
+
+  assertEquals(caughtError, true)
+})
+
 Deno.test("given contextual input data, expect the executed command receives the input data", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `python3 -c "import os; print(open(os.getenv('DATA_FILE_PATH'), 'r').read());"`,
