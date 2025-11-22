@@ -1,6 +1,6 @@
 {
   "imports": {
-    "@david/dax": "jsr:@david/dax@^0.43.2",
+    "@david/dax": "jsr:@david/dax@^0.44.0",
     "@deno-library/template": "jsr:@deno-library/template@^0.2.1",
     "@std/cli": "jsr:@std/cli@^1.0.20",
     "@std/semver": "jsr:@std/semver@^1.0.4",
