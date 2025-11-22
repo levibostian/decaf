@@ -1,5 +1,4 @@
 import * as log from "./log.ts"
-import * as shellQuote from "shell-quote"
 import { AnyStepInput } from "./types/environment.ts"
 
 export interface RunResult {
@@ -45,19 +44,6 @@ const run = async (
     log.debug(` $> ${command}`)
   }
 
-  const execCommand = command.split(" ")[0]
-  const execArgs = shellQuote.parse(
-    command.replace(new RegExp(`^${execCommand}\\s*`), ""),
-  )
-
-  // If command actually contains 2 commands (using &&), throw an error. The API of this function simply doesn't support that.
-  // shell-quote parses operators like && as objects, not strings, so we need to check for non-string elements
-  if (execArgs.some((arg: unknown) => typeof arg !== "string")) {
-    throw new Error(
-      `The command "${command}" contains multiple commands (uses &&). This is not supported. Please run each command separately.`,
-    )
-  }
-
   const environmentVariablesToPassToCommand: { [key: string]: string } = envVars || {}
 
   // For some features to work, we need to communicate with the command. We need to send data to it and read data that it produces.
@@ -83,8 +69,11 @@ const run = async (
 
   // We want to capture the stdout of the command but we also want to stream it to the console. By using streams, this allows us to
   // output the stdout/stderr to the console in real-time instead of waiting for the command to finish before we see the output.
-  const process = new Deno.Command(execCommand, {
-    args: execArgs,
+  //
+  // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
+  // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
+  const process = new Deno.Command("sh", {
+    args: ["-c", command],
     stdout: "piped",
     stderr: "piped",
     env: environmentVariablesToPassToCommand,

@@ -130,14 +130,16 @@ jobs:
 
 You can provide multiple commands for the `deploy`, `get_latest_release_current_branch`, and `get_next_release_version` steps.
 
-**Note:** Shell operators like `&&` are not supported. Use the repeatable flag pattern instead.
+**Execution behavior**
 
-### Execution behavior
+If you do run multiple commands, the execution behavior differs per step: 
 
-- **`deploy`**: All commands execute in order, every time
-- **`get_latest_release_current_branch` and `get_next_release_version`**: Commands execute sequentially until one returns valid output, then stops
+- **`get_latest_release_current_branch` and `get_next_release_version`** steps: Commands execute sequentially until one command returns valid output, then stops
   - **Order matters!** List commands from most preferred to least preferred
   - Useful for fallback strategies (e.g., try GitHub API first, fall back to git tags)
+- **`deploy`** step: All commands execute sequentially, regardless of success or failure of previous commands, and does not exit early. 
+
+Ok, now here are examples of how to run multiple commands per step:
 
 **GitHub Actions example:**
 ```yaml
@@ -164,6 +166,13 @@ You can provide multiple commands for the `deploy`, `get_latest_release_current_
   --deploy "python scripts/deploy.py" \
   --get_latest_release_current_branch "python scripts/check-github-releases.py" \
   --get_latest_release_current_branch "python scripts/fallback-git-tags.py"
+```
+
+Or, if you want to be a bash nerd, you can use bash's `&&` and `;` operators to chain commands together in a single command string:
+
+```bash
+./decaf \
+  --deploy "npm run build && npm run test && python scripts/deploy.py" 
 ```
 
 # Write your step scripts
