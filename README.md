@@ -168,12 +168,16 @@ Ok, now here are examples of how to run multiple commands per step:
   --get_latest_release_current_branch "python scripts/fallback-git-tags.py"
 ```
 
-Or, if you want to be a bash nerd, you can use bash's `&&` and `;` operators to chain commands together in a single command string:
+**You could use &&, but be careful**
+
+If you want to be a bash nerd, instead of using separate commands, as explained above, you can use bash's `&&` and `;` operators to chain commands together in a single command string:
 
 ```bash
 ./decaf \
   --deploy "npm run build && npm run test && python scripts/deploy.py" 
 ```
+
+But be careful! After each command executes, decaf will check the output of the command to see if it gave output. If you use `&&` to run multiple commands where both commands produce output, only the output of the last command will be seen by decaf! 
 
 # Write your step scripts
 
