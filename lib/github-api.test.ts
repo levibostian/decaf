@@ -107,3 +107,24 @@ describe("getCommitsForBranch", () => {
     }
   })
 })
+
+describe("getRepoMergeTypes", () => {
+  it("should return merge types for repo", async () => {
+    if (!assertTokenSet()) return
+
+    const mergeTypes = await githubApi.getRepoMergeTypes({
+      owner: "levibostian",
+      repo: "decaf",
+    })
+
+    console.log(
+      `Expect to see merge types for levibostian/decaf: ${
+        JSON.stringify(
+          mergeTypes,
+          null,
+          2,
+        )
+      }`,
+    )
+  })
+})
