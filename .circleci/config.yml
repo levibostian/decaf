@@ -27,13 +27,14 @@ jobs:
 
       - run:
           name: Run CLI Tool
+          # Do not pass in these command line args:
+          # simulated_merge_type - we want to test the smart default behavior that calls the github api. 
           command: |
             ./decaf \
               --github_token "$GH_TOKEN" \
               --deploy "./steps/deploy.ts" \
               --get_latest_release_current_branch "./steps/get-latest-release.ts" \
               --get_next_release_version "deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits" \
-              --simulated_merge_type "rebase" \
               --make_pull_request_comment false \
               --debug true
 
