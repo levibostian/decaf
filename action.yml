@@ -19,8 +19,8 @@ inputs:
     description: 'Command to run to get the next release version.'
     default: ''
   simulated_merge_type:
-    description: 'When running in a pull request, what type of merge to simulate to run the tool in test mode. Note: This input option is planned to go away in favor of reading github repo settings. Options: merge, squash, rebase.'
-    default: 'merge' # options: merge, squash, rebase
+    description: 'When running in a pull request, what type of merge to simulate to run the tool in test mode. Options: merge, squash, rebase.'
+    default: '' # options: merge, squash, rebase
   make_pull_request_comment:
     description: 'If a pull request comment should be made. Value is string values "true" or "false".'
     default: 'true'

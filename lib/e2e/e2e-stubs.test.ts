@@ -472,8 +472,8 @@ export class EnvironmentStub implements Environment {
       currentBranch,
     }
   }
-  getSimulatedMergeType(): "merge" | "rebase" | "squash" {
-    return this.args.runFromPullRequest?.simulatedMergeType ?? "merge"
+  getSimulatedMergeType(): Promise<"merge" | "rebase" | "squash"> {
+    return Promise.resolve(this.args.runFromPullRequest?.simulatedMergeType ?? "merge")
   }
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other" {
     if (this.args.runFromPullRequest) {
