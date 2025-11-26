@@ -6,7 +6,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
 
     - name: Set up Deno
       uses: denoland/setup-deno@v1
@@ -23,13 +23,13 @@ jobs:
       run: deno coverage --lcov --output=reports/coverage.lcov reports/coverage/
 
     - name: Upload test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       with:
         name: junit-results
         path: reports/junit.xml
 
     - name: Upload coverage for analysis
-      uses: coverallsapp/github-action@v2
+      uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2
       with:
         file: reports/coverage.lcov
       env:
@@ -38,7 +38,7 @@ jobs:
 
     - name: Annotate failed tests
       if: always() # Run with test/lint failures.
-      uses: granodigital/report-annotate@v1.0.1
+      uses: granodigital/report-annotate@f5f44aab16ade92fbc3e8a0bed9d9c6ebd44ae90 # v2.0.0
       with:
         reports: |
           junit|reports/junit.xml

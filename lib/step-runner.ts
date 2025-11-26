@@ -1,4 +1,4 @@
-import { jsonParse, pipe } from "./utils.ts"
+import { jsonParse } from "./utils.ts"
 import Template from "@deno-library/template"
 const stringTemplating = new Template({
   isEscape: false,
@@ -42,26 +42,38 @@ export class StepRunnerImpl implements StepRunner {
   async getCommandFromUserAndRun<Output>(
     { step, input, outputCheck }: { step: AnyStepName; input: AnyStepInput; outputCheck: (output: unknown) => boolean },
   ): Promise<Output | null> {
-    const commandToRun = pipe(
-      this.environment.getCommandForStep({ stepName: step }),
-      (command) => command ? stringTemplating.render(command, input as unknown as Record<string, unknown>) : command,
-    )
+    const commands = this.environment.getCommandsForStep({ stepName: step })
 
-    if (!commandToRun) return null
+    if (!commands) return null
 
-    this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
-    const runResult = await this.exec.run({ command: commandToRun, input: input, displayLogs: true })
-    this.logger.debug(`Step ${step} completed. step output: ${runResult.output}`)
+    // Run each command in the array
+    for (const command of commands) {
+      const commandToRun = stringTemplating.render(command, input as unknown as Record<string, unknown>)
 
-    if (outputCheck(runResult.output)) {
-      return runResult.output as Output
+      this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
+      const runResult = await this.exec.run({ command: commandToRun, input: input, displayLogs: true })
+      this.logger.debug(`Step ${step} completed. step output: ${runResult.output}`)
+
+      // For deploy step, run all commands without checking output
+      if (step === "deploy") {
+        continue
+      }
+
+      // For non-deploy steps, check if we got valid output
+      if (outputCheck(runResult.output)) {
+        return runResult.output as Output
+      }
+
+      const stdoutAsParsedJSON = jsonParse(runResult.stdout)
+      if (outputCheck(stdoutAsParsedJSON)) {
+        return stdoutAsParsedJSON as Output
+      }
+
+      // Output was not valid, continue to next command
     }
 
-    const stdoutAsParsedJSON = jsonParse(runResult.stdout)
-    if (outputCheck(stdoutAsParsedJSON)) {
-      return stdoutAsParsedJSON as Output
-    }
-
+    // For deploy: all commands ran successfully
+    // For other steps: no command produced valid output
     return null
   }
 }

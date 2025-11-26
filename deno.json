@@ -1,17 +1,17 @@
 {
   "imports": {
-    "@david/dax": "jsr:@david/dax@^0.43.2",
+    "@david/service-store": "jsr:@david/service-store@^0.3.0",
+    "@david/dax": "jsr:@david/dax@^0.44.0",
     "@deno-library/template": "jsr:@deno-library/template@^0.2.1",
     "@std/cli": "jsr:@std/cli@^1.0.20",
     "@std/semver": "jsr:@std/semver@^1.0.4",
     "@std/testing": "jsr:@std/testing@^1.0.10",
     "@std/assert": "jsr:@std/assert@^1.0.12",
-    "ansi-styles": "npm:ansi-styles@6.2.1",
+    "ansi-styles": "npm:ansi-styles@6.2.3",
     "cathy": "npm:cathy@^1.4.0",
     "env-ci": "npm:env-ci@^11.1.1",
-    "globrex": "npm:globrex@^0.1.2",
     "shell-quote": "npm:shell-quote@^1.8.2",
-    "tiny-di": "https://raw.githubusercontent.com/levibostian/tiny-di-deno/40a25149ad667c9d7f7d96c2b6b2a499ede56beb/mod.ts"
+    "globrex": "npm:globrex@^0.1.2"
   },
   "tasks": {
     "test": "deno test --allow-all --junit-path reports/junit.xml --coverage=reports/coverage/",

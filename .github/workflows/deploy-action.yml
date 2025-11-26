@@ -16,7 +16,7 @@ jobs:
     # Checkout the repo and make sure to get all commits for all branches. 
     # This is required by the deploy script because we try to merge the deployment branch into 'latest' branch and 
     # you will get "unrelated histories" error if you don't have all commits on both branches. 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
       with:
         fetch-depth: 0
 
@@ -30,16 +30,16 @@ jobs:
         compile_binary: 'true'
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: './steps/get-next-release.ts'
+        get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits
         deploy: './steps/deploy.ts'
         debug_file: '/tmp/debug-merge.log' 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       if: always()
       with:
         name: merge-method-logs
         path: /tmp/debug-merge.log
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
 
     - name: Run deployment, squash method
       if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
@@ -52,16 +52,16 @@ jobs:
         compile_binary: 'true'
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: './steps/get-next-release.ts'
+        get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits
         deploy: './steps/deploy.ts'
         debug_file: '/tmp/debug-squash.log' # Optional, but useful for debugging.
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       if: always()
       with:
         name: squash-method-logs
         path: /tmp/debug-squash.log
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
     
     - name: Run deployment, rebase method
       if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
@@ -74,11 +74,11 @@ jobs:
         compile_binary: 'true'
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: './steps/get-next-release.ts'
+        get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits        
         deploy: './steps/deploy.ts'
         debug_file: '/tmp/debug-rebase.log' # Optional, but useful for debugging.
         
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
       if: always()
       with:
         name: rebase-method-logs

@@ -492,8 +492,8 @@ export class EnvironmentStub implements Environment {
       return undefined
     }
   }
-  getCommandForStep({ stepName: _stepName }: { stepName: AnyStepName }): string | undefined {
-    return this.args.commandToRunStubStepScript
+  getCommandsForStep({ stepName: _stepName }: { stepName: AnyStepName }): string[] | undefined {
+    return this.args.commandToRunStubStepScript ? [this.args.commandToRunStubStepScript] : undefined
   }
   getGitConfigInput(): { name: string; email: string } | undefined {
     return undefined

@@ -126,6 +126,59 @@ jobs:
             # --make_pull_request_comment true # Enable this if you want PR comments (requires pull-requests:write)
 ```
 
+## Running multiple commands per step
+
+You can provide multiple commands for the `deploy`, `get_latest_release_current_branch`, and `get_next_release_version` steps.
+
+**Execution behavior**
+
+If you do run multiple commands, the execution behavior differs per step: 
+
+- **`get_latest_release_current_branch` and `get_next_release_version`** steps: Commands execute sequentially until one command returns valid output, then stops
+  - **Order matters!** List commands from most preferred to least preferred
+  - Useful for fallback strategies (e.g., try GitHub API first, fall back to git tags)
+- **`deploy`** step: All commands execute sequentially, regardless of success or failure of previous commands, and does not exit early. 
+
+Ok, now here are examples of how to run multiple commands per step:
+
+**GitHub Actions example:**
+```yaml
+- uses: levibostian/decaf@<version>
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    # Deploy: all commands run
+    deploy: |
+      npm run build
+      npm run test
+      python scripts/deploy.py
+    # Get latest release: stops at first valid output
+    get_latest_release_current_branch: |
+      python scripts/check-github-releases.py
+      python scripts/fallback-git-tags.py
+```
+
+**CLI example:**
+```bash
+./decaf \
+  --github_token "$GH_TOKEN" \
+  --deploy "npm run build" \
+  --deploy "npm run test" \
+  --deploy "python scripts/deploy.py" \
+  --get_latest_release_current_branch "python scripts/check-github-releases.py" \
+  --get_latest_release_current_branch "python scripts/fallback-git-tags.py"
+```
+
+**You could use &&, but be careful**
+
+If you want to be a bash nerd, instead of using separate commands, as explained above, you can use bash's `&&` and `;` operators to chain commands together in a single command string:
+
+```bash
+./decaf \
+  --deploy "npm run build && npm run test && python scripts/deploy.py" 
+```
+
+But be careful! After each command executes, decaf will check the output of the command to see if it gave output. If you use `&&` to run multiple commands where both commands produce output, only the output of the last command will be seen by decaf! 
+
 # Write your step scripts
 
 You are responsible for writing the scripts that perform each deployment step. This includes determining the next version, updating the version number in metadata files, and pushing code to a server. You can use *any* language or tools you prefer 😍!
