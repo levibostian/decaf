@@ -9,7 +9,7 @@
     "@std/assert": "jsr:@std/assert@^1.0.12",
     "ansi-styles": "npm:ansi-styles@6.2.3",
     "cathy": "npm:cathy@^1.4.0",
-    "env-ci": "npm:env-ci@^11.1.1",
+    "env-ci": "npm:env-ci@^11.2.0",
     "shell-quote": "npm:shell-quote@^1.8.2",
     "globrex": "npm:globrex@^0.1.2"
   },

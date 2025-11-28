@@ -6,7 +6,7 @@ import { GitHubApi } from "./github-api.ts"
 
 export interface Environment {
   getRepository(): { owner: string; repo: string }
-  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string }
+  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string; ciService: string }
   getSimulatedMergeType(): Promise<"merge" | "rebase" | "squash">
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
   isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
@@ -39,19 +39,12 @@ export class EnvironmentImpl implements Environment {
     return this.env.branch
   }
 
-  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string } {
-    let buildUrl = this.env.buildUrl
-
-    // workaround because github actions doesn't set the build URL correctly
-    // fix: https://github.com/semantic-release/env-ci/pull/194
-    if (this.env.service === "github") {
-      buildUrl = `${Deno.env.get("GITHUB_SERVER_URL")}/${Deno.env.get("GITHUB_REPOSITORY")}/actions/runs/${Deno.env.get("GITHUB_RUN_ID")}`
-    }
-
+  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string; ciService: string } {
     return {
       buildId: this.env.build,
-      buildUrl,
+      buildUrl: this.env.buildUrl,
       currentBranch: this.getNameOfCurrentBranch(),
+      ciService: this.env.service,
     }
   }
 

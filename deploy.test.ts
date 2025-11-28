@@ -441,6 +441,7 @@ const setupTestEnvironmentAndRun = async ({
       currentBranch,
       buildUrl: "https://example.com/build/123",
       buildId: "123",
+      ciService: "github",
     }
   })
   stub(environment, "getRepository", () => {

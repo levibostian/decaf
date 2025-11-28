@@ -26,7 +26,7 @@
     "jsr:@std/testing@^1.0.10": "1.0.16",
     "npm:ansi-styles@6.2.3": "6.2.3",
     "npm:cathy@^1.4.0": "1.4.0",
-    "npm:env-ci@^11.1.1": "11.1.1",
+    "npm:env-ci@^11.2.0": "11.2.0",
     "npm:globrex@~0.1.2": "0.1.2",
     "npm:shell-quote@^1.8.2": "1.8.3"
   },
@@ -135,8 +135,8 @@
         "which"
       ]
     },
-    "env-ci@11.1.1": {
-      "integrity": "sha512-mT3ks8F0kwpo7SYNds6nWj0PaRh+qJxIeBVBXAKTN9hphAzZv7s0QAZQbqnB1fAv/r4pJUGE15BV9UrS31FP2w==",
+    "env-ci@11.2.0": {
+      "integrity": "sha512-D5kWfzkmaOQDioPmiviWAVtKmpPT4/iJmMVQxWxMPJTFyTkdc5JQUfc5iXEeWxcOdsYTKSAiA/Age4NUOqKsRA==",
       "dependencies": [
         "execa",
         "java-properties"
@@ -238,7 +238,7 @@
       "jsr:@std/testing@^1.0.10",
       "npm:ansi-styles@6.2.3",
       "npm:cathy@^1.4.0",
-      "npm:env-ci@^11.1.1",
+      "npm:env-ci@^11.2.0",
       "npm:globrex@~0.1.2",
       "npm:shell-quote@^1.8.2"
     ]
