@@ -64,21 +64,6 @@ function log(level: keyof LogLevels, message: string) {
       console.log(consoleLogLine)
     })
   }
-
-  const debugFilePath = Deno.env.get("INPUT_DEBUG_FILE")?.trim()
-  const shouldWriteToDebugFile = debugFilePath && debugFilePath !== ""
-
-  if (shouldWriteToDebugFile) {
-    try {
-      const timestamp = new Date().toISOString()
-      const logEntry = `[${timestamp}] [${level.toUpperCase()}] ${message}\n`
-      Deno.writeTextFileSync(debugFilePath, logEntry, { append: true })
-    } catch (error) {
-      // If we can't write to the debug file, don't crash the program
-      // Just log the error to console without recursing
-      console.error(`Failed to write to debug file: ${error}`)
-    }
-  }
 }
 
 /**
