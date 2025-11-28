@@ -11,7 +11,6 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       "make_pull_request_comment",
       "fail_on_deploy_verification",
       "debug",
-      "debug_file",
       "branch_filters",
       "commit_limit",
     ],
@@ -32,7 +31,6 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       make_pull_request_comment: "true",
       fail_on_deploy_verification: "true",
       debug: "false",
-      debug_file: "",
       branch_filters: "",
       commit_limit: "",
     },
@@ -49,7 +47,6 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
   Deno.env.set("INPUT_MAKE_PULL_REQUEST_COMMENT", args.make_pull_request_comment)
   Deno.env.set("INPUT_FAIL_ON_DEPLOY_VERIFICATION", args.fail_on_deploy_verification)
   Deno.env.set("INPUT_DEBUG", args.debug)
-  Deno.env.set("INPUT_DEBUG_FILE", args.debug_file)
   Deno.env.set("INPUT_BRANCH_FILTERS", args.branch_filters)
   Deno.env.set("INPUT_COMMIT_LIMIT", args.commit_limit)
 }
