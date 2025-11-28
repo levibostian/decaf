@@ -332,12 +332,13 @@ async function githubGraphqlRequestPaging<RESPONSE>(
   }
 }
 
-const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, ciBuildId }: {
+const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, ciBuildId, ciService }: {
   message: string
   owner: string
   repo: string
   prNumber: number
   ciBuildId: string
+  ciService: string
 }) => {
   await cathy.speak(message, {
     githubToken: Deno.env.get("INPUT_GITHUB_TOKEN")!,
@@ -345,7 +346,10 @@ const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, c
     githubIssue: prNumber,
     updateExisting: true,
     appendToExisting: true,
-    updateID: ["decaf-deploy-run-output", `decaf-deploy-run-output-${ciBuildId}`],
+    // 2 IDs which allow us to delete PR comments made in the PR for previous pushes/builds.
+    // But also, both IDs are unique between CI services so if you run multiple CI services against the same PR,
+    // they won't delete each other's comments.
+    updateID: [`decaf-deploy-run-output-${ciService}`, `decaf-deploy-run-output-${ciBuildId}`],
   })
 }
 

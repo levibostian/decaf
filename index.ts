@@ -38,6 +38,7 @@ If this pull request and all of it's parent pull requests are merged using the..
     repo,
     prNumber: pullRequestInfo.prNumber,
     ciBuildId: buildInfo.buildId,
+    ciService: buildInfo.ciService,
   })
 }
 
@@ -75,6 +76,7 @@ Commits since last release:<br>
       repo,
       prNumber: pullRequestInfo.prNumber,
       ciBuildId: buildInfo.buildId,
+      ciService: buildInfo.ciService,
     })
   }
 } catch (error) {
@@ -92,6 +94,7 @@ Commits since last release:<br>
       repo,
       prNumber: pullRequestInfo.prNumber,
       ciBuildId: buildInfo.buildId,
+      ciService: buildInfo.ciService,
     })
   }
 
