@@ -77,7 +77,7 @@ jobs:
       # This block installs the tool and configures it for your project. 
       - uses: levibostian/decaf@<version>
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }} # See "GitHub Authentication" section for token requirements
           get_latest_release_current_branch: python scripts/get_latest_release.py
           get_next_release_version: python scripts/get_next_release.py
           deploy: python scripts/deploy.py
@@ -112,10 +112,8 @@ jobs:
       - run:
           name: Run CLI Tool
           command: |
-            # You must provide a GitHub personal access token (PAT) with the required permissions.
-            # The minimum required is contents:read, pull-requests:read. 
-            # If your deployment step pushes tags, commits, or creates releases, you need contents:write.
-            # If you want PR comments in test mode, you also need pull-requests:write.
+            # You must provide a GitHub personal access token (PAT).
+            # See the "GitHub Authentication" section in the README for detailed permission requirements.
             ./decaf \
               --github_token "$GH_TOKEN" \
               --deploy "./steps/deploy.ts" \
@@ -309,6 +307,27 @@ If your team is not used to using a special format for git commit messages, you 
 🎊 Congrats! You're all setup for automated deployments! 
 
 *Tip:* We suggest checking out [how to create pre-production releases](#create-prerelease-versions) to see if this is something you're interested in. 
+
+# GitHub Authentication
+
+All CI providers require you to provide a GitHub token via the `github_token` input. This token is used to interact with the GitHub API for various operations.
+
+## Token Types
+
+You can use either a classic GitHub personal access token (PAT) or a fine-grained PAT. **Fine-grained tokens are recommended** and work perfectly with this project.
+
+## Required Permissions
+
+Different features require different permission levels:
+
+### Minimum permissions (required for basic functionality)
+- **Contents: Read** - Required for the tool to function at all
+
+### Additional permissions for specific features
+- **Pull Requests: Read & Write** - Required if you enable the pull request comments feature (enabled by default via `make_pull_request_comment` config)
+- **Contents: Write** - Required in two scenarios:
+  1. If your deployment script pushes commits, creates tags, or creates GitHub Releases
+  2. If you want the automatic simulated merge type detection feature to work (only needed if you don't provide the `simulated_merge_type` input)
 
 # Outputs 
 
