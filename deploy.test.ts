@@ -432,7 +432,7 @@ const setupTestEnvironmentAndRun = async ({
       }
       : undefined
   })
-  stub(environment, "getSimulatedMergeType", (): "merge" | "rebase" | "squash" => {
+  stub(environment, "getSimulatedMergeType", async (): Promise<"merge" | "rebase" | "squash"> => {
     return "merge"
   })
 
@@ -441,6 +441,7 @@ const setupTestEnvironmentAndRun = async ({
       currentBranch,
       buildUrl: "https://example.com/build/123",
       buildId: "123",
+      ciService: "github",
     }
   })
   stub(environment, "getRepository", () => {

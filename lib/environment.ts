@@ -2,11 +2,12 @@ import { exec } from "./exec.ts"
 import * as log from "./log.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
 import envCi from "env-ci"
+import { GitHubApi } from "./github-api.ts"
 
 export interface Environment {
   getRepository(): { owner: string; repo: string }
-  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string }
-  getSimulatedMergeType(): "merge" | "rebase" | "squash"
+  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string; ciService: string }
+  getSimulatedMergeType(): Promise<"merge" | "rebase" | "squash">
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
   isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
   getCommandsForStep({ stepName }: { stepName: AnyStepName }): string[] | undefined
@@ -21,12 +22,15 @@ export interface Environment {
 export class EnvironmentImpl implements Environment {
   private readonly env: Record<string, string>
   private outputFileCache: Record<string, string>
+  private simulatedMergeTypeCache: "merge" | "rebase" | "squash" | null = null
+  private readonly githubApi: GitHubApi
 
-  constructor() {
+  constructor(githubApi: GitHubApi) {
     // Example of the values in `this.env`:
     // {"isCi":true,"name":"GitHub Actions","service":"github","commit":"7d4aec10df2b2dcbe99643662beca90a24a8a81f","build":"15876053587","isPr":true,"branch":"alpha","prBranch":"refs/pull/68/merge","slug":"levibostian/decaf","root":"/home/runner/work/decaf/decaf","pr":68}
     this.env = envCi()
     this.outputFileCache = {}
+    this.githubApi = githubApi
   }
 
   // Note: For pull requests, the return value is pretty useless. Example: "refs/pull/68/merge"
@@ -35,19 +39,12 @@ export class EnvironmentImpl implements Environment {
     return this.env.branch
   }
 
-  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string } {
-    let buildUrl = this.env.buildUrl
-
-    // workaround because github actions doesn't set the build URL correctly
-    // fix: https://github.com/semantic-release/env-ci/pull/194
-    if (this.env.service === "github") {
-      buildUrl = `${Deno.env.get("GITHUB_SERVER_URL")}/${Deno.env.get("GITHUB_REPOSITORY")}/actions/runs/${Deno.env.get("GITHUB_RUN_ID")}`
-    }
-
+  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string; ciService: string } {
     return {
       buildId: this.env.build,
-      buildUrl,
+      buildUrl: this.env.buildUrl,
       currentBranch: this.getNameOfCurrentBranch(),
+      ciService: this.env.service,
     }
   }
 
@@ -58,23 +55,52 @@ export class EnvironmentImpl implements Environment {
     }
   }
 
-  getSimulatedMergeType(): "merge" | "rebase" | "squash" {
+  async getSimulatedMergeType(): Promise<"merge" | "rebase" | "squash"> {
+    // first, check if we have it cached.
+    if (this.simulatedMergeTypeCache) {
+      return Promise.resolve(this.simulatedMergeTypeCache)
+    }
+
+    // Next, check if user provided the type via config.
     const githubActionInputKey = "simulated_merge_type"
 
-    const simulateMergeType = this.getInput(githubActionInputKey)
-    if (!simulateMergeType) {
+    try {
+      const simulateMergeType = this.getInput(githubActionInputKey)
+      const isValidInput = simulateMergeType === "merge" || simulateMergeType === "rebase" || simulateMergeType === "squash"
+      if (simulateMergeType && isValidInput) {
+        this.simulatedMergeTypeCache = simulateMergeType
+        return Promise.resolve(simulateMergeType)
+      }
+    } catch (_error) {
+      // Input not set, fall through to GitHub API check
+    }
+
+    // Next, try to get the repo's configured merge types from GitHub API.
+    try {
+      const mergeTypes = await this.githubApi.getRepoMergeTypes({
+        owner: this.getRepository().owner,
+        repo: this.getRepository().repo,
+      })
+
+      log.debug(`Repository merge types retrieved from github api: ${JSON.stringify(mergeTypes)}`)
+
+      if (mergeTypes.allowMergeCommit) {
+        this.simulatedMergeTypeCache = "merge"
+        return "merge"
+      } else if (mergeTypes.allowSquashMerge) {
+        this.simulatedMergeTypeCache = "squash"
+        return "squash"
+      } else { // github forces you to have at least one selected. so we know rebase is allowed if we get here.
+        this.simulatedMergeTypeCache = "rebase"
+        return "rebase"
+      }
+    } catch (error) {
+      log.debug(`Failed to get repository merge types from GitHub API: ${error}`)
+
+      // use a default of "merge" if we can't get the info from the API.
+      this.simulatedMergeTypeCache = "merge"
       return "merge"
     }
-
-    if (simulateMergeType !== "merge" && simulateMergeType !== "rebase" && simulateMergeType !== "squash") {
-      log.error(
-        `The value for the GitHub Actions input ${githubActionInputKey} is invalid. The value must be either "merge", "rebase", or "squash". The value provided was: ${simulateMergeType}`,
-      )
-
-      throw new Error()
-    }
-
-    return simulateMergeType
   }
 
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other" {

@@ -26,7 +26,7 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       deploy: [],
       get_latest_release_current_branch: [],
       get_next_release_version: [],
-      simulated_merge_type: "merge",
+      simulated_merge_type: "",
       output_file: "",
       make_pull_request_comment: "true",
       fail_on_deploy_verification: "true",

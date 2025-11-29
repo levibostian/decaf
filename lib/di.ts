@@ -6,7 +6,7 @@ import { Environment, EnvironmentImpl } from "./environment.ts"
 export const productionDiDefinition = defineStore()
   .add("git", git.impl)
   .add("github", githubApi.impl)
-  .add("environment", (): Environment => new EnvironmentImpl())
+  .add("environment", (store): Environment => new EnvironmentImpl(store.get("github")))
 
 export const productionDiGraph = productionDiDefinition
 

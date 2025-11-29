@@ -332,12 +332,13 @@ async function githubGraphqlRequestPaging<RESPONSE>(
   }
 }
 
-const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, ciBuildId }: {
+const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, ciBuildId, ciService }: {
   message: string
   owner: string
   repo: string
   prNumber: number
   ciBuildId: string
+  ciService: string
 }) => {
   await cathy.speak(message, {
     githubToken: Deno.env.get("INPUT_GITHUB_TOKEN")!,
@@ -345,14 +346,36 @@ const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, c
     githubIssue: prNumber,
     updateExisting: true,
     appendToExisting: true,
-    updateID: ["decaf-deploy-run-output", `decaf-deploy-run-output-${ciBuildId}`],
+    // 2 IDs which allow us to delete PR comments made in the PR for previous pushes/builds.
+    // But also, both IDs are unique between CI services so if you run multiple CI services against the same PR,
+    // they won't delete each other's comments.
+    updateID: [`decaf-deploy-run-output-${ciService}`, `decaf-deploy-run-output-${ciBuildId}`],
   })
+}
+
+/**
+ * calls GET /repos/{owner}/{repo} and view allow_merge_commit, allow_squash_merge, allow_rebase_merge
+ * to determine if merge types are allowed on the repo.
+ */
+export const getRepoMergeTypes = async ({ owner, repo }: { owner: string; repo: string }) => {
+  const response = await githubApiRequest<{
+    allow_merge_commit: boolean
+    allow_squash_merge: boolean
+    allow_rebase_merge: boolean
+  }>(`https://api.github.com/repos/${owner}/${repo}`)
+
+  return {
+    allowMergeCommit: response.body.allow_merge_commit,
+    allowSquashMerge: response.body.allow_squash_merge,
+    allowRebaseMerge: response.body.allow_rebase_merge,
+  }
 }
 
 export interface GitHubApi {
   getCommitsForBranch: typeof getCommitsForBranch
   getPullRequestStack: typeof getPullRequestStack
   postStatusUpdateOnPullRequest: typeof postStatusUpdateOnPullRequest
+  getRepoMergeTypes: typeof getRepoMergeTypes
 }
 
 export const impl = (): GitHubApi => {
@@ -360,5 +383,6 @@ export const impl = (): GitHubApi => {
     getCommitsForBranch,
     getPullRequestStack,
     postStatusUpdateOnPullRequest,
+    getRepoMergeTypes,
   }
 }

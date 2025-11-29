@@ -42,7 +42,9 @@ jobs:
         # required to use 'gh' CLI in my step scripts. 
         GH_TOKEN: ${{ github.token }}
       with: 
-        simulated_merge_type: 'squash'
+        # purposefully do not pass in a simulated_merge_type here to test that we use the github api 
+        # to get the squash merge type. 
+        # simulated_merge_type: 'squash'
         compile_binary: 'true'
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'

@@ -461,7 +461,7 @@ export class EnvironmentStub implements Environment {
       repo: "decaf",
     }
   }
-  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string } {
+  getBuild(): { buildUrl?: string; buildId: string; currentBranch: string; ciService: string } {
     const currentBranch = this.args.runFromPush?.branch ?? this.args.runFromPullRequest?.baseBranch
     if (!currentBranch) {
       throw new Error("No branch provided")
@@ -470,10 +470,11 @@ export class EnvironmentStub implements Environment {
     return {
       buildId: this.buildId,
       currentBranch,
+      ciService: "github",
     }
   }
-  getSimulatedMergeType(): "merge" | "rebase" | "squash" {
-    return this.args.runFromPullRequest?.simulatedMergeType ?? "merge"
+  getSimulatedMergeType(): Promise<"merge" | "rebase" | "squash"> {
+    return Promise.resolve(this.args.runFromPullRequest?.simulatedMergeType ?? "merge")
   }
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other" {
     if (this.args.runFromPullRequest) {
