@@ -333,29 +333,29 @@ Deno.test("getCommandsForStep - should handle commands with special characters",
 
 Deno.test("getSimulatedMergeType - should return merge type when merge type is set by user", async () => {
   Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "merge")
-  assertEquals(await environment.getSimulatedMergeType(), "merge")
+  assertEquals(await environment.getSimulatedMergeType(), ["merge"])
 })
 
 Deno.test("getSimulatedMergeType - should return squash type when squash type is set by user", async () => {
   Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "squash")
-  assertEquals(await environment.getSimulatedMergeType(), "squash")
+  assertEquals(await environment.getSimulatedMergeType(), ["squash"])
 })
 
 Deno.test("getSimulatedMergeType - should return rebase type when rebase type is set by user", async () => {
   Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "rebase")
-  assertEquals(await environment.getSimulatedMergeType(), "rebase")
+  assertEquals(await environment.getSimulatedMergeType(), ["rebase"])
 })
 
 Deno.test("getSimulatedMergeType - should return cached value on subsequent calls", async () => {
   Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "merge")
-  assertEquals(await environment.getSimulatedMergeType(), "merge")
+  assertEquals(await environment.getSimulatedMergeType(), ["merge"])
 
   // Change the environment variable, but should still return cached value
   Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "squash")
-  assertEquals(await environment.getSimulatedMergeType(), "merge")
+  assertEquals(await environment.getSimulatedMergeType(), ["merge"])
 })
 
-Deno.test("getSimulatedMergeType - should return merge when INPUT_SIMULATED_MERGE_TYPE is not set and defaults are used", async () => {
+Deno.test("getSimulatedMergeType - should return all merge types when INPUT_SIMULATED_MERGE_TYPE is not set and defaults are used", async () => {
   // Don't set INPUT_SIMULATED_MERGE_TYPE
   Deno.env.delete("INPUT_SIMULATED_MERGE_TYPE")
 
@@ -367,12 +367,12 @@ Deno.test("getSimulatedMergeType - should return merge when INPUT_SIMULATED_MERG
 
   const result = await environment.getSimulatedMergeType()
 
-  // When no input is provided and API fails/not available, should default to merge
-  assertEquals(result, "merge")
+  // When no input is provided and API fails/not available, should default to all types
+  assertEquals(result, ["merge", "squash", "rebase"])
   assertEquals(apiCalled, true)
 })
 
-Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_MERGE_TYPE is not set and return merge", async () => {
+Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_MERGE_TYPE is not set and return only merge", async () => {
   Deno.env.delete("INPUT_SIMULATED_MERGE_TYPE")
 
   when(githubApiMock, "getRepoMergeTypes", async (_args) => {
@@ -385,10 +385,10 @@ Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_M
 
   const result = await environment.getSimulatedMergeType()
 
-  assertEquals(result, "merge")
+  assertEquals(result, ["merge"])
 })
 
-Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_MERGE_TYPE is not set and return squash", async () => {
+Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_MERGE_TYPE is not set and return only squash", async () => {
   Deno.env.delete("INPUT_SIMULATED_MERGE_TYPE")
 
   when(githubApiMock, "getRepoMergeTypes", async (_args) => {
@@ -401,10 +401,10 @@ Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_M
 
   const result = await environment.getSimulatedMergeType()
 
-  assertEquals(result, "squash")
+  assertEquals(result, ["squash"])
 })
 
-Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_MERGE_TYPE is not set and return rebase", async () => {
+Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_MERGE_TYPE is not set and return only rebase", async () => {
   Deno.env.delete("INPUT_SIMULATED_MERGE_TYPE")
 
   when(githubApiMock, "getRepoMergeTypes", async (_args) => {
@@ -417,10 +417,10 @@ Deno.test("getSimulatedMergeType - should call GitHub API when INPUT_SIMULATED_M
 
   const result = await environment.getSimulatedMergeType()
 
-  assertEquals(result, "rebase")
+  assertEquals(result, ["rebase"])
 })
 
-Deno.test("getSimulatedMergeType - should return merge when all merge types are allowed", async () => {
+Deno.test("getSimulatedMergeType - should return all merge types when all merge types are allowed", async () => {
   Deno.env.delete("INPUT_SIMULATED_MERGE_TYPE")
 
   when(githubApiMock, "getRepoMergeTypes", async (_args) => {
@@ -433,7 +433,7 @@ Deno.test("getSimulatedMergeType - should return merge when all merge types are 
 
   const result = await environment.getSimulatedMergeType()
 
-  assertEquals(result, "merge")
+  assertEquals(result, ["merge", "squash", "rebase"])
 })
 
 Deno.test("getSimulatedMergeType - should prioritize user input over GitHub API", async () => {
@@ -452,7 +452,7 @@ Deno.test("getSimulatedMergeType - should prioritize user input over GitHub API"
   const result = await environment.getSimulatedMergeType()
 
   // Should return rebase from user input, not merge from API
-  assertEquals(result, "rebase")
+  assertEquals(result, ["rebase"])
   assertEquals(apiCalled, false)
 })
 
@@ -470,11 +470,11 @@ Deno.test("getSimulatedMergeType - should cache GitHub API result on subsequent 
   })
 
   const firstResult = await environment.getSimulatedMergeType()
-  assertEquals(firstResult, "squash")
+  assertEquals(firstResult, ["squash"])
   assertEquals(apiCallCount, 1)
 
   const secondResult = await environment.getSimulatedMergeType()
-  assertEquals(secondResult, "squash")
+  assertEquals(secondResult, ["squash"])
   // API should only be called once due to caching
   assertEquals(apiCallCount, 1)
 })
@@ -495,7 +495,7 @@ Deno.test("getSimulatedMergeType - should fallback to API when invalid user inpu
   const result = await environment.getSimulatedMergeType()
 
   // Should fallback to API result since input is invalid
-  assertEquals(result, "squash")
+  assertEquals(result, ["squash"])
   assertEquals(apiCalled, true)
 })
 

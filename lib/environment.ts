@@ -7,7 +7,7 @@ import { GitHubApi } from "./github-api.ts"
 export interface Environment {
   getRepository(): { owner: string; repo: string }
   getBuild(): { buildUrl?: string; buildId: string; currentBranch: string; ciService: string }
-  getSimulatedMergeType(): Promise<"merge" | "rebase" | "squash">
+  getSimulatedMergeType(): Promise<("merge" | "rebase" | "squash")[]>
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
   isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
   getCommandsForStep({ stepName }: { stepName: AnyStepName }): string[] | undefined
@@ -22,7 +22,7 @@ export interface Environment {
 export class EnvironmentImpl implements Environment {
   private readonly env: Record<string, string>
   private outputFileCache: Record<string, string>
-  private simulatedMergeTypeCache: "merge" | "rebase" | "squash" | null = null
+  private simulatedMergeTypeCache: ("merge" | "rebase" | "squash")[] | null = null
   private readonly githubApi: GitHubApi
 
   constructor(githubApi: GitHubApi) {
@@ -55,7 +55,7 @@ export class EnvironmentImpl implements Environment {
     }
   }
 
-  async getSimulatedMergeType(): Promise<"merge" | "rebase" | "squash"> {
+  async getSimulatedMergeType(): Promise<("merge" | "rebase" | "squash")[]> {
     // first, check if we have it cached.
     if (this.simulatedMergeTypeCache) {
       return Promise.resolve(this.simulatedMergeTypeCache)
@@ -68,8 +68,8 @@ export class EnvironmentImpl implements Environment {
       const simulateMergeType = this.getInput(githubActionInputKey)
       const isValidInput = simulateMergeType === "merge" || simulateMergeType === "rebase" || simulateMergeType === "squash"
       if (simulateMergeType && isValidInput) {
-        this.simulatedMergeTypeCache = simulateMergeType
-        return Promise.resolve(simulateMergeType)
+        this.simulatedMergeTypeCache = [simulateMergeType]
+        return Promise.resolve([simulateMergeType])
       }
     } catch (_error) {
       // Input not set, fall through to GitHub API check
@@ -84,22 +84,27 @@ export class EnvironmentImpl implements Environment {
 
       log.debug(`Repository merge types retrieved from github api: ${JSON.stringify(mergeTypes)}`)
 
+      const enabledTypes: ("merge" | "rebase" | "squash")[] = []
+      
       if (mergeTypes.allowMergeCommit) {
-        this.simulatedMergeTypeCache = "merge"
-        return "merge"
-      } else if (mergeTypes.allowSquashMerge) {
-        this.simulatedMergeTypeCache = "squash"
-        return "squash"
-      } else { // github forces you to have at least one selected. so we know rebase is allowed if we get here.
-        this.simulatedMergeTypeCache = "rebase"
-        return "rebase"
+        enabledTypes.push("merge")
       }
+      if (mergeTypes.allowSquashMerge) {
+        enabledTypes.push("squash")
+      }
+      if (mergeTypes.allowRebaseMerge) {
+        enabledTypes.push("rebase")
+      }
+
+      // GitHub forces you to have at least one selected, so this should never be empty
+      this.simulatedMergeTypeCache = enabledTypes
+      return enabledTypes
     } catch (error) {
       log.debug(`Failed to get repository merge types from GitHub API: ${error}`)
 
-      // use a default of "merge" if we can't get the info from the API.
-      this.simulatedMergeTypeCache = "merge"
-      return "merge"
+      // use a default of all types if we can't get the info from the API.
+      this.simulatedMergeTypeCache = ["merge", "squash", "rebase"]
+      return ["merge", "squash", "rebase"]
     }
   }
 
