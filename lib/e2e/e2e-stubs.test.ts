@@ -473,7 +473,7 @@ export class EnvironmentStub implements Environment {
       ciService: "github",
     }
   }
-  getSimulatedMergeType(): Promise<("merge" | "rebase" | "squash")[]> {
+  getSimulatedMergeTypes(): Promise<("merge" | "rebase" | "squash")[]> {
     const mergeType = this.args.runFromPullRequest?.simulatedMergeType ?? "merge"
     return Promise.resolve([mergeType])
   }
