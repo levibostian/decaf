@@ -31,8 +31,10 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
 
     if (!runInTestMode) return undefined
 
-    const simulateMergeType = await this.environment.getSimulatedMergeType()
-    logger.debug(`Simulated merge type: ${simulateMergeType}`)
+    const simulateMergeTypes = await this.environment.getSimulatedMergeType()
+    // Use the first enabled merge type (priority order: merge, squash, rebase)
+    const simulateMergeType = simulateMergeTypes[0]
+    logger.debug(`Simulated merge types available: ${simulateMergeTypes.join(", ")}. Using: ${simulateMergeType}`)
 
     const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingPrNumber: testModeContext.prNumber })
     const commitsCreatedDuringSimulatedMerges: GitCommit[] = []

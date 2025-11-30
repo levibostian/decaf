@@ -20,7 +20,8 @@ const git = diGraph.get("git")
 
 const pullRequestInfo = environment.isRunningInPullRequest()
 const buildInfo = environment.getBuild()
-const simulatedMergeType = await environment.getSimulatedMergeType()
+const simulatedMergeTypes = await environment.getSimulatedMergeType()
+const simulatedMergeType = simulatedMergeTypes[0] // Use the first enabled merge type
 const shouldPostStatusUpdatesOnPullRequest = environment.getUserConfigurationOptions().makePullRequestComment && pullRequestInfo !== undefined
 
 const { owner, repo } = environment.getRepository()
