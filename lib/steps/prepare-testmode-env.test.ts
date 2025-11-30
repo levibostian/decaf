@@ -49,7 +49,7 @@ describe("prepareEnvironmentForTestMode", () => {
     const givenMergeType: "merge" | "squash" | "rebase" = "merge"
 
     when(git, "createLocalBranchFromRemote", async () => {})
-    when(environment, "getSimulatedMergeType", async () => [givenMergeType])
+    when(environment, "getSimulatedMergeTypes", async () => [givenMergeType])
     when(
       environment,
       "isRunningInPullRequest",

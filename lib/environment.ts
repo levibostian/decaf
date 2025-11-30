@@ -7,7 +7,7 @@ import { GitHubApi } from "./github-api.ts"
 export interface Environment {
   getRepository(): { owner: string; repo: string }
   getBuild(): { buildUrl?: string; buildId: string; currentBranch: string; ciService: string }
-  getSimulatedMergeType(): Promise<("merge" | "rebase" | "squash")[]>
+  getSimulatedMergeTypes(): Promise<("merge" | "rebase" | "squash")[]>
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other"
   isRunningInPullRequest(): { baseBranch: string; targetBranch: string; prNumber: number } | undefined
   getCommandsForStep({ stepName }: { stepName: AnyStepName }): string[] | undefined
@@ -55,7 +55,7 @@ export class EnvironmentImpl implements Environment {
     }
   }
 
-  async getSimulatedMergeType(): Promise<("merge" | "rebase" | "squash")[]> {
+  async getSimulatedMergeTypes(): Promise<("merge" | "rebase" | "squash")[]> {
     // first, check if we have it cached.
     if (this.simulatedMergeTypeCache) {
       return Promise.resolve(this.simulatedMergeTypeCache)
