@@ -31,7 +31,7 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
 
     if (!runInTestMode) return undefined
 
-    const simulateMergeTypes = await this.environment.getSimulatedMergeType()
+    const simulateMergeTypes = await this.environment.getSimulatedMergeTypes()
     // Use the first enabled merge type (priority order: merge, squash, rebase)
     const simulateMergeType = simulateMergeTypes[0]
     logger.debug(`Simulated merge types available: ${simulateMergeTypes.join(", ")}. Using: ${simulateMergeType}`)

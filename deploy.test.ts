@@ -432,7 +432,7 @@ const setupTestEnvironmentAndRun = async ({
       }
       : undefined
   })
-  stub(environment, "getSimulatedMergeType", async (): Promise<("merge" | "rebase" | "squash")[]> => {
+  stub(environment, "getSimulatedMergeTypes", async (): Promise<("merge" | "rebase" | "squash")[]> => {
     return ["merge"]
   })
 
