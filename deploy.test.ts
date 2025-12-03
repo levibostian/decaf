@@ -475,6 +475,8 @@ const setupTestEnvironmentAndRun = async ({
     git: gitMock,
     exec: execMock,
     environment,
+    simulatedMergeType: "merge",
+    gitWorktreeDirectory: "/tmp/test-worktree",
   })
 
   return {

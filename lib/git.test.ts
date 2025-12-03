@@ -24,14 +24,14 @@ describe("checkoutBranch", () => {
     await git.checkoutBranch({ exec, branch: "main", createBranchIfNotExist: false })
 
     assertSpyCall(execMock, 0, {
-      args: [{ command: `git checkout main`, input: undefined }],
+      args: [{ command: `git checkout main`, input: undefined, currentWorkingDirectory: undefined }],
     })
 
     // Now, test with createBranchIfNotExist
     await git.checkoutBranch({ exec, branch: "main", createBranchIfNotExist: true })
 
     assertSpyCall(execMock, 1, {
-      args: [{ command: `git checkout -b main`, input: undefined }],
+      args: [{ command: `git checkout -b main`, input: undefined, currentWorkingDirectory: undefined }],
     })
   })
 

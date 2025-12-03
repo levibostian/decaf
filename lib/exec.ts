@@ -9,12 +9,13 @@ export interface RunResult {
 
 export interface Exec {
   run: (
-    { command, input, displayLogs }: {
+    { command, input, displayLogs, currentWorkingDirectory }: {
       command: string
       input: AnyStepInput | undefined
       displayLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
+      currentWorkingDirectory?: string
     },
   ) => Promise<RunResult>
 }
@@ -30,12 +31,13 @@ We use a popular package to parse the string into the correct args list. See aut
 To make this function testable, we not only have the stdout and stderr be piped to the console, but we return it from this function so tests can verify the output of the command.
 */
 const run = async (
-  { command, input, displayLogs, envVars, throwOnNonZeroExitCode }: {
+  { command, input, displayLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
     command: string
     input: AnyStepInput | undefined
     displayLogs?: boolean
     envVars?: { [key: string]: string }
     throwOnNonZeroExitCode?: boolean
+    currentWorkingDirectory?: string
   },
 ): Promise<RunResult> => {
   if (displayLogs) {
@@ -77,6 +79,7 @@ const run = async (
     stdout: "piped",
     stderr: "piped",
     env: environmentVariablesToPassToCommand,
+    cwd: currentWorkingDirectory,
   })
 
   const child = process.spawn()
