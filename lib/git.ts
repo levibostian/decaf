@@ -300,6 +300,7 @@ const getCommits = async (
      */
     command: `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branch.ref}`,
     input: undefined,
+    displayLogs: false,
     currentWorkingDirectory: cwd,
   })
 
