@@ -40,6 +40,7 @@ describe("prepareEnvironmentForTestMode", () => {
     const result = await step.prepareEnvironmentForTestMode({
       owner: "owner",
       repo: "repo",
+      simulatedMergeType: "merge",
     })
 
     assertEquals(result, undefined)
@@ -49,7 +50,6 @@ describe("prepareEnvironmentForTestMode", () => {
     const givenMergeType: "merge" | "squash" | "rebase" = "merge"
 
     when(git, "createLocalBranchFromRemote", async () => {})
-    when(environment, "getSimulatedMergeTypes", async () => [givenMergeType])
     when(
       environment,
       "isRunningInPullRequest",
@@ -105,6 +105,7 @@ describe("prepareEnvironmentForTestMode", () => {
     const result = await step.prepareEnvironmentForTestMode({
       owner: "owner",
       repo: "repo",
+      simulatedMergeType: givenMergeType,
     })
 
     assertEquals(performSimulatedMergeMock.calls.length, 2)

@@ -19,7 +19,7 @@ export interface ConvenienceStep {
 }
 
 export class ConvenienceStepImpl implements ConvenienceStep {
-  constructor(private exec: Exec, private environment: Environment, private git: Git, private log: Logger) {}
+  constructor(private exec: Exec, private environment: Environment, private git: Git, private log: Logger, private cwd?: string) {}
 
   /**
    * Check if a branch name matches any of the provided filters
@@ -51,10 +51,12 @@ export class ConvenienceStepImpl implements ConvenienceStep {
       await this.exec.run({
         command: `git config user.name "${userProvidedGitCommitterConfig.name}"`,
         input: undefined,
+        currentWorkingDirectory: this.cwd,
       })
       await this.exec.run({
         command: `git config user.email "${userProvidedGitCommitterConfig.email}"`,
         input: undefined,
+        currentWorkingDirectory: this.cwd,
       })
     }
 
@@ -62,8 +64,8 @@ export class ConvenienceStepImpl implements ConvenienceStep {
     this.log.debug(`Branch filters provided: ${JSON.stringify(branchFilters)}`)
 
     const gitCommitsAllBranches: { [branchName: string]: GitCommit[] } = {}
-    const allBranchNames = await this.git.getBranches({ exec })
-    const currentBranch = await this.git.getCurrentBranch({ exec })
+    const allBranchNames = await this.git.getBranches({ exec, cwd: this.cwd })
+    const currentBranch = await this.git.getCurrentBranch({ exec, cwd: this.cwd })
 
     for (const [branchName, branchInfo] of allBranchNames) {
       // Always include current branch for safety, regardless of filters
@@ -71,7 +73,7 @@ export class ConvenienceStepImpl implements ConvenienceStep {
 
       if (shouldIncludeBranch) {
         this.log.debug(`Processing commits for branch: ${branchName}, commit limit: ${commitLimit || "unlimited"}`)
-        const commitsOnBranch = await this.git.getCommits({ exec, branch: branchInfo, limit: commitLimit })
+        const commitsOnBranch = await this.git.getCommits({ exec, branch: branchInfo, limit: commitLimit, cwd: this.cwd })
         gitCommitsAllBranches[branchName] = commitsOnBranch
       }
     }

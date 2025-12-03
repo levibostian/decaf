@@ -399,6 +399,16 @@ export class GitStub implements Git {
     return Promise.resolve(branchMap)
   }
 
+  createWorktree: ({ exec }: { exec: Exec }) => Promise<string> = async () => {
+    // For testing purposes, just return a mock directory path
+    return Promise.resolve("/tmp/mock-worktree")
+  }
+
+  removeWorktree: ({ exec, directory }: { exec: Exec; directory: string }) => Promise<void> = async () => {
+    // For testing purposes, this is a no-op
+    return Promise.resolve()
+  }
+
   // Helper methods for testing setup
 
   /** Add a commit to a specific branch */

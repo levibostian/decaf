@@ -4,51 +4,61 @@ import { GitCommit } from "./types/git.ts"
 import * as shellQuote from "shell-quote"
 
 export interface Git {
-  fetch: ({ exec }: { exec: Exec }) => Promise<void>
+  fetch: ({ exec, cwd }: { exec: Exec; cwd?: string }) => Promise<void>
   checkoutBranch: (
-    { exec, branch, createBranchIfNotExist }: { exec: Exec; branch: string; createBranchIfNotExist: boolean },
+    { exec, branch, createBranchIfNotExist, cwd }: { exec: Exec; branch: string; createBranchIfNotExist: boolean; cwd?: string },
   ) => Promise<void>
   merge: (
-    { exec, branchToMergeIn, commitTitle, commitMessage, fastForward }: {
+    { exec, branchToMergeIn, commitTitle, commitMessage, fastForward, cwd }: {
       exec: Exec
       branchToMergeIn: string
       commitTitle: string
       commitMessage: string
       fastForward?: "--no-ff" | "--ff-only"
+      cwd?: string
     },
   ) => Promise<void>
-  pull: ({ exec }: { exec: Exec }) => Promise<void>
+  pull: ({ exec, cwd }: { exec: Exec; cwd?: string }) => Promise<void>
   setUser: (
-    { exec, name, email }: { exec: Exec; name: string; email: string },
+    { exec, name, email, cwd }: { exec: Exec; name: string; email: string; cwd?: string },
   ) => Promise<void>
   squash: (
-    { exec, branchToSquash, branchMergingInto, commitTitle, commitMessage }: {
+    { exec, branchToSquash, branchMergingInto, commitTitle, commitMessage, cwd }: {
       exec: Exec
       branchToSquash: string
       branchMergingInto: string
       commitTitle: string
       commitMessage: string
+      cwd?: string
     },
   ) => Promise<void>
   rebase: (
-    { exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string },
+    { exec, branchToRebaseOnto, cwd }: { exec: Exec; branchToRebaseOnto: string; cwd?: string },
   ) => Promise<void>
-  getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitCommit }): Promise<GitCommit[]>
+  getLatestCommitsSince({ exec, commit, cwd }: { exec: Exec; commit: GitCommit; cwd?: string }): Promise<GitCommit[]>
   // returns undefined when no commits are found on the branch
-  getLatestCommitOnBranch({ exec, branch }: { exec: Exec; branch: { ref: string } }): Promise<GitCommit | undefined>
-  createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void>
-  getCommits: ({ exec, branch, limit }: { exec: Exec; branch: { ref: string }; limit?: number }) => Promise<GitCommit[]>
-  getCurrentBranch: ({ exec }: { exec: Exec }) => Promise<string>
+  getLatestCommitOnBranch({ exec, branch, cwd }: { exec: Exec; branch: { ref: string }; cwd?: string }): Promise<GitCommit | undefined>
+  createLocalBranchFromRemote: ({ exec, branch, cwd }: { exec: Exec; branch: string; cwd?: string }) => Promise<void>
+  getCommits: ({ exec, branch, limit, cwd }: { exec: Exec; branch: { ref: string }; limit?: number; cwd?: string }) => Promise<GitCommit[]>
+  getCurrentBranch: ({ exec, cwd }: { exec: Exec; cwd?: string }) => Promise<string>
   /**
    * Gets a Map of all branches. Key = the name of the branch, local or remote.
    * Value is an object with 'ref' being the full reference of the branch. Example: if the branch
    * is available locally, the ref is <branch-name>. If the branch is only available remotely, the ref is
    * 'origin/<branch-name>'.
    */
-  getBranches: ({ exec }: { exec: Exec }) => Promise<Map<string, { ref: string }>>
+  getBranches: ({ exec, cwd }: { exec: Exec; cwd?: string }) => Promise<Map<string, { ref: string }>>
+  /**
+   * Creates a new git worktree directory and returns the path to it.
+   */
+  createWorktree: ({ exec }: { exec: Exec }) => Promise<string>
+  /**
+   * Removes a git worktree directory.
+   */
+  removeWorktree: ({ exec, directory }: { exec: Exec; directory: string }) => Promise<void>
 }
 
-const fetch = async ({ exec }: { exec: Exec }): Promise<void> => {
+const fetch = async ({ exec, cwd }: { exec: Exec; cwd?: string }): Promise<void> => {
   // A *complete* fetch that gets all branches, all commits, all tags.
 
   // First, try to unshallow if the repository is shallow.
@@ -57,6 +67,7 @@ const fetch = async ({ exec }: { exec: Exec }): Promise<void> => {
     await exec.run({
       command: `git fetch --unshallow --tags --all`,
       input: undefined,
+      currentWorkingDirectory: cwd,
     })
   } catch (_error) {
     // If repo is not shallow, it will throw exception "fatal: --unshallow on a complete repository does not make sense"
@@ -66,26 +77,29 @@ const fetch = async ({ exec }: { exec: Exec }): Promise<void> => {
       // --all ensures that we get all branches from the origin remote.
       command: `git fetch --tags --all`,
       input: undefined,
+      currentWorkingDirectory: cwd,
     })
   }
 }
 
 const checkoutBranch = async (
-  { exec, branch, createBranchIfNotExist }: { exec: Exec; branch: string; createBranchIfNotExist: boolean },
+  { exec, branch, createBranchIfNotExist, cwd }: { exec: Exec; branch: string; createBranchIfNotExist: boolean; cwd?: string },
 ): Promise<void> => {
   await exec.run({
     command: `git checkout ${createBranchIfNotExist ? "-b " : ""}${branch}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 }
 
 const merge = async (
-  { exec, branchToMergeIn, commitTitle, commitMessage, fastForward }: {
+  { exec, branchToMergeIn, commitTitle, commitMessage, fastForward, cwd }: {
     exec: Exec
     branchToMergeIn: string
     commitTitle: string
     commitMessage: string
     fastForward?: "--no-ff" | "--ff-only"
+    cwd?: string
   },
 ): Promise<void> => {
   // Use shell-quote to properly escape the commit message to prevent shell injection and parsing errors
@@ -94,46 +108,52 @@ const merge = async (
   await exec.run({
     command: `git merge ${branchToMergeIn} -m ${escapedCommitTitle} -m ${escapedCommitMessage} ${fastForward || ""}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 }
 
-const pull = async ({ exec }: { exec: Exec }): Promise<void> => {
-  const currentBranchName = await getCurrentBranch({ exec })
+const pull = async ({ exec, cwd }: { exec: Exec; cwd?: string }): Promise<void> => {
+  const currentBranchName = await getCurrentBranch({ exec, cwd })
 
   await exec.run({
     command: `git pull origin ${currentBranchName}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 }
 
 const setUser = async (
-  { exec, name, email }: { exec: Exec; name: string; email: string },
+  { exec, name, email, cwd }: { exec: Exec; name: string; email: string; cwd?: string },
 ): Promise<void> => {
   await exec.run({
     command: `git config user.name "${name}"`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 
   await exec.run({
     command: `git config user.email "${email}"`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 }
 
 // Squash all commits of a branch into 1 commit
 const squash = async (
-  { exec, branchToSquash, branchMergingInto, commitTitle, commitMessage }: {
+  { exec, branchToSquash, branchMergingInto, commitTitle, commitMessage, cwd }: {
     exec: Exec
     branchToSquash: string
     branchMergingInto: string
     commitTitle: string
     commitMessage: string
+    cwd?: string
   },
 ): Promise<void> => {
   // We need to find out how many commits 1 branch is ahead of the other to find out how many unique commits there are.
   const { stdout } = await exec.run({
     command: `git rev-list --count ${branchMergingInto}..${branchToSquash}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 
   const numberOfCommitsAheadOfBranchMergingInto = parseInt(stdout.trim())
@@ -147,6 +167,7 @@ const squash = async (
   await exec.run({
     command: `git reset --soft HEAD~${numberOfCommitsAheadOfBranchMergingInto}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 
   // Use shell-quote to properly escape the commit message to prevent shell injection and parsing errors
@@ -155,24 +176,26 @@ const squash = async (
   await exec.run({
     command: `git commit -m ${escapedCommitTitle} -m ${escapedCommitMessage}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 }
 
 const rebase = async (
-  { exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string },
+  { exec, branchToRebaseOnto, cwd }: { exec: Exec; branchToRebaseOnto: string; cwd?: string },
 ): Promise<void> => {
   await exec.run({
     command: `git rebase ${branchToRebaseOnto}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 }
 
 const getLatestCommitsSince = async (
-  { exec, commit }: { exec: Exec; commit: GitCommit },
+  { exec, commit, cwd }: { exec: Exec; commit: GitCommit; cwd?: string },
 ): Promise<GitCommit[]> => {
-  const currentBranchName = await getCurrentBranch({ exec })
+  const currentBranchName = await getCurrentBranch({ exec, cwd })
 
-  const allCommits = await getCommits({ exec, branch: { ref: currentBranchName } })
+  const allCommits = await getCommits({ exec, branch: { ref: currentBranchName }, cwd })
 
   // Find the index of the commit we're looking for
   const commitIndex = allCommits.findIndex((c) => c.sha === commit.sha)
@@ -182,9 +205,9 @@ const getLatestCommitsSince = async (
 }
 
 const getLatestCommitOnBranch = async (
-  { exec, branch }: { exec: Exec; branch: { ref: string } },
+  { exec, branch, cwd }: { exec: Exec; branch: { ref: string }; cwd?: string },
 ): Promise<GitCommit | undefined> => {
-  const commits = await getCommits({ exec, branch })
+  const commits = await getCommits({ exec, branch, cwd })
 
   if (commits.length === 0) {
     return undefined
@@ -203,18 +226,20 @@ const getLatestCommitOnBranch = async (
  * have given the most consistent results.
  */
 const createLocalBranchFromRemote = async (
-  { exec, branch }: { exec: Exec; branch: string },
+  { exec, branch, cwd }: { exec: Exec; branch: string; cwd?: string },
 ): Promise<void> => {
-  const currentBranchName = await getCurrentBranch({ exec })
+  const currentBranchName = await getCurrentBranch({ exec, cwd })
   const doesBranchExist = (await exec.run({
     command: `git branch --list ${branch}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })).stdout.trim() !== ""
   // Only run if it doesn't exist locally. This is to avoid a error that crashes the tool: "fatal: a branch named '<branch-name>' already exists"
   if (!doesBranchExist) {
     await exec.run({
       command: `git branch --track ${branch} origin/${branch}`,
       input: undefined,
+      currentWorkingDirectory: cwd,
     })
   }
 
@@ -222,6 +247,7 @@ const createLocalBranchFromRemote = async (
   await exec.run({
     command: `git checkout ${branch}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 
   // Pull the branch from the remote.
@@ -230,12 +256,14 @@ const createLocalBranchFromRemote = async (
   await exec.run({
     command: `git pull --no-rebase origin ${branch}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 
   // Switch back to the branch we were on before.
   await exec.run({
     command: `git checkout ${currentBranchName}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 }
 
@@ -245,7 +273,7 @@ const createLocalBranchFromRemote = async (
  * **NOTE**: Be sure that `git fetch` is called before calling this command!! Otherwise, the commit history you get might be incomplete.
  */
 const getCommits = async (
-  { exec, branch, limit }: { exec: Exec; branch: { ref: string }; limit?: number },
+  { exec, branch, limit, cwd }: { exec: Exec; branch: { ref: string }; limit?: number; cwd?: string },
 ): Promise<GitCommit[]> => {
   // Use a more detailed pretty format to get more info per commit
   const limitArg = limit ? `-${limit}` : ""
@@ -269,6 +297,7 @@ const getCommits = async (
      */
     command: `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${branch.ref}`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 
   // Split by commit separator to separate commits. We can't use another method like newlines because the git message body might contain newlines.
@@ -361,15 +390,16 @@ const getCommits = async (
   return commits
 }
 
-const getCurrentBranch = async ({ exec }: { exec: Exec }): Promise<string> => {
+const getCurrentBranch = async ({ exec, cwd }: { exec: Exec; cwd?: string }): Promise<string> => {
   const { stdout } = await exec.run({
     command: `git branch --show-current`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
   return stdout.trim()
 }
 
-const getBranches = async ({ exec }: { exec: Exec }): Promise<Map<string, { ref: string }>> => {
+const getBranches = async ({ exec, cwd }: { exec: Exec; cwd?: string }): Promise<Map<string, { ref: string }>> => {
   /*
    * We call "git fetch" before running the tool. fetch does not create a local branch which by default will not show up when you call `git branch`.
    * The implementation of this function is to get a list of all local and remote branches. So we run multiple commands to get all branches.
@@ -377,6 +407,7 @@ const getBranches = async ({ exec }: { exec: Exec }): Promise<Map<string, { ref:
   const { stdout } = await exec.run({
     command: `git branch -a --format='%(refname:short)'`,
     input: undefined,
+    currentWorkingDirectory: cwd,
   })
 
   const branchMap = new Map<string, { ref: string }>()
@@ -419,6 +450,31 @@ const getBranches = async ({ exec }: { exec: Exec }): Promise<Map<string, { ref:
   return branchMap
 }
 
+const createWorktree = async ({ exec }: { exec: Exec }): Promise<string> => {
+  const currentBranchName = await getCurrentBranch({ exec })
+  const worktreeDirectory = await Deno.makeTempDir({
+    prefix: "decaf-worktree-",
+  })
+
+  await exec.run({
+    command: `git worktree add ${worktreeDirectory} ${currentBranchName}`,
+    input: undefined,
+  })
+
+  log.debug(`Created git worktree at ${worktreeDirectory}`)
+
+  return worktreeDirectory
+}
+
+const removeWorktree = async ({ exec, directory }: { exec: Exec; directory: string }): Promise<void> => {
+  await exec.run({
+    command: `git worktree remove ${directory}`,
+    input: undefined,
+  })
+
+  log.debug(`Removed git worktree at ${directory}`)
+}
+
 export const impl = (): Git => {
   return {
     fetch,
@@ -434,5 +490,7 @@ export const impl = (): Git => {
     createLocalBranchFromRemote,
     getCurrentBranch,
     getBranches,
+    createWorktree,
+    removeWorktree,
   }
 }

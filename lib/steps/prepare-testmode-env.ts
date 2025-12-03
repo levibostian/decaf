@@ -2,14 +2,14 @@ import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
 import { Environment } from "../environment.ts"
 import { GitHubApi } from "../github-api.ts"
-import { logger } from "../log.ts"
 import { SimulateMerge } from "../simulate-merge.ts"
 import { GitCommit } from "../types/git.ts"
 
 export interface PrepareTestModeEnvStep {
-  prepareEnvironmentForTestMode({ owner, repo }: {
+  prepareEnvironmentForTestMode({ owner, repo, simulatedMergeType }: {
     owner: string
     repo: string
+    simulatedMergeType: "merge" | "rebase" | "squash"
   }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitCommit[] } | undefined>
 }
 
@@ -20,21 +20,18 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     private simulateMerge: SimulateMerge,
     private git: Git,
     private exec: Exec,
+    private cwd?: string,
   ) {}
 
-  prepareEnvironmentForTestMode = async ({ owner, repo }: {
+  prepareEnvironmentForTestMode = async ({ owner, repo, simulatedMergeType }: {
     owner: string
     repo: string
+    simulatedMergeType: "merge" | "rebase" | "squash"
   }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitCommit[] } | undefined> => {
     const testModeContext = this.environment.isRunningInPullRequest()
     const runInTestMode = testModeContext !== undefined
 
     if (!runInTestMode) return undefined
-
-    const simulateMergeTypes = await this.environment.getSimulatedMergeTypes()
-    // Use the first enabled merge type (priority order: merge, squash, rebase)
-    const simulateMergeType = simulateMergeTypes[0]
-    logger.debug(`Simulated merge types available: ${simulateMergeTypes.join(", ")}. Using: ${simulateMergeType}`)
 
     const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingPrNumber: testModeContext.prNumber })
     const commitsCreatedDuringSimulatedMerges: GitCommit[] = []
@@ -42,10 +39,10 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
 
     for await (const pr of pullRequestStack) {
       // make sure that a local branch exists for the PR branches so we can check simulate the merge by running merge commands between the branches.
-      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.sourceBranchName })
-      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.targetBranchName })
+      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.sourceBranchName, cwd: this.cwd })
+      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.targetBranchName, cwd: this.cwd })
 
-      const commitsCreated = await this.simulateMerge.performSimulation(simulateMergeType, {
+      const commitsCreated = await this.simulateMerge.performSimulation(simulatedMergeType, {
         baseBranch: pr.sourceBranchName,
         targetBranch: pr.targetBranchName,
         pullRequestNumber: pr.prNumber,

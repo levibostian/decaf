@@ -144,7 +144,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getLatestCommitsSince was called with the existing commit as reference
       assertSpyCall(getLatestCommitsSinceStub, 0, {
-        args: [{ exec, commit: existingCommit }],
+        args: [{ exec, commit: existingCommit, cwd: undefined }],
       })
     })
 
@@ -170,7 +170,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: { ref: "main" } }],
+        args: [{ exec, branch: { ref: "main" }, cwd: undefined }],
       })
     })
   })
@@ -198,7 +198,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getLatestCommitsSince was called with the existing commit as reference
       assertSpyCall(getLatestCommitsSinceStub, 0, {
-        args: [{ exec, commit: existingCommit }],
+        args: [{ exec, commit: existingCommit, cwd: undefined }],
       })
     })
 
@@ -223,7 +223,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: { ref: "main" } }],
+        args: [{ exec, branch: { ref: "main" }, cwd: undefined }],
       })
     })
   })
@@ -252,7 +252,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getLatestCommitsSince was called with the existing commit as reference
       assertSpyCall(getLatestCommitsSinceStub, 0, {
-        args: [{ exec, commit: existingCommit }],
+        args: [{ exec, commit: existingCommit, cwd: undefined }],
       })
     })
 
@@ -278,7 +278,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: { ref: "main" } }],
+        args: [{ exec, branch: { ref: "main" }, cwd: undefined }],
       })
     })
   })
