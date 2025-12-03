@@ -13,7 +13,7 @@ export interface GetCommitsSinceLatestReleaseStep {
 }
 
 export class GetCommitsSinceLatestReleaseStepImpl implements GetCommitsSinceLatestReleaseStep {
-  constructor(private git: Git, private exec: Exec) {}
+  constructor(private git: Git, private exec: Exec, private cwd?: string) {}
 
   async getAllCommitsSinceGivenCommit({ owner: _owner, repo: _repo, branch, latestRelease }: {
     owner: string
@@ -26,6 +26,7 @@ export class GetCommitsSinceLatestReleaseStepImpl implements GetCommitsSinceLate
     const commits = await this.git.getCommits({
       exec: this.exec,
       branch: { ref: branch },
+      cwd: this.cwd,
     })
 
     for (const commit of commits) {

@@ -19,6 +19,8 @@ export const run = async ({
   git,
   exec,
   log,
+  simulatedMergeType,
+  gitWorktreeDirectory,
 }: {
   convenienceStep: ConvenienceStep
   stepRunner: StepRunner
@@ -28,6 +30,8 @@ export const run = async ({
   git: Git
   exec: Exec
   log: Logger
+  simulatedMergeType: "merge" | "rebase" | "squash",
+  gitWorktreeDirectory: string,
 }): Promise<
   { nextReleaseVersion: string | null; commitsSinceLastRelease: GitHubCommit[]; latestRelease: GetLatestReleaseStepOutput | null } | null
 > => {
@@ -65,6 +69,7 @@ export const run = async ({
     const prepareEnvironmentForTestModeResults = await prepareEnvironmentForTestMode.prepareEnvironmentForTestMode({
       owner,
       repo,
+      simulatedMergeType,
     })
 
     const pullRequestBranchBeforeSimulatedMerges = currentBranch
@@ -183,7 +188,7 @@ export const run = async ({
   )
   // Re-run convenience commands to ensure any git changes done in deployment commands are included. This will
   // run a git fetch again and parse commits all over again.
-  await git.fetch({ exec })
+  await git.fetch({ exec, cwd: gitWorktreeDirectory })
 
   const {
     gitCommitsAllLocalBranches: gitCommitsAllLocalBranchesAfterDeploy,

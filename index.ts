@@ -21,7 +21,6 @@ const git = diGraph.get("git")
 const pullRequestInfo = environment.isRunningInPullRequest()
 const buildInfo = environment.getBuild()
 const simulatedMergeTypes = await environment.getSimulatedMergeTypes()
-const simulatedMergeType = simulatedMergeTypes[0] // Use the first enabled merge type
 const shouldPostStatusUpdatesOnPullRequest = environment.getUserConfigurationOptions().makePullRequestComment && pullRequestInfo !== undefined
 
 const { owner, repo } = environment.getRepository()
@@ -43,62 +42,75 @@ If this pull request and all of it's parent pull requests are merged using the..
   })
 }
 
-try {
-  const runResult = await run({
-    convenienceStep: new ConvenienceStepImpl(exec, environment, git, logger),
-    stepRunner: new StepRunnerImpl(environment, exec, logger),
-    prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec), git, exec),
-    getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec),
-    log: logger,
-    git,
-    exec,
-    environment,
-  })
-  const newReleaseVersion = runResult?.nextReleaseVersion
-
-  if (shouldPostStatusUpdatesOnPullRequest) {
-    let message = newReleaseVersion
-      ? `...🟩 **${simulatedMergeType}** 🟩 merge method... 🚢 The next version of the project will be: **${newReleaseVersion}**`
-      : `...🟩 **${simulatedMergeType}** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.`
-
-    message += `\n\n<details>
-<summary>Learn more</summary>
-<br>
-Latest release: ${runResult?.latestRelease?.versionName || "none, this is the first release."}<br>
-Commit of latest release: ${runResult?.latestRelease?.commitSha || "none, this is the first release."}<br>
-<br>
-Commits since last release:<br>
-- ${runResult?.commitsSinceLastRelease.map((commit) => commit.message).join("<br>- ") || "none"}    
-</details>`
-
-    await githubApi.postStatusUpdateOnPullRequest({
-      message,
-      owner,
-      repo,
-      prNumber: pullRequestInfo.prNumber,
-      ciBuildId: buildInfo.buildId,
-      ciService: buildInfo.ciService,
+for (const simulatedMergeType of simulatedMergeTypes) {
+  const gitWorktreeDirectory = await git.createWorktree({exec})
+  
+  try {
+    const runResult = await run({
+      convenienceStep: new ConvenienceStepImpl(exec, environment, git, logger, gitWorktreeDirectory),
+      stepRunner: new StepRunnerImpl(environment, exec, logger),
+      prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec, gitWorktreeDirectory), git, exec, gitWorktreeDirectory),
+      getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec, gitWorktreeDirectory),
+      log: logger,
+      git,
+      exec,
+      environment,
+      simulatedMergeType,
+      gitWorktreeDirectory, // this is the directory that all git operations should be run in
     })
-  }
-} catch (error) {
-  if (shouldPostStatusUpdatesOnPullRequest) {
-    let message = `...🟩 **${simulatedMergeType}** 🟩 merge method... ⚠️ There was an error during deployment run.`
-    if (buildInfo.buildUrl) {
-      message += ` [See logs to learn more and fix the issue](${buildInfo.buildUrl}).`
-    } else {
-      message += ` See CI server logs to learn more and fix the issue.`
+    const newReleaseVersion = runResult?.nextReleaseVersion
+
+    if (shouldPostStatusUpdatesOnPullRequest) {
+      let message = newReleaseVersion
+        ? `...🟩 **${simulatedMergeType}** 🟩 merge method... 🚢 The next version of the project will be: **${newReleaseVersion}**`
+        : `...🟩 **${simulatedMergeType}** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.`
+
+      message += `\n\n<details>
+  <summary>Learn more</summary>
+  <br>
+  Latest release: ${runResult?.latestRelease?.versionName || "none, this is the first release."}<br>
+  Commit of latest release: ${runResult?.latestRelease?.commitSha || "none, this is the first release."}<br>
+  <br>
+  Commits since last release:<br>
+  - ${runResult?.commitsSinceLastRelease.map((commit) => commit.message).join("<br>- ") || "none"}    
+  </details>`
+
+      await githubApi.postStatusUpdateOnPullRequest({
+        message,
+        owner,
+        repo,
+        prNumber: pullRequestInfo.prNumber,
+        ciBuildId: buildInfo.buildId,
+        ciService: buildInfo.ciService,
+      })
+    }
+  } catch (error) {
+    if (shouldPostStatusUpdatesOnPullRequest) {
+      let message = `...🟩 **${simulatedMergeType}** 🟩 merge method... ⚠️ There was an error during deployment run.`
+      if (buildInfo.buildUrl) {
+        message += ` [See logs to learn more and fix the issue](${buildInfo.buildUrl}).`
+      } else {
+        message += ` See CI server logs to learn more and fix the issue.`
+      }
+
+      await githubApi.postStatusUpdateOnPullRequest({
+        message,
+        owner,
+        repo,
+        prNumber: pullRequestInfo.prNumber,
+        ciBuildId: buildInfo.buildId,
+        ciService: buildInfo.ciService,
+      })
     }
 
-    await githubApi.postStatusUpdateOnPullRequest({
-      message,
-      owner,
-      repo,
-      prNumber: pullRequestInfo.prNumber,
-      ciBuildId: buildInfo.buildId,
-      ciService: buildInfo.ciService,
-    })
+    // rethrow the error to ensure the action fails
+    throw error
+  } finally {
+    // Always clean up the worktree, even if an error occurred
+    try {
+      await git.removeWorktree({ exec, directory: gitWorktreeDirectory })
+    } catch (cleanupError) {
+      logger.warning(`Failed to remove worktree at ${gitWorktreeDirectory}: ${cleanupError}`)
+    }
   }
-
-  // rethrow the error to ensure the action fails
-  throw error
 }
