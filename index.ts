@@ -25,10 +25,6 @@ const shouldPostStatusUpdatesOnPullRequest = environment.getUserConfigurationOpt
 
 const { owner, repo } = environment.getRepository()
 
-// Before we do anything, run a complete git fetch.
-// Many git commands in this tool depend on it, so run it early to avoid any issues.
-await git.fetch({ exec })
-
 if (shouldPostStatusUpdatesOnPullRequest) {
   await githubApi.postStatusUpdateOnPullRequest({
     message: `## decaf
@@ -44,6 +40,10 @@ If this pull request and all of it's parent pull requests are merged using the..
 
 for (const simulatedMergeType of simulatedMergeTypes) {
   const isolatedCloneDirectory = await git.createIsolatedClone({exec})
+  
+  // Run a complete git fetch in the isolated clone.
+  // Many git commands in this tool depend on it, so run it early to avoid any issues.
+  await git.fetch({ exec, cwd: isolatedCloneDirectory })
   
   try {
     const runResult = await run({
