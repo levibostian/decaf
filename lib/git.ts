@@ -465,11 +465,38 @@ const createIsolatedClone = async ({ exec }: { exec: Exec }): Promise<string> =>
     input: undefined,
   })
 
+  // Get the remote URL from the original repository
+  const { stdout: remoteUrl } = await exec.run({
+    command: `git config --get remote.origin.url`,
+    input: undefined,
+  })
+
+  // Get the current branch or commit in the original repo
+  const { stdout: currentRef } = await exec.run({
+    command: `git rev-parse HEAD`,
+    input: undefined,
+  })
+
   // Create a local clone of the repository
   // This gives us complete isolation - commits in the clone won't affect the original repo
   await exec.run({
     command: `git clone ${repoPath.trim()} ${cloneDirectory}`,
     input: undefined,
+  })
+
+  // Update the origin remote to point to the actual remote, not the local path
+  // This ensures that git fetch will fetch from the real remote
+  await exec.run({
+    command: `git remote set-url origin ${remoteUrl.trim()}`,
+    input: undefined,
+    currentWorkingDirectory: cloneDirectory,
+  })
+
+  // Checkout the same commit as the original repo to avoid detached HEAD issues
+  await exec.run({
+    command: `git checkout ${currentRef.trim()}`,
+    input: undefined,
+    currentWorkingDirectory: cloneDirectory,
   })
 
   log.debug(`Created isolated git clone at ${cloneDirectory}`)
