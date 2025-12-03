@@ -43,20 +43,20 @@ If this pull request and all of it's parent pull requests are merged using the..
 }
 
 for (const simulatedMergeType of simulatedMergeTypes) {
-  const gitWorktreeDirectory = await git.createWorktree({exec})
+  const isolatedCloneDirectory = await git.createIsolatedClone({exec})
   
   try {
     const runResult = await run({
-      convenienceStep: new ConvenienceStepImpl(exec, environment, git, logger, gitWorktreeDirectory),
+      convenienceStep: new ConvenienceStepImpl(exec, environment, git, logger, isolatedCloneDirectory),
       stepRunner: new StepRunnerImpl(environment, exec, logger),
-      prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec, gitWorktreeDirectory), git, exec, gitWorktreeDirectory),
-      getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec, gitWorktreeDirectory),
+      prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec, isolatedCloneDirectory), git, exec, isolatedCloneDirectory),
+      getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec, isolatedCloneDirectory),
       log: logger,
       git,
       exec,
       environment,
       simulatedMergeType,
-      gitWorktreeDirectory, // this is the directory that all git operations should be run in
+      gitWorktreeDirectory: isolatedCloneDirectory, // isolated git clone directory - all git operations run here without affecting main repo
     })
     const newReleaseVersion = runResult?.nextReleaseVersion
 
@@ -106,11 +106,11 @@ for (const simulatedMergeType of simulatedMergeTypes) {
     // rethrow the error to ensure the action fails
     throw error
   } finally {
-    // Always clean up the worktree, even if an error occurred
+    // Always clean up the isolated git clone, even if an error occurred
     try {
-      await git.removeWorktree({ exec, directory: gitWorktreeDirectory })
+      await git.removeIsolatedClone({ exec, directory: isolatedCloneDirectory })
     } catch (cleanupError) {
-      logger.warning(`Failed to remove worktree at ${gitWorktreeDirectory}: ${cleanupError}`)
+      logger.warning(`Failed to remove isolated git clone at ${isolatedCloneDirectory}: ${cleanupError}`)
     }
   }
 }

@@ -49,13 +49,16 @@ export interface Git {
    */
   getBranches: ({ exec, cwd }: { exec: Exec; cwd?: string }) => Promise<Map<string, { ref: string }>>
   /**
-   * Creates a new git worktree directory and returns the path to it.
+   * Creates an isolated git clone in a temporary directory.
+   * This allows git operations to be performed without affecting the main repository.
+   * All commits made in this clone are isolated and will be discarded when the clone is removed.
+   * Returns the path to the temporary clone directory.
    */
-  createWorktree: ({ exec }: { exec: Exec }) => Promise<string>
+  createIsolatedClone: ({ exec }: { exec: Exec }) => Promise<string>
   /**
-   * Removes a git worktree directory.
+   * Removes the isolated git clone directory created by createIsolatedClone.
    */
-  removeWorktree: ({ exec, directory }: { exec: Exec; directory: string }) => Promise<void>
+  removeIsolatedClone: ({ exec, directory }: { exec: Exec; directory: string }) => Promise<void>
 }
 
 const fetch = async ({ exec, cwd }: { exec: Exec; cwd?: string }): Promise<void> => {
@@ -450,29 +453,38 @@ const getBranches = async ({ exec, cwd }: { exec: Exec; cwd?: string }): Promise
   return branchMap
 }
 
-const createWorktree = async ({ exec }: { exec: Exec }): Promise<string> => {
-  const currentBranchName = await getCurrentBranch({ exec })
-  const worktreeDirectory = await Deno.makeTempDir({
-    prefix: "decaf-worktree-",
+const createIsolatedClone = async ({ exec }: { exec: Exec }): Promise<string> => {
+  const cloneDirectory = await Deno.makeTempDir({
+    prefix: "decaf-clone-",
   })
 
-  await exec.run({
-    command: `git worktree add ${worktreeDirectory} ${currentBranchName}`,
+  // Get the current repository path to clone from
+  const { stdout: repoPath } = await exec.run({
+    command: `git rev-parse --show-toplevel`,
     input: undefined,
   })
 
-  log.debug(`Created git worktree at ${worktreeDirectory}`)
+  // Create a local clone of the repository
+  // This gives us complete isolation - commits in the clone won't affect the original repo
+  await exec.run({
+    command: `git clone ${repoPath.trim()} ${cloneDirectory}`,
+    input: undefined,
+  })
 
-  return worktreeDirectory
+  log.debug(`Created isolated git clone at ${cloneDirectory}`)
+
+  return cloneDirectory
 }
 
-const removeWorktree = async ({ exec, directory }: { exec: Exec; directory: string }): Promise<void> => {
+const removeIsolatedClone = async ({ exec, directory }: { exec: Exec; directory: string }): Promise<void> => {
+  // Simply remove the directory - it's a separate clone, not a worktree
+  // Using rm -rf is safe here because we created a temp directory specifically for this
   await exec.run({
-    command: `git worktree remove ${directory}`,
+    command: `rm -rf ${directory}`,
     input: undefined,
   })
 
-  log.debug(`Removed git worktree at ${directory}`)
+  log.debug(`Removed isolated git clone at ${directory}`)
 }
 
 export const impl = (): Git => {
@@ -490,7 +502,7 @@ export const impl = (): Git => {
     createLocalBranchFromRemote,
     getCurrentBranch,
     getBranches,
-    createWorktree,
-    removeWorktree,
+    createIsolatedClone,
+    removeIsolatedClone,
   }
 }

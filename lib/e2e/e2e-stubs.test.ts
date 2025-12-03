@@ -399,12 +399,12 @@ export class GitStub implements Git {
     return Promise.resolve(branchMap)
   }
 
-  createWorktree: ({ exec }: { exec: Exec }) => Promise<string> = async () => {
+  createIsolatedClone: ({ exec }: { exec: Exec }) => Promise<string> = async () => {
     // For testing purposes, just return a mock directory path
-    return Promise.resolve("/tmp/mock-worktree")
+    return Promise.resolve("/tmp/mock-clone")
   }
 
-  removeWorktree: ({ exec, directory }: { exec: Exec; directory: string }) => Promise<void> = async () => {
+  removeIsolatedClone: ({ exec, directory }: { exec: Exec; directory: string }) => Promise<void> = async () => {
     // For testing purposes, this is a no-op
     return Promise.resolve()
   }
