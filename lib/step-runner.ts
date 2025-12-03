@@ -50,7 +50,9 @@ export class StepRunnerImpl implements StepRunner {
     for (const command of commands) {
       const commandToRun = stringTemplating.render(command, input as unknown as Record<string, unknown>)
 
-      this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
+      // input contains all git commits. too much data to log.
+      // this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
+      this.logger.debug(`Running step, ${step}. Command: ${commandToRun}`)
       const runResult = await this.exec.run({ command: commandToRun, input: input, displayLogs: true })
       this.logger.debug(`Step ${step} completed. step output: ${runResult.output}`)
 
