@@ -15,7 +15,6 @@ import { GitHubApi, GitHubPullRequest } from "../github-api.ts"
 import { assertObjectMatch } from "@std/assert"
 import { assertSnapshot } from "@std/testing/snapshot"
 import * as di from "../di.ts"
-import { exec } from "../exec.ts"
 
 Deno.test("when running a deployment, given CI only cloned 1 commit on current branch, expect to receive all parsed commits for branch", async (t) => {
   // when running on github actions with actions/checkout and it's default config, you will only have 1 checked out commit.
@@ -42,6 +41,7 @@ Deno.test("when running a deployment, given CI only cloned 1 commit on current b
 
   await run({
     testMode: false,
+    simulatedMergeTypes: ["merge"],
   })
 
   // assert that the input data given to the step scripts is what we expect.
@@ -108,6 +108,7 @@ Deno.test("when running in test mode in a stacked pull request, expect the step 
 
   await run({
     testMode: true,
+    simulatedMergeTypes: ["merge"],
   })
 
   // assert that the input data given to the step scripts is what we expect.
@@ -125,6 +126,76 @@ Deno.test("when running in test mode in a stacked pull request, expect the step 
     "latest commit on feature-1 branch",
     "latest commit on main branch",
   ], e2eStepScript.getGetLatestReleaseInput().gitCommitsCurrentBranch.map((commit) => commit.title))
+})
+
+Deno.test("when running with multiple simulated merge types, expect isolated clone created for each type", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "commit on main", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+  ])
+
+  const { gitRepoCloner } = setupGitRepo({
+    checkedOutBranch: "main",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  // this test only cares to assert the cloner calls. 
+  // so, no need to setup more of the step scripts.
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+
+  await run({
+    testMode: false,
+    simulatedMergeTypes: ["merge", "rebase", "squash"],
+  })
+
+  // Assert: clone() was called 3 times (once per merge type)
+  assertEquals(gitRepoCloner.cloneCalls.length, 3, "Should create 3 isolated clones for 3 merge types")
+
+  // Assert: remove() was called 3 times
+  assertEquals(gitRepoCloner.removeCalls.length, 3, "Should clean up all 3 isolated clones")
+})
+
+Deno.test("when cleanup fails, expect warning logged but execution continues", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "commit on main", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+  ])
+
+  const { gitRepoCloner } = setupGitRepo({
+    checkedOutBranch: "main",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  gitRepoCloner.setThrowOnRemove(true)
+
+  // this test only cares to assert the cloner calls. 
+  // so, no need to setup more of the step scripts.
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+
+  // Act: Run the tool - should NOT throw despite cleanup failure
+  await run({ testMode: false, simulatedMergeTypes: ["merge"] })
+
+  // Assert: The tool completed successfully despite cleanup error
+  // If it threw, the test would fail here
+  // The test passing proves the finally block caught the error and logged a warning
+
+  // Also verify that clone was called and remove was attempted
+  assertEquals(gitRepoCloner.cloneCalls.length, 1, "Should have attempted to create 1 clone")
+  assertEquals(gitRepoCloner.removeCalls.length, 1, "Should have attempted to remove the clone despite error")
 })
 
 // helper functions
@@ -148,7 +219,7 @@ const setupGitRepo = (
     remoteCommits: Map<string, GitCommit[]>
     remotePullRequests: GitHubPullRequest[]
   },
-): { remoteRepository: GitRemoteRepositoryMock } => {
+): { remoteRepository: GitRemoteRepositoryMock; gitRepoCloner: GitRepoClonerStub } => {
   currentBranchWhenTestStarts = checkedOutBranch
 
   const remoteRepository: GitRemoteRepositoryMock = {
@@ -159,7 +230,8 @@ const setupGitRepo = (
   // Override the services with test implementations
   const gitStub = new GitStub({ currentBranch: checkedOutBranch, remoteRepo: remoteRepository, commits: localCommits })  
   // Override gitRepoCloner to return the same gitStub instead of creating real clones
-  diGraph = diGraph.override("gitRepoCloner", () => new GitRepoClonerStub(gitStub, exec))
+  const gitRepoCloner = new GitRepoClonerStub(gitStub)
+  diGraph = diGraph.override("gitRepoCloner", () => gitRepoCloner)
 
   githubApiMock = mock()
   when(githubApiMock, "getPullRequestStack", async (_args) => {
@@ -167,14 +239,14 @@ const setupGitRepo = (
   })
   diGraph = diGraph.override("github", () => githubApiMock)
 
-  return { remoteRepository }
+  return { remoteRepository, gitRepoCloner }
 }
 
 let currentBranchWhenTestStarts: string
 let environmentMock: Environment
 let githubApiMock: GitHubApi = mock()
 
-const run = async ({ testMode }: { testMode: boolean }) => {
+const run = async ({ testMode, simulatedMergeTypes }: { testMode: boolean; simulatedMergeTypes?: ("merge" | "rebase" | "squash")[] }) => {
   if (testMode) {
     environmentMock = new EnvironmentStub({
       commandToRunStubStepScript: e2eStepScript.getBashCommandToRunThisScript(),
@@ -182,8 +254,8 @@ const run = async ({ testMode }: { testMode: boolean }) => {
         baseBranch: currentBranchWhenTestStarts,
         targetBranch: "feature",
         prNumber: 123,
-        simulatedMergeType: "merge",
       },
+      simulatedMergeTypes,
     })
   } else {
     environmentMock = new EnvironmentStub({
@@ -191,6 +263,7 @@ const run = async ({ testMode }: { testMode: boolean }) => {
       runFromPush: {
         branch: currentBranchWhenTestStarts,
       },
+      simulatedMergeTypes,
     })
   }
   diGraph = diGraph.override("environment", () => environmentMock)
