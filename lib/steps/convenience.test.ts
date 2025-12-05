@@ -1,7 +1,6 @@
 import { assertEquals } from "@std/assert"
 import { ConvenienceStepImpl } from "./convenience.ts"
 import { mock, when } from "../mock/mock.ts"
-import { Exec } from "../exec.ts"
 import { Environment } from "../environment.ts"
 import { logger } from "../log.ts"
 import { Git } from "../git.ts"
@@ -9,23 +8,18 @@ import { GitCommit } from "../types/git.ts"
 import { GitCommitFake } from "../types/git.test.ts"
 
 Deno.test("ConvenienceStepImpl", async (t) => {
-  let mockExec: Exec
   let mockEnvironment: Environment
   let mockGit: Git
   let convenience: ConvenienceStepImpl
 
   function setupMocks() {
-    mockExec = mock<Exec>()
     mockEnvironment = mock<Environment>()
     mockGit = mock<Git>()
-
-    // Mock exec.run method
-    when(mockExec, "run", () => Promise.resolve({ exitCode: 0, stdout: "", output: undefined }))
 
     // Mock environment methods
     when(mockEnvironment, "getCommitLimit", () => 500)
 
-    convenience = new ConvenienceStepImpl(mockExec, mockEnvironment, mockGit, logger)
+    convenience = new ConvenienceStepImpl(mockEnvironment, mockGit, logger)
   }
 
   const createMockCommit = (): GitCommit => new GitCommitFake({})
@@ -41,12 +35,11 @@ Deno.test("ConvenienceStepImpl", async (t) => {
 
     await convenience.runConvenienceCommands()
 
-    const execCalls = (mockExec.run as unknown as { calls: { args: [{ command: string }] }[] }).calls
-    const userNameCall = execCalls.find((call) => call.args[0].command === `git config user.name "Test User"`)
-    const userEmailCall = execCalls.find((call) => call.args[0].command === `git config user.email "test@example.com"`)
-
-    assertEquals(userNameCall !== undefined, true, "git config user.name should be executed")
-    assertEquals(userEmailCall !== undefined, true, "git config user.email should be executed")
+    // Verify that git.setUser was called with the correct arguments
+    const setUserCalls = (mockGit.setUser as unknown as { calls: { args: [{ name: string; email: string }] }[] }).calls
+    assertEquals(setUserCalls.length, 1, "git.setUser should be called once")
+    assertEquals(setUserCalls[0].args[0].name, "Test User", "git.setUser should be called with correct name")
+    assertEquals(setUserCalls[0].args[0].email, "test@example.com", "git.setUser should be called with correct email")
   })
 
   await t.step("should not set git config when user does not provide git committer config", async () => {
@@ -59,10 +52,9 @@ Deno.test("ConvenienceStepImpl", async (t) => {
 
     await convenience.runConvenienceCommands()
 
-    const execCalls = (mockExec.run as unknown as { calls: { args: [{ command: string }] }[] }).calls
-    const gitConfigCalls = execCalls.filter((call) => call.args[0].command.includes("git config user."))
-
-    assertEquals(gitConfigCalls.length, 0, "no git config commands should be executed")
+    // Verify that git.setUser was not called
+    const setUserCalls = (mockGit.setUser as unknown as { calls?: unknown[] }).calls
+    assertEquals(setUserCalls === undefined || setUserCalls.length === 0, true, "git.setUser should not be called")
   })
 
   await t.step("should get commits for all local branches when no filters provided", async () => {
@@ -216,10 +208,12 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     await convenience.runConvenienceCommands([], commitLimit)
 
     // Verify getCommits was called with the commit limit
-    const getCommitsCalls = (mockGit.getCommits as unknown as { calls: { args: [{ exec: unknown; branch: string; limit: number }] }[] }).calls
+    const getCommitsCalls = (mockGit.getCommits as unknown as {
+      calls: { args: [{ branch: { ref: string }; limit?: number }] }[]
+    }).calls
     assertEquals(getCommitsCalls.length, branches.length)
 
-    // Check that each call includes the commit limit
+    // Check that each call includes the commit limit in the args object
     getCommitsCalls.forEach((call) => {
       assertEquals(call.args[0].limit, commitLimit, "getCommits should be called with the specified commit limit")
     })
@@ -240,7 +234,9 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     await convenience.runConvenienceCommands([])
 
     // Verify getCommits was called without a commit limit
-    const getCommitsCalls = (mockGit.getCommits as unknown as { calls: { args: [{ exec: unknown; branch: string; limit?: number }] }[] }).calls
+    const getCommitsCalls = (mockGit.getCommits as unknown as {
+      calls: { args: [{ branch: { ref: string }; limit?: number }] }[]
+    }).calls
     assertEquals(getCommitsCalls.length, branches.length)
 
     // Check that the call doesn't include a commit limit (should be undefined)
