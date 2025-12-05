@@ -1,4 +1,3 @@
-import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
 import { GitCommit } from "../types/git.ts"
 import { GetLatestReleaseStepOutput } from "./types/output.ts"
@@ -13,7 +12,7 @@ export interface GetCommitsSinceLatestReleaseStep {
 }
 
 export class GetCommitsSinceLatestReleaseStepImpl implements GetCommitsSinceLatestReleaseStep {
-  constructor(private git: Git, private exec: Exec, private cwd?: string) {}
+  constructor(private git: Git) {}
 
   async getAllCommitsSinceGivenCommit({ owner: _owner, repo: _repo, branch, latestRelease }: {
     owner: string
@@ -23,11 +22,7 @@ export class GetCommitsSinceLatestReleaseStepImpl implements GetCommitsSinceLate
   }): Promise<GitCommit[]> {
     const returnResult: GitCommit[] = []
 
-    const commits = await this.git.getCommits({
-      exec: this.exec,
-      branch: { ref: branch },
-      cwd: this.cwd,
-    })
+    const commits = await this.git.getCommits({ branch: { ref: branch } })
 
     for (const commit of commits) {
       // We do not want to include the last tag commit in the list of commits. This may result in making a release from this commit which we do not want.

@@ -1,5 +1,5 @@
 import { Exec } from "../exec.ts"
-import { Git } from "../git.ts"
+import { Git, GitRepoCloner } from "../git.ts"
 import { GitCommit } from "../types/git.ts"
 import { Environment } from "../environment.ts"
 import { AnyStepName } from "../steps/types/any-step.ts"
@@ -12,6 +12,10 @@ export interface GitRemoteRepositoryMock {
 }
 
 export class GitStub implements Git {
+  // These properties are needed to match the Git class signature but aren't used in the stub
+  private readonly exec: Exec | undefined
+  private readonly directory: string | undefined
+  
   currentBranch: string
   /** Local commits for all local branches. These are commits that are pulled/merge into branches, not commits that are fetched! */
   localBranchCommits: Map<string, GitCommit[]>
@@ -52,7 +56,7 @@ export class GitStub implements Git {
     return Math.random().toString(16).substring(2, 42).padEnd(40, "0")
   }
 
-  fetch: () => Promise<void> = async () => {
+  fetch = async (): Promise<void> => {
     // Simulate fetching from remote repository
     // This converts a shallow repository to unshallow by adding remote commits and tags
 
@@ -86,74 +90,70 @@ export class GitStub implements Git {
 
     return Promise.resolve()
   }
-  checkoutBranch: ({ exec, branch, createBranchIfNotExist }: { exec: Exec; branch: string; createBranchIfNotExist: boolean }) => Promise<void> =
-    async ({ branch, createBranchIfNotExist }) => {
+  checkoutBranch = async (args: { branch: string; createBranchIfNotExist: boolean }): Promise<void> => {
       // Check if branch exists locally or remotely
-      const branchExists = this.localBranchCommits.has(branch) || this.branches.includes(branch)
+      const branchExists = this.localBranchCommits.has(args.branch) || this.branches.includes(args.branch)
 
-      if (!branchExists && !createBranchIfNotExist) {
-        throw new Error(`Branch '${branch}' does not exist and createBranchIfNotExist is false`)
+      if (!branchExists && !args.createBranchIfNotExist) {
+        throw new Error(`Branch '${args.branch}' does not exist and createBranchIfNotExist is false`)
       }
 
-      if (!branchExists && createBranchIfNotExist) {
+      if (!branchExists && args.createBranchIfNotExist) {
         // Create new branch from current branch
         const currentBranchCommits = this.localBranchCommits.get(this.currentBranch) || []
-        this.localBranchCommits.set(branch, [...currentBranchCommits]) // Copy commits from current branch
-        this.branches.push(branch)
+        this.localBranchCommits.set(args.branch, [...currentBranchCommits]) // Copy commits from current branch
+        this.branches.push(args.branch)
       }
 
       // If branch exists remotely but not locally, create local tracking branch
-      if (!this.localBranchCommits.has(branch) && this.branches.includes(branch)) {
-        const branchRef = branch
+      if (!this.localBranchCommits.has(args.branch) && this.branches.includes(args.branch)) {
+        const branchRef = args.branch
         if (branchRef.startsWith("origin/")) {
           const remoteBranchName = branchRef.replace("origin/", "")
           const remoteCommits = this.remoteRepo.remoteBranches.get(remoteBranchName) || []
-          this.localBranchCommits.set(branch, [...remoteCommits])
+          this.localBranchCommits.set(args.branch, [...remoteCommits])
         }
       }
 
-      this.currentBranch = branch
+      this.currentBranch = args.branch
       return Promise.resolve()
     }
 
-  merge: (
-    { exec, branchToMergeIn, commitTitle, commitMessage, fastForward }: {
-      exec: Exec
-      branchToMergeIn: string
-      commitTitle: string
-      commitMessage: string
-      fastForward?: "--no-ff" | "--ff-only"
-    },
-  ) => Promise<void> = async ({ branchToMergeIn, commitTitle, commitMessage, fastForward }) => {
+  merge = async (args: {
+    branchToMergeIn: string
+    commitTitle: string
+    commitMessage: string
+    fastForward?: "--no-ff" | "--ff-only"
+  }): Promise<void> => {
     const currentBranchCommits = this.localBranchCommits.get(this.currentBranch) || []
-    const branchToMergeCommits = this.localBranchCommits.get(branchToMergeIn) || []
+    const branchToMergeCommits = this.localBranchCommits.get(args.branchToMergeIn) || []
 
     if (branchToMergeCommits.length === 0) {
-      throw new Error(`Branch '${branchToMergeIn}' has no commits or does not exist`)
+      throw new Error(`Branch '${args.branchToMergeIn}' has no commits or does not exist`)
     }
 
     // Check if fast-forward is possible (current branch is behind the branch to merge)
     const canFastForward = currentBranchCommits.length === 0 ||
       branchToMergeCommits.some((commit) => currentBranchCommits[currentBranchCommits.length - 1]?.sha === commit.sha)
 
-    if (fastForward === "--ff-only" && !canFastForward) {
+    if (args.fastForward === "--ff-only" && !canFastForward) {
       throw new Error("Cannot fast-forward merge - branches have diverged")
     }
 
     let updatedCommits: GitCommit[]
 
-    if (fastForward !== "--no-ff" && canFastForward) {
+    if (args.fastForward !== "--no-ff" && canFastForward) {
       // Fast-forward merge: just add the new commits
       const newCommits = branchToMergeCommits.filter((commit) => !currentBranchCommits.some((existing) => existing.sha === commit.sha))
       updatedCommits = [...currentBranchCommits, ...newCommits]
     } else {
       // Create merge commit
       const mergeCommit: GitCommit = {
-        title: commitTitle,
+        title: args.commitTitle,
         sha: this.generateSha(),
         abbreviatedSha: this.generateSha().substring(0, 8),
-        message: `${commitTitle}\n\n${commitMessage}`,
-        messageLines: [commitTitle, "", commitMessage],
+        message: `${args.commitTitle}\n\n${args.commitMessage}`,
+        messageLines: [args.commitTitle, "", args.commitMessage],
         author: { name: "Test User", email: "test@example.com" },
         committer: { name: "Test User", email: "test@example.com" },
         date: new Date(),
@@ -180,7 +180,7 @@ export class GitStub implements Git {
     return Promise.resolve()
   }
 
-  pull: ({ exec }: { exec: Exec }) => Promise<void> = async () => {
+  pull = async (): Promise<void> => {
     // Simulate pulling from remote origin
     const remoteBranchName = this.currentBranch
     const remoteCommits = this.remoteRepo.remoteBranches.get(remoteBranchName) || []
@@ -200,33 +200,30 @@ export class GitStub implements Git {
     return Promise.resolve()
   }
 
-  setUser: ({ exec, name, email }: { exec: Exec; name: string; email: string }) => Promise<void> = () => {
+  setUser = (_args: { name: string; email: string }): Promise<void> => {
     return Promise.resolve()
   }
 
-  squash: (
-    { exec, branchToSquash, branchMergingInto, commitTitle, commitMessage }: {
-      exec: Exec
-      branchToSquash: string
-      branchMergingInto: string
-      commitTitle: string
-      commitMessage: string
-    },
-  ) => Promise<void> = async ({ branchToSquash, branchMergingInto, commitTitle, commitMessage }) => {
-    const branchToSquashCommits = this.localBranchCommits.get(branchToSquash) || []
-    const targetBranchCommits = this.localBranchCommits.get(branchMergingInto) || []
+  squash = async (args: {
+    branchToSquash: string
+    branchMergingInto: string
+    commitTitle: string
+    commitMessage: string
+  }): Promise<void> => {
+    const branchToSquashCommits = this.localBranchCommits.get(args.branchToSquash) || []
+    const targetBranchCommits = this.localBranchCommits.get(args.branchMergingInto) || []
 
     if (branchToSquashCommits.length === 0) {
-      throw new Error(`Branch '${branchToSquash}' has no commits or does not exist`)
+      throw new Error(`Branch '${args.branchToSquash}' has no commits or does not exist`)
     }
 
     // Create a single squashed commit representing all commits from the branch being squashed
     const squashedCommit: GitCommit = {
-      title: commitTitle,
+      title: args.commitTitle,
       sha: this.generateSha(),
       abbreviatedSha: this.generateSha().substring(0, 8),
-      message: `${commitTitle}\n\n${commitMessage}`,
-      messageLines: [commitTitle, "", commitMessage],
+      message: `${args.commitTitle}\n\n${args.commitMessage}`,
+      messageLines: [args.commitTitle, "", args.commitMessage],
       author: { name: "Test User", email: "test@example.com" },
       committer: { name: "Test User", email: "test@example.com" },
       date: new Date(),
@@ -234,26 +231,26 @@ export class GitStub implements Git {
       isMergeCommit: false,
       isRevertCommit: false,
       parents: [targetBranchCommits[targetBranchCommits.length - 1]?.sha || ""],
-      branch: branchMergingInto,
-      refs: [branchMergingInto],
+      branch: args.branchMergingInto,
+      refs: [args.branchMergingInto],
     }
 
     // Add the squashed commit to the target branch
-    this.localBranchCommits.set(branchMergingInto, [...targetBranchCommits, squashedCommit])
+    this.localBranchCommits.set(args.branchMergingInto, [...targetBranchCommits, squashedCommit])
 
     // Remove the squashed branch
-    this.localBranchCommits.delete(branchToSquash)
-    this.branches = this.branches.filter((branch) => branch !== branchToSquash)
+    this.localBranchCommits.delete(args.branchToSquash)
+    this.branches = this.branches.filter((branch) => branch !== args.branchToSquash)
 
     return Promise.resolve()
   }
 
-  rebase: ({ exec, branchToRebaseOnto }: { exec: Exec; branchToRebaseOnto: string }) => Promise<void> = async ({ branchToRebaseOnto }) => {
+  rebase = async (args: { branchToRebaseOnto: string }): Promise<void> => {
     const currentBranchCommits = this.localBranchCommits.get(this.currentBranch) || []
-    const targetBranchCommits = this.localBranchCommits.get(branchToRebaseOnto) || []
+    const targetBranchCommits = this.localBranchCommits.get(args.branchToRebaseOnto) || []
 
     if (targetBranchCommits.length === 0) {
-      throw new Error(`Target branch '${branchToRebaseOnto}' has no commits or does not exist`)
+      throw new Error(`Target branch '${args.branchToRebaseOnto}' has no commits or does not exist`)
     }
 
     // Find the common ancestor (simplified: assume it's the base of current branch)
@@ -283,11 +280,11 @@ export class GitStub implements Git {
     return Promise.resolve()
   }
 
-  getLatestCommitsSince({ exec, commit }: { exec: Exec; commit: GitCommit }): Promise<GitCommit[]> {
+  getLatestCommitsSince = async (args: { commit: GitCommit }): Promise<GitCommit[]> => {
     // Reuse getCommits to get the full commit history, then slice from the specified commit
-    return this.getCommits({ exec, branch: { ref: this.currentBranch } }).then((allCommits) => {
+    return this.getCommits({ branch: { ref: this.currentBranch } }).then((allCommits) => {
       // Find the index of the given commit (commits are in reverse chronological order from getCommits)
-      const commitIndex = allCommits.findIndex((c) => c.sha === commit.sha)
+      const commitIndex = allCommits.findIndex((c) => c.sha === args.commit.sha)
 
       if (commitIndex === -1) {
         // Commit not found, return all commits (assuming the commit is older than all we have)
@@ -299,9 +296,9 @@ export class GitStub implements Git {
     })
   }
 
-  getLatestCommitOnBranch({ exec: _exec, branch }: { exec: Exec; branch: { ref: string } }): Promise<GitCommit | undefined> {
+  getLatestCommitOnBranch = async (args: { branch: { ref: string } }): Promise<GitCommit | undefined> => {
     // Extract branch name from ref (handle both local and remote refs)
-    const branchName = branch.ref.startsWith("origin/") ? branch.ref.replace("origin/", "") : branch.ref
+    const branchName = args.branch.ref.startsWith("origin/") ? args.branch.ref.replace("origin/", "") : args.branch.ref
     const branchCommits = this.localBranchCommits.get(branchName) || []
 
     // Return the latest (last) commit on the branch
@@ -309,79 +306,77 @@ export class GitStub implements Git {
     return Promise.resolve(latestCommit)
   }
 
-  createLocalBranchFromRemote: ({ exec, branch }: { exec: Exec; branch: string }) => Promise<void> = async ({ branch }) => {
+  createLocalBranchFromRemote = async (args: { branch: string }): Promise<void> => {
     // Check if remote branch exists
-    const remoteCommits = this.remoteRepo.remoteBranches.get(branch) || []
+    const remoteCommits = this.remoteRepo.remoteBranches.get(args.branch) || []
 
     if (remoteCommits.length === 0) {
-      throw new Error(`Remote branch '${branch}' does not exist`)
+      throw new Error(`Remote branch '${args.branch}' does not exist`)
     }
 
     // Check if local branch already exists (like real implementation)
-    const localBranchExists = this.localBranchCommits.has(branch)
+    const localBranchExists = this.localBranchCommits.has(args.branch)
 
     // Only create local branch if it doesn't exist (like real implementation)
     if (!localBranchExists) {
       // Create local branch with commits from remote
-      this.localBranchCommits.set(branch, [...remoteCommits])
+      this.localBranchCommits.set(args.branch, [...remoteCommits])
 
       // Add to branches list if not already there
-      if (!this.branches.includes(branch)) {
-        this.branches.push(branch)
+      if (!this.branches.includes(args.branch)) {
+        this.branches.push(args.branch)
       }
     }
 
     // Add remote branch reference to branches if not already there (simulates fetch behavior)
-    const remoteBranchRef = `origin/${branch}`
+    const remoteBranchRef = `origin/${args.branch}`
     if (!this.branches.includes(remoteBranchRef)) {
       this.branches.push(remoteBranchRef)
     }
 
     // Simulate "pull" - merge any new remote commits that aren't in local branch
-    const localCommits = this.localBranchCommits.get(branch) || []
+    const localCommits = this.localBranchCommits.get(args.branch) || []
     const localShas = new Set(localCommits.map((c) => c.sha))
     const newRemoteCommits = remoteCommits.filter((commit) => !localShas.has(commit.sha))
 
     if (newRemoteCommits.length > 0) {
-      this.localBranchCommits.set(branch, [...localCommits, ...newRemoteCommits])
+      this.localBranchCommits.set(args.branch, [...localCommits, ...newRemoteCommits])
     }
 
     return Promise.resolve()
   }
 
-  getCommits: ({ exec, branch, limit }: { exec: Exec; branch: { ref: string }; limit?: number }) => Promise<GitCommit[]> = async (
-    { branch, limit },
-  ) => {
+  getCommits = async (args: { branch: { ref: string }; limit?: number }): Promise<GitCommit[]> => {
     // After fetch, we should return the complete commit history (from commitsFetched)
     // Fall back to localBranchCommits only if no fetched commits are available
     let branchCommits: GitCommit[] = []
 
-    if (this.commitsFetched.has(branch.ref)) {
+    if (this.commitsFetched.has(args.branch.ref)) {
       // Use fetched commits (complete history after fetch)
-      branchCommits = this.commitsFetched.get(branch.ref) || []
-    } else if (this.localBranchCommits.has(branch.ref)) {
+      branchCommits = this.commitsFetched.get(args.branch.ref) || []
+    } else if (this.localBranchCommits.has(args.branch.ref)) {
       // Fall back to local commits if no fetched commits available
-      branchCommits = this.localBranchCommits.get(branch.ref) || []
+      branchCommits = this.localBranchCommits.get(args.branch.ref) || []
     }
 
     // Apply limit if specified
-    if (limit && limit > 0) {
+    if (args.limit && args.limit > 0) {
       // Return latest commits up to the limit (most recent first, so take from the end)
-      return Promise.resolve(branchCommits.slice(-limit).reverse())
+      return Promise.resolve(branchCommits.slice(-args.limit).reverse())
     }
 
     // Return all commits (most recent first)
     return Promise.resolve([...branchCommits].reverse())
   }
 
-  getCurrentBranch: ({ exec }: { exec: Exec }) => Promise<string> = async () => {
+  getCurrentBranch = async (): Promise<string> => {
     return Promise.resolve(this.currentBranch)
   }
 
   /**
    * expects to get a Map of branches (remote and local combined) where local branches are preferred so the remote ref will not be returned if there is a local branch.
    */
-  getBranches: ({ exec }: { exec: Exec }) => Promise<Map<string, { ref: string }>> = async () => {
+  getBranches = async (): Promise<Map<string, { ref: string }>> => {
     const branchMap = new Map<string, { ref: string }>()
 
     // Add the remote  branches, first.
@@ -399,12 +394,12 @@ export class GitStub implements Git {
     return Promise.resolve(branchMap)
   }
 
-  createIsolatedClone: ({ exec }: { exec: Exec }) => Promise<string> = async () => {
+  createIsolatedClone = async (): Promise<string> => {
     // For testing purposes, just return a mock directory path
     return Promise.resolve("/tmp/mock-clone")
   }
 
-  removeIsolatedClone: ({ exec, directory }: { exec: Exec; directory: string }) => Promise<void> = async () => {
+  removeIsolatedClone = async (_directory: string): Promise<void> => {
     // For testing purposes, this is a no-op
     return Promise.resolve()
   }
@@ -524,5 +519,28 @@ export class EnvironmentStub implements Environment {
       failOnDeployVerification: false,
       makePullRequestComment: false,
     }
+  }
+}
+
+/**
+ * GitRepoCloner stub that returns the same GitStub instance instead of creating isolated clones.
+ * This prevents e2e tests from trying to create actual git clones and run real git commands.
+ */
+export class GitRepoClonerStub extends GitRepoCloner {
+  constructor(private gitStub: Git, exec: Exec) {
+    super(exec)
+  }
+
+  override async clone(): Promise<{ git: Git; directory: string }> {
+    // Return the same git stub instance instead of creating a real clone
+    return Promise.resolve({
+      git: this.gitStub,
+      directory: "/tmp/mock-clone",
+    })
+  }
+
+  override async remove(_directory: string): Promise<void> {
+    // No-op in stub - nothing to clean up
+    return Promise.resolve()
   }
 }

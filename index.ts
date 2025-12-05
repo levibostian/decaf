@@ -16,7 +16,7 @@ processCommandLineArgs(Deno.args)
 const diGraph = di.getGraph()
 const githubApi = diGraph.get("github")
 const environment = diGraph.get("environment")
-const git = diGraph.get("git")
+const gitRepoCloner = diGraph.get("gitRepoCloner")
 
 const pullRequestInfo = environment.isRunningInPullRequest()
 const buildInfo = environment.getBuild()
@@ -39,24 +39,22 @@ If this pull request and all of it's parent pull requests are merged using the..
 }
 
 for (const simulatedMergeType of simulatedMergeTypes) {
-  const isolatedCloneDirectory = await git.createIsolatedClone({exec})
+  const { git, directory: isolatedCloneDirectory } = await gitRepoCloner.clone()
   
   // Run a complete git fetch in the isolated clone.
   // Many git commands in this tool depend on it, so run it early to avoid any issues.
-  await git.fetch({ exec, cwd: isolatedCloneDirectory })
+  await git.fetch()
   
   try {
     const runResult = await run({
-      convenienceStep: new ConvenienceStepImpl(exec, environment, git, logger, isolatedCloneDirectory),
+      convenienceStep: new ConvenienceStepImpl(environment, git, logger),
       stepRunner: new StepRunnerImpl(environment, exec, logger),
-      prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, exec, isolatedCloneDirectory), git, exec, isolatedCloneDirectory),
-      getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git, exec, isolatedCloneDirectory),
+      prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git), git),
+      getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git),
       log: logger,
       git,
-      exec,
       environment,
       simulatedMergeType,
-      gitWorktreeDirectory: isolatedCloneDirectory, // isolated git clone directory - all git operations run here without affecting main repo
     })
     const newReleaseVersion = runResult?.nextReleaseVersion
 
@@ -108,7 +106,7 @@ for (const simulatedMergeType of simulatedMergeTypes) {
   } finally {
     // Always clean up the isolated git clone, even if an error occurred
     try {
-      await git.removeIsolatedClone({ exec, directory: isolatedCloneDirectory })
+      await gitRepoCloner.remove(isolatedCloneDirectory)
     } catch (cleanupError) {
       logger.warning(`Failed to remove isolated git clone at ${isolatedCloneDirectory}: ${cleanupError}`)
     }
