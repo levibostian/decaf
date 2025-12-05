@@ -4,17 +4,14 @@ import { restore, stub } from "@std/testing/mock"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./get-commits-since-latest-release.ts"
 import { GetLatestReleaseStepOutputFake } from "./types/output.test.ts"
 import { mock } from "../mock/mock.ts"
-import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
 import { GitCommitFake } from "../types/git.test.ts"
 
 describe("getAllCommitsSinceGivenCommit", () => {
   let git: Git = mock()
-  let exec: Exec = mock()
 
   beforeEach(() => {
     git = mock()
-    exec = mock()
   })
 
   afterEach(() => {
@@ -27,7 +24,7 @@ describe("getAllCommitsSinceGivenCommit", () => {
     })
 
     assertEquals(
-      await new GetCommitsSinceLatestReleaseStepImpl(git, exec)
+      await new GetCommitsSinceLatestReleaseStepImpl(git)
         .getAllCommitsSinceGivenCommit({
           owner: "owner",
           repo: "repo",
@@ -53,7 +50,7 @@ describe("getAllCommitsSinceGivenCommit", () => {
     })
 
     assertEquals(
-      await new GetCommitsSinceLatestReleaseStepImpl(git, exec)
+      await new GetCommitsSinceLatestReleaseStepImpl(git)
         .getAllCommitsSinceGivenCommit({
           owner: "owner",
           repo: "repo",

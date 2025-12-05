@@ -6,7 +6,6 @@ import { SimulateMerge } from "../simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./prepare-testmode-env.ts"
 import { mock, when } from "../mock/mock.ts"
 import { Git } from "../git.ts"
-import { Exec } from "../exec.ts"
 import { GitCommitFake } from "../types/git.test.ts"
 
 describe("prepareEnvironmentForTestMode", () => {
@@ -16,21 +15,18 @@ describe("prepareEnvironmentForTestMode", () => {
   let gitHubApi: GitHubApi
   let simulateMerge: SimulateMerge
   let git: Git
-  let exec: Exec
 
   beforeEach(() => {
     environment = mock()
     gitHubApi = mock()
     simulateMerge = mock()
     git = mock()
-    exec = mock()
 
     step = new PrepareTestModeEnvStepImpl(
       gitHubApi,
       environment,
       simulateMerge,
       git,
-      exec,
     )
   })
 

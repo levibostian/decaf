@@ -1,4 +1,3 @@
-import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
 import { Environment } from "../environment.ts"
 import { GitHubApi } from "../github-api.ts"
@@ -19,8 +18,6 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     private environment: Environment,
     private simulateMerge: SimulateMerge,
     private git: Git,
-    private exec: Exec,
-    private cwd?: string,
   ) {}
 
   prepareEnvironmentForTestMode = async ({ owner, repo, simulatedMergeType }: {
@@ -39,8 +36,8 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
 
     for await (const pr of pullRequestStack) {
       // make sure that a local branch exists for the PR branches so we can check simulate the merge by running merge commands between the branches.
-      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.sourceBranchName, cwd: this.cwd })
-      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.targetBranchName, cwd: this.cwd })
+      await this.git.createLocalBranchFromRemote({ branch: pr.sourceBranchName })
+      await this.git.createLocalBranchFromRemote({ branch: pr.targetBranchName })
 
       const commitsCreated = await this.simulateMerge.performSimulation(simulatedMergeType, {
         baseBranch: pr.sourceBranchName,

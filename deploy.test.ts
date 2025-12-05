@@ -15,7 +15,6 @@ import { ConvenienceStep } from "./lib/steps/convenience.ts"
 import { GitCommit } from "./lib/types/git.ts"
 import { GitCommitFake } from "./lib/types/git.test.ts"
 import { Git } from "./lib/git.ts"
-import { Exec } from "./lib/exec.ts"
 
 describe("run the tool in different scenarios", () => {
   afterEach(() => {
@@ -463,8 +462,7 @@ const setupTestEnvironmentAndRun = async ({
     return { currentGitBranch: pullRequestTargetBranch, commitsCreatedDuringSimulatedMerges: commitsCreatedBySimulatedMerge || [] }
   })
 
-  const gitMock = mock<Git>()
-  const execMock = mock<Exec>()
+  const gitMock = mock<Git>()  
 
   await run({
     convenienceStep,
@@ -473,10 +471,8 @@ const setupTestEnvironmentAndRun = async ({
     getCommitsSinceLatestReleaseStep,
     log: logMock,
     git: gitMock,
-    exec: execMock,
     environment,
     simulatedMergeType: "merge",
-    gitWorktreeDirectory: "/tmp/test-worktree",
   })
 
   return {

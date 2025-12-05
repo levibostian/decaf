@@ -1,10 +1,11 @@
 import { defineStore } from "@david/service-store"
 import * as githubApi from "./github-api.ts"
-import * as git from "./git.ts"
+import { createGitRepoCloner, GitRepoCloner } from "./git.ts"
 import { Environment, EnvironmentImpl } from "./environment.ts"
+import { exec } from "./exec.ts"
 
 export const productionDiDefinition = defineStore()
-  .add("git", git.impl)
+  .add("gitRepoCloner", (): GitRepoCloner => createGitRepoCloner(exec))
   .add("github", githubApi.impl)
   .add("environment", (store): Environment => new EnvironmentImpl(store.get("github")))
 

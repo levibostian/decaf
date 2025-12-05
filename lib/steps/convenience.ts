@@ -1,4 +1,3 @@
-import { Exec, exec } from "../exec.ts"
 import { Environment } from "../environment.ts"
 import { Logger } from "../log.ts"
 import { GitCommit } from "../types/git.ts"
@@ -19,7 +18,7 @@ export interface ConvenienceStep {
 }
 
 export class ConvenienceStepImpl implements ConvenienceStep {
-  constructor(private exec: Exec, private environment: Environment, private git: Git, private log: Logger, private cwd?: string) {}
+  constructor(private environment: Environment, private git: Git, private log: Logger) {}
 
   /**
    * Check if a branch name matches any of the provided filters
@@ -48,24 +47,15 @@ export class ConvenienceStepImpl implements ConvenienceStep {
       this.log.notice(
         `I will set the git committer config to the user provided values: name: ${userProvidedGitCommitterConfig.name}, email: ${userProvidedGitCommitterConfig.email}`,
       )
-      await this.exec.run({
-        command: `git config user.name "${userProvidedGitCommitterConfig.name}"`,
-        input: undefined,
-        currentWorkingDirectory: this.cwd,
-      })
-      await this.exec.run({
-        command: `git config user.email "${userProvidedGitCommitterConfig.email}"`,
-        input: undefined,
-        currentWorkingDirectory: this.cwd,
-      })
+      await this.git.setUser({ name: userProvidedGitCommitterConfig.name, email: userProvidedGitCommitterConfig.email })
     }
 
     this.log.debug(`Getting commits for all branches and parsing commits...`)
     this.log.debug(`Branch filters provided: ${JSON.stringify(branchFilters)}`)
 
     const gitCommitsAllBranches: { [branchName: string]: GitCommit[] } = {}
-    const allBranchNames = await this.git.getBranches({ exec, cwd: this.cwd })
-    const currentBranch = await this.git.getCurrentBranch({ exec, cwd: this.cwd })
+    const allBranchNames = await this.git.getBranches()
+    const currentBranch = await this.git.getCurrentBranch()
 
     for (const [branchName, branchInfo] of allBranchNames) {
       // Always include current branch for safety, regardless of filters
@@ -73,7 +63,7 @@ export class ConvenienceStepImpl implements ConvenienceStep {
 
       if (shouldIncludeBranch) {
         this.log.debug(`Processing commits for branch: ${branchName}, commit limit: ${commitLimit || "unlimited"}`)
-        const commitsOnBranch = await this.git.getCommits({ exec, branch: branchInfo, limit: commitLimit, cwd: this.cwd })
+        const commitsOnBranch = await this.git.getCommits({ branch: branchInfo, limit: commitLimit })
         gitCommitsAllBranches[branchName] = commitsOnBranch
       }
     }

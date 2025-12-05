@@ -5,7 +5,7 @@
  */
 
 import { assertEquals } from "@std/assert/equals"
-import { EnvironmentStub, GitRemoteRepositoryMock, GitStub } from "./e2e-stubs.test.ts"
+import { EnvironmentStub, GitRemoteRepositoryMock, GitRepoClonerStub, GitStub } from "./e2e-stubs.test.ts"
 import { GitCommitFake } from "../types/git.test.ts"
 import { GitCommit } from "../types/git.ts"
 import * as e2eStepScript from "./e2e-step-script-helper.test.ts"
@@ -15,6 +15,7 @@ import { GitHubApi, GitHubPullRequest } from "../github-api.ts"
 import { assertObjectMatch } from "@std/assert"
 import { assertSnapshot } from "@std/testing/snapshot"
 import * as di from "../di.ts"
+import { exec } from "../exec.ts"
 
 Deno.test("when running a deployment, given CI only cloned 1 commit on current branch, expect to receive all parsed commits for branch", async (t) => {
   // when running on github actions with actions/checkout and it's default config, you will only have 1 checked out commit.
@@ -156,7 +157,9 @@ const setupGitRepo = (
   }
 
   // Override the services with test implementations
-  diGraph = diGraph.override("git", () => new GitStub({ currentBranch: checkedOutBranch, remoteRepo: remoteRepository, commits: localCommits }))
+  const gitStub = new GitStub({ currentBranch: checkedOutBranch, remoteRepo: remoteRepository, commits: localCommits })  
+  // Override gitRepoCloner to return the same gitStub instead of creating real clones
+  diGraph = diGraph.override("gitRepoCloner", () => new GitRepoClonerStub(gitStub, exec))
 
   githubApiMock = mock()
   when(githubApiMock, "getPullRequestStack", async (_args) => {
