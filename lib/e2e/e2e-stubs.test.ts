@@ -455,8 +455,9 @@ export class EnvironmentStub implements Environment {
   constructor(
     private args: {
       commandToRunStubStepScript: string
-      runFromPullRequest?: { baseBranch: string; targetBranch: string; prNumber: number; simulatedMergeType: "merge" | "rebase" | "squash" }
+      runFromPullRequest?: { baseBranch: string; targetBranch: string; prNumber: number; }
       runFromPush?: { branch: string }
+      simulatedMergeTypes?: ("merge" | "rebase" | "squash")[]
     },
   ) {}
 
@@ -479,8 +480,12 @@ export class EnvironmentStub implements Environment {
     }
   }
   getSimulatedMergeTypes(): Promise<("merge" | "rebase" | "squash")[]> {
-    const mergeType = this.args.runFromPullRequest?.simulatedMergeType ?? "merge"
-    return Promise.resolve([mergeType])
+    // If explicitly provided, use those types
+    if (this.args.simulatedMergeTypes) {
+      return Promise.resolve(this.args.simulatedMergeTypes)
+    } 
+
+    throw new Error("No simulated merge types provided in EnvironmentStub")
   }
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other" {
     if (this.args.runFromPullRequest) {
@@ -526,20 +531,43 @@ export class EnvironmentStub implements Environment {
  * GitRepoCloner stub that returns the same GitStub instance instead of creating isolated clones.
  * This prevents e2e tests from trying to create actual git clones and run real git commands.
  */
-export class GitRepoClonerStub extends GitRepoCloner {
-  constructor(private gitStub: Git, exec: Exec) {
-    super(exec)
+export class GitRepoClonerStub implements GitRepoCloner {
+  // Track calls to clone() and remove() for testing
+  public cloneCalls: string[] = []
+  public removeCalls: string[] = []
+  private cloneCounter = 0
+  private shouldThrowOnRemove = false
+
+  constructor(private gitStub: Git) {
   }
 
-  override async clone(): Promise<{ git: Git; directory: string }> {
+  /**
+   * Configure the stub to throw an error when remove() is called.
+   * Useful for testing error handling in cleanup logic.
+   */
+  setThrowOnRemove(shouldThrow: boolean): void {
+    this.shouldThrowOnRemove = shouldThrow
+  }
+
+  async clone(): Promise<{ git: Git; directory: string }> {
+    // Generate unique directory for each clone to simulate real behavior
+    const directory = `/tmp/mock-clone-${this.cloneCounter++}`
+    this.cloneCalls.push(directory)
+
     // Return the same git stub instance instead of creating a real clone
     return Promise.resolve({
       git: this.gitStub,
-      directory: "/tmp/mock-clone",
+      directory,
     })
   }
 
-  override async remove(_directory: string): Promise<void> {
+  async remove(directory: string): Promise<void> {
+    this.removeCalls.push(directory)
+
+    if (this.shouldThrowOnRemove) {
+      throw new Error(`EACCES: permission denied, rmdir '${directory}'`)
+    }
+
     // No-op in stub - nothing to clean up
     return Promise.resolve()
   }
