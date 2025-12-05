@@ -413,19 +413,28 @@ export class GitImpl implements Git {
  * GitRepoCloner handles creating isolated git clones.
  * When you call clone(), it returns a Git instance that's locked to that clone's directory.
  */
-export class GitRepoCloner {
-  private readonly exec: Exec
-
-  constructor(exec: Exec) {
-    this.exec = exec
-  }
-
+export interface GitRepoCloner {
   /**
    * Creates an isolated git clone in a temporary directory.
    * This allows git operations to be performed without affecting the main repository.
    * All commits made in this clone are isolated and will be discarded when the clone is removed.
    * Returns a Git instance locked to the clone directory.
    */
+  clone(): Promise<{ git: Git; directory: string }>
+
+  /**
+   * Removes the isolated git clone directory.
+   */
+  remove(directory: string): Promise<void>
+}
+
+export class GitRepoClonerImpl implements GitRepoCloner {
+  private readonly exec: Exec
+
+  constructor(exec: Exec) {
+    this.exec = exec
+  }
+
   async clone(): Promise<{ git: Git; directory: string }> {
     const cloneDirectory = await Deno.makeTempDir({
       prefix: "decaf-clone-",
@@ -480,9 +489,6 @@ export class GitRepoCloner {
     }
   }
 
-  /**
-   * Removes the isolated git clone directory.
-   */
   async remove(directory: string): Promise<void> {
     // Simply remove the directory - it's a separate clone, not a worktree
     // Using rm -rf is safe here because we created a temp directory specifically for this
@@ -502,5 +508,5 @@ export const createGit = (exec: Exec, directory?: string): Git => {
 
 // Factory function for creating a GitRepoCloner instance
 export const createGitRepoCloner = (exec: Exec): GitRepoCloner => {
-  return new GitRepoCloner(exec)
+  return new GitRepoClonerImpl(exec)
 }
