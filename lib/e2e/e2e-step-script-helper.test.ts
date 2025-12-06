@@ -14,11 +14,11 @@ export const getBashCommandToRunThisScript = (): string => {
 }
 
 export const setGetLatestReleaseStepOutput = (output: GetLatestReleaseStepOutput | null) => {
-  Deno.writeFileSync("/tmp/e2e-output.json", new TextEncoder().encode(JSON.stringify(output || {})))
+  Deno.writeFileSync("/tmp/e2e-get-latest-release-output.json", new TextEncoder().encode(JSON.stringify(output || {})))
 }
 
 export const setNextReleaseVersionStepOutput = (output: GetNextReleaseVersionStepOutput | null) => {
-  Deno.writeFileSync("/tmp/e2e-output.json", new TextEncoder().encode(JSON.stringify(output || {})))
+  Deno.writeFileSync("/tmp/e2e-get-next-version-output.json", new TextEncoder().encode(JSON.stringify(output || {})))
 }
 
 export const getGetLatestReleaseInput = (): GetLatestReleaseStepInput => {
@@ -29,4 +29,10 @@ export const getGetLatestReleaseInput = (): GetLatestReleaseStepInput => {
 export const getNextReleaseVersionInput = (): GetNextReleaseVersionStepInput => {
   const data = Deno.readTextFileSync("/tmp/e2e-input.json")
   return JSON.parse(data)
+}
+
+// Tells a step script to throw an error when it runs.
+// Allowing us to test error handling when a deployment step fails.
+export const setShouldThrowError = (shouldThrow: boolean, errorMessage: string = "Deployment failed!") => {
+  Deno.writeFileSync("/tmp/e2e-should-throw.json", new TextEncoder().encode(JSON.stringify({ shouldThrow, errorMessage })))
 }
