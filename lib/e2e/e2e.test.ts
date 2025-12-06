@@ -16,6 +16,15 @@ import { assertObjectMatch } from "@std/assert"
 import { assertSnapshot } from "@std/testing/snapshot"
 import * as di from "../di.ts"
 
+type PrCommentCall = {
+  message: string
+  owner: string
+  repo: string
+  prNumber: number
+  ciBuildId: string
+  ciService: string
+}
+
 Deno.test("when running a deployment, given CI only cloned 1 commit on current branch, expect to receive all parsed commits for branch", async (t) => {
   // when running on github actions with actions/checkout and it's default config, you will only have 1 checked out commit.
   const givenLocalCommits = new Map<string, GitCommit[]>([
@@ -198,6 +207,250 @@ Deno.test("when cleanup fails, expect warning logged but execution continues", a
   assertEquals(gitRepoCloner.removeCalls.length, 1, "Should have attempted to remove the clone despite error")
 })
 
+Deno.test("when makePullRequestComment is enabled and deployment succeeds, expect status updates posted to PR", async (t) => {
+  // Previous release was at commit sha "old-commit-sha"
+  const oldCommits = [
+    new GitCommitFake({ message: "chore: previous release", sha: "old-commit-sha" }),
+  ]
+  
+  // New commits since last release
+  const newCommits = [
+    new GitCommitFake({ message: "feat: add new feature", sha: "main-1" }),
+    new GitCommitFake({ message: "fix: bug fix", sha: "main-2" }),
+  ]
+
+  const allCommits = [...oldCommits, ...newCommits]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", allCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", oldCommits], // main branch already has the previous release commit
+    ["feature", allCommits],
+  ])
+
+  const { prCommentCalls } = setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [
+      {
+        prNumber: 42,
+        targetBranchName: "main",
+        sourceBranchName: "feature",
+        title: "Add new feature and bug fix",
+        description: "PR description",
+      },
+    ],
+  })
+
+  // Setup step scripts - this is NOT the first release
+  e2eStepScript.setGetLatestReleaseStepOutput({ versionName: "1.0.0", commitSha: "old-commit-sha" })
+  e2eStepScript.setNextReleaseVersionStepOutput({ version: "1.1.0" })
+
+  await run({
+    testMode: true,
+    simulatedMergeTypes: ["merge"],
+    makePullRequestComment: true,
+  })
+
+  // Verify we made 2 calls: initial + result
+  assertEquals(prCommentCalls.length, 2, "Should post initial status and result")
+
+  // Snapshot all PR comments - should show latest release v1.0.0 and 2 new commits
+  await assertSnapshot(t, prCommentCalls.map((call) => call.message))
+})
+
+Deno.test("when makePullRequestComment is enabled and no deployment triggered, expect appropriate PR message", async (t) => {
+  const mainBranchCommits = [new GitCommitFake({ message: "chore: does not trigger release", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", []],
+    ["feature", mainBranchCommits],
+  ])
+
+  const { prCommentCalls } = setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  e2eStepScript.setGetLatestReleaseStepOutput({ versionName: "1.0.0", commitSha: "abc123prev" })
+  // Return null to indicate no deployment needed
+  e2eStepScript.setNextReleaseVersionStepOutput(null)
+
+  await run({
+    testMode: true,
+    simulatedMergeTypes: ["merge"],
+    makePullRequestComment: true,
+  })
+
+  assertEquals(prCommentCalls.length, 2, "Should post initial status and result")
+
+  // Snapshot all PR comments
+  await assertSnapshot(t, prCommentCalls.map((call) => call.message))
+})
+
+Deno.test("when multiple simulated merge types configured with PR comments, expect separate status for each type", async (t) => {
+  const mainBranchCommits = [new GitCommitFake({ message: "feat: add feature", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", []],
+    ["feature", mainBranchCommits],
+  ])
+
+  const { prCommentCalls } = setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  e2eStepScript.setGetLatestReleaseStepOutput({ versionName: "1.0.0", commitSha: "def456prev" })
+  e2eStepScript.setNextReleaseVersionStepOutput({ version: "1.1.0" })
+
+  await run({
+    testMode: true,
+    simulatedMergeTypes: ["merge", "rebase", "squash"],
+    makePullRequestComment: true,
+  })
+
+  // Should have: 1 initial + 3 results = 4 calls
+  assertEquals(prCommentCalls.length, 4, "Should post initial status and 3 merge type results")
+
+  // Snapshot all PR comments
+  await assertSnapshot(t, prCommentCalls.map((call) => call.message))
+})
+
+Deno.test("when this is the first release with PR comments enabled, expect 'Learn more' shows appropriate text", async (t) => {
+  const mainBranchCommits = [new GitCommitFake({ message: "feat: initial release", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", []],
+    ["feature", mainBranchCommits],
+  ])
+
+  const { prCommentCalls } = setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  // null indicates first release
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+  e2eStepScript.setNextReleaseVersionStepOutput({ version: "1.0.0" })
+
+  await run({
+    testMode: true,
+    simulatedMergeTypes: ["merge"],
+    makePullRequestComment: true,
+  })
+
+  assertEquals(prCommentCalls.length, 2)
+
+  // Snapshot all PR comments
+  await assertSnapshot(t, prCommentCalls.map((call) => call.message))
+})
+
+Deno.test("when deployment fails with makePullRequestComment enabled and buildUrl provided, expect error comment with link", async (t) => {
+  const mainBranchCommits = [new GitCommitFake({ message: "feat: add feature", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", []],
+    ["feature", mainBranchCommits],
+  ])
+
+  const { prCommentCalls } = setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  e2eStepScript.setGetLatestReleaseStepOutput({ versionName: "1.0.0", commitSha: "ghi789prev" })
+  e2eStepScript.setNextReleaseVersionStepOutput({ version: "1.1.0" })
+  // Make the deployment step throw an error
+  e2eStepScript.setShouldThrowError(true, "Deployment failed due to network error")
+
+  try {
+    await run({
+      testMode: true,
+      simulatedMergeTypes: ["merge"],
+      makePullRequestComment: true,
+      buildUrl: "https://github.com/owner/repo/actions/runs/123456",
+    })
+  } catch (_error) {
+    // Expected to throw
+  }
+
+  // Verify we made 2 calls: initial + error message
+  assertEquals(prCommentCalls.length, 2, "Should post initial status and error message")
+
+  // Snapshot all PR comments
+  await assertSnapshot(t, prCommentCalls.map((call) => call.message))
+})
+
+Deno.test("when deployment fails with makePullRequestComment enabled and no buildUrl, expect error comment without link", async (t) => {
+  const mainBranchCommits = [new GitCommitFake({ message: "feat: add feature", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", []],
+    ["feature", mainBranchCommits],
+  ])
+
+  const { prCommentCalls } = setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  e2eStepScript.setGetLatestReleaseStepOutput({ versionName: "1.0.0", commitSha: "jkl012prev" })
+  e2eStepScript.setNextReleaseVersionStepOutput({ version: "1.1.0" })
+  // Make the deployment step throw an error
+  e2eStepScript.setShouldThrowError(true, "Deployment failed due to network error")
+
+  try {
+    await run({
+      testMode: true,
+      simulatedMergeTypes: ["merge"],
+      makePullRequestComment: true,
+      // No buildUrl provided
+    })
+  } catch (_error) {
+    // Expected to throw
+  }
+
+  // Verify we made 2 calls: initial + error message
+  assertEquals(prCommentCalls.length, 2, "Should post initial status and error message")
+
+  // Snapshot all PR comments
+  await assertSnapshot(t, prCommentCalls.map((call) => call.message))
+})
+
 // helper functions
 
 let diGraph: typeof di.productionDiGraph
@@ -206,6 +459,11 @@ Deno.test.beforeEach(() => {
   di.clearOverride()
 
   diGraph = di.getGraph().createChild()
+  prCommentCalls = []
+  // Reset error flag and step outputs
+  e2eStepScript.setShouldThrowError(false)
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+  e2eStepScript.setNextReleaseVersionStepOutput(null)
 })
 
 Deno.test.afterEach(() => {
@@ -219,7 +477,7 @@ const setupGitRepo = (
     remoteCommits: Map<string, GitCommit[]>
     remotePullRequests: GitHubPullRequest[]
   },
-): { remoteRepository: GitRemoteRepositoryMock; gitRepoCloner: GitRepoClonerStub } => {
+): { remoteRepository: GitRemoteRepositoryMock; gitRepoCloner: GitRepoClonerStub; prCommentCalls: PrCommentCall[] } => {
   currentBranchWhenTestStarts = checkedOutBranch
 
   const remoteRepository: GitRemoteRepositoryMock = {
@@ -237,16 +495,27 @@ const setupGitRepo = (
   when(githubApiMock, "getPullRequestStack", async (_args) => {
     return remotePullRequests
   })
+  when(githubApiMock, "postStatusUpdateOnPullRequest", async (args) => {
+    prCommentCalls.push(args)
+  })
   diGraph = diGraph.override("github", () => githubApiMock)
 
-  return { remoteRepository, gitRepoCloner }
+  return { remoteRepository, gitRepoCloner, prCommentCalls }
 }
 
 let currentBranchWhenTestStarts: string
 let environmentMock: Environment
 let githubApiMock: GitHubApi = mock()
+let prCommentCalls: PrCommentCall[] = []
 
-const run = async ({ testMode, simulatedMergeTypes }: { testMode: boolean; simulatedMergeTypes?: ("merge" | "rebase" | "squash")[] }) => {
+const run = async (
+  { testMode, simulatedMergeTypes, makePullRequestComment, buildUrl }: {
+    testMode: boolean
+    simulatedMergeTypes?: ("merge" | "rebase" | "squash")[]
+    makePullRequestComment?: boolean
+    buildUrl?: string
+  },
+) => {
   if (testMode) {
     environmentMock = new EnvironmentStub({
       commandToRunStubStepScript: e2eStepScript.getBashCommandToRunThisScript(),
@@ -256,6 +525,8 @@ const run = async ({ testMode, simulatedMergeTypes }: { testMode: boolean; simul
         prNumber: 123,
       },
       simulatedMergeTypes,
+      makePullRequestComment,
+      buildUrl,
     })
   } else {
     environmentMock = new EnvironmentStub({
@@ -264,6 +535,8 @@ const run = async ({ testMode, simulatedMergeTypes }: { testMode: boolean; simul
         branch: currentBranchWhenTestStarts,
       },
       simulatedMergeTypes,
+      makePullRequestComment,
+      buildUrl,
     })
   }
   diGraph = diGraph.override("environment", () => environmentMock)
@@ -271,6 +544,7 @@ const run = async ({ testMode, simulatedMergeTypes }: { testMode: boolean; simul
   // Finalize the DI graph with overrides
   di.overrideStore(diGraph)
 
-  // Import the module and call its main function
-  await import(`../../index.ts?t=${Date.now()}`)
+  // Import and call main function
+  const { main } = await import("../../index.ts")
+  await main()
 }

@@ -458,6 +458,8 @@ export class EnvironmentStub implements Environment {
       runFromPullRequest?: { baseBranch: string; targetBranch: string; prNumber: number; }
       runFromPush?: { branch: string }
       simulatedMergeTypes?: ("merge" | "rebase" | "squash")[]
+      makePullRequestComment?: boolean
+      buildUrl?: string
     },
   ) {}
 
@@ -477,6 +479,7 @@ export class EnvironmentStub implements Environment {
       buildId: this.buildId,
       currentBranch,
       ciService: "github",
+      buildUrl: this.args.buildUrl,
     }
   }
   getSimulatedMergeTypes(): Promise<("merge" | "rebase" | "squash")[]> {
@@ -522,7 +525,7 @@ export class EnvironmentStub implements Environment {
   getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean } {
     return {
       failOnDeployVerification: false,
-      makePullRequestComment: false,
+      makePullRequestComment: this.args.makePullRequestComment ?? false,
     }
   }
 }
