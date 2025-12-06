@@ -5,7 +5,7 @@
  */
 
 import { assertEquals } from "@std/assert/equals"
-import { EnvironmentStub, GitRemoteRepositoryMock, GitRepoClonerStub, GitStub } from "./e2e-stubs.test.ts"
+import { EnvironmentStub, GitRemoteRepositoryMock, GitRepoManagerStub, GitStub } from "./e2e-stubs.test.ts"
 import { GitCommitFake } from "../types/git.test.ts"
 import { GitCommit } from "../types/git.ts"
 import * as e2eStepScript from "./e2e-step-script-helper.test.ts"
@@ -148,7 +148,7 @@ Deno.test("when running with multiple simulated merge types, expect isolated clo
     ["main", mainBranchCommits],
   ])
 
-  const { gitRepoCloner } = setupGitRepo({
+  const { gitRepo } = setupGitRepo({
     checkedOutBranch: "main",
     localCommits: givenLocalCommits,
     remoteCommits: givenRemoteCommits,
@@ -160,15 +160,15 @@ Deno.test("when running with multiple simulated merge types, expect isolated clo
   e2eStepScript.setGetLatestReleaseStepOutput(null)
 
   await run({
-    testMode: false,
+    testMode: true, // Must be in test mode to create isolated clones
     simulatedMergeTypes: ["merge", "rebase", "squash"],
   })
 
-  // Assert: clone() was called 3 times (once per merge type)
-  assertEquals(gitRepoCloner.cloneCalls.length, 3, "Should create 3 isolated clones for 3 merge types")
+  // Assert: getIsolatedClone() was called 3 times (once per merge type)
+  assertEquals(gitRepo.cloneCalls.length, 3, "Should create 3 isolated clones for 3 merge types")
 
-  // Assert: remove() was called 3 times
-  assertEquals(gitRepoCloner.removeCalls.length, 3, "Should clean up all 3 isolated clones")
+  // Assert: removeIsolatedClone() was called 3 times
+  assertEquals(gitRepo.removeCalls.length, 3, "Should clean up all 3 isolated clones")
 })
 
 Deno.test("when cleanup fails, expect warning logged but execution continues", async () => {
@@ -182,29 +182,29 @@ Deno.test("when cleanup fails, expect warning logged but execution continues", a
     ["main", mainBranchCommits],
   ])
 
-  const { gitRepoCloner } = setupGitRepo({
+  const { gitRepo } = setupGitRepo({
     checkedOutBranch: "main",
     localCommits: givenLocalCommits,
     remoteCommits: givenRemoteCommits,
     remotePullRequests: [],
   })
 
-  gitRepoCloner.setThrowOnRemove(true)
+  gitRepo.setThrowOnRemove(true)
 
   // this test only cares to assert the cloner calls. 
   // so, no need to setup more of the step scripts.
   e2eStepScript.setGetLatestReleaseStepOutput(null)
 
   // Act: Run the tool - should NOT throw despite cleanup failure
-  await run({ testMode: false, simulatedMergeTypes: ["merge"] })
+  await run({ testMode: true, simulatedMergeTypes: ["merge"] }) // Must be in test mode to create isolated clones
 
   // Assert: The tool completed successfully despite cleanup error
   // If it threw, the test would fail here
   // The test passing proves the finally block caught the error and logged a warning
 
-  // Also verify that clone was called and remove was attempted
-  assertEquals(gitRepoCloner.cloneCalls.length, 1, "Should have attempted to create 1 clone")
-  assertEquals(gitRepoCloner.removeCalls.length, 1, "Should have attempted to remove the clone despite error")
+  // Also verify that getIsolatedClone was called and removeIsolatedClone was attempted
+  assertEquals(gitRepo.cloneCalls.length, 1, "Should have attempted to create 1 clone")
+  assertEquals(gitRepo.removeCalls.length, 1, "Should have attempted to remove the clone despite error")
 })
 
 Deno.test("when makePullRequestComment is enabled and deployment succeeds, expect status updates posted to PR", async (t) => {
@@ -477,7 +477,7 @@ const setupGitRepo = (
     remoteCommits: Map<string, GitCommit[]>
     remotePullRequests: GitHubPullRequest[]
   },
-): { remoteRepository: GitRemoteRepositoryMock; gitRepoCloner: GitRepoClonerStub; prCommentCalls: PrCommentCall[] } => {
+): { remoteRepository: GitRemoteRepositoryMock; gitRepo: GitRepoManagerStub; prCommentCalls: PrCommentCall[] } => {
   currentBranchWhenTestStarts = checkedOutBranch
 
   const remoteRepository: GitRemoteRepositoryMock = {
@@ -487,9 +487,9 @@ const setupGitRepo = (
 
   // Override the services with test implementations
   const gitStub = new GitStub({ currentBranch: checkedOutBranch, remoteRepo: remoteRepository, commits: localCommits })  
-  // Override gitRepoCloner to return the same gitStub instead of creating real clones
-  const gitRepoCloner = new GitRepoClonerStub(gitStub)
-  diGraph = diGraph.override("gitRepoCloner", () => gitRepoCloner)
+  // Override gitRepoManager to return the same gitStub instead of creating real clones
+  const gitRepo = new GitRepoManagerStub(gitStub)
+  diGraph = diGraph.override("gitRepoManager", () => gitRepo)
 
   githubApiMock = mock()
   when(githubApiMock, "getPullRequestStack", async (_args) => {
@@ -500,7 +500,7 @@ const setupGitRepo = (
   })
   diGraph = diGraph.override("github", () => githubApiMock)
 
-  return { remoteRepository, gitRepoCloner, prCommentCalls }
+  return { remoteRepository, gitRepo, prCommentCalls }
 }
 
 let currentBranchWhenTestStarts: string

@@ -410,32 +410,42 @@ export class GitImpl implements Git {
 }
 
 /**
- * GitRepoCloner handles creating isolated git clones.
- * When you call clone(), it returns a Git instance that's locked to that clone's directory.
+ * GitRepoManager provides access to git repositories.
+ * It can either provide access to the current repository or create isolated clones for testing.
  */
-export interface GitRepoCloner {
+export interface GitRepoManager {
   /**
    * Creates an isolated git clone in a temporary directory.
    * This allows git operations to be performed without affecting the main repository.
    * All commits made in this clone are isolated and will be discarded when the clone is removed.
    * Returns a Git instance locked to the clone directory.
    */
-  clone(): Promise<{ git: Git; directory: string }>
+  getIsolatedClone(): Promise<{ git: Git; directory: string }>
+
+  /**
+   * Returns a Git instance for the current directory (no clone).
+   * This is used in non-test mode where we want to work directly with the current repository.
+   */
+  getCurrentRepo(): Git
 
   /**
    * Removes the isolated git clone directory.
    */
-  remove(directory: string): Promise<void>
+  removeIsolatedClone(directory: string): Promise<void>
 }
 
-export class GitRepoClonerImpl implements GitRepoCloner {
+export class GitRepoManagerImpl implements GitRepoManager {
   private readonly exec: Exec
 
   constructor(exec: Exec) {
     this.exec = exec
   }
 
-  async clone(): Promise<{ git: Git; directory: string }> {
+  getCurrentRepo(): Git {
+    return new GitImpl(this.exec)
+  }
+
+  async getIsolatedClone(): Promise<{ git: Git; directory: string }> {
     const cloneDirectory = await Deno.makeTempDir({
       prefix: "decaf-clone-",
     })
@@ -489,7 +499,7 @@ export class GitRepoClonerImpl implements GitRepoCloner {
     }
   }
 
-  async remove(directory: string): Promise<void> {
+  async removeIsolatedClone(directory: string): Promise<void> {
     // Simply remove the directory - it's a separate clone, not a worktree
     // Using rm -rf is safe here because we created a temp directory specifically for this
     await this.exec.run({
@@ -506,7 +516,7 @@ export const createGit = (exec: Exec, directory?: string): Git => {
   return new GitImpl(exec, directory)
 }
 
-// Factory function for creating a GitRepoCloner instance
-export const createGitRepoCloner = (exec: Exec): GitRepoCloner => {
-  return new GitRepoClonerImpl(exec)
+// Factory function for creating a GitRepoManager instance
+export const createGitRepoManager = (exec: Exec): GitRepoManager => {
+  return new GitRepoManagerImpl(exec)
 }
