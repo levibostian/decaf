@@ -1,5 +1,5 @@
 import { Exec } from "../exec.ts"
-import { Git, GitRepoCloner } from "../git.ts"
+import { Git, GitRepoManager } from "../git.ts"
 import { GitCommit } from "../types/git.ts"
 import { Environment } from "../environment.ts"
 import { AnyStepName } from "../steps/types/any-step.ts"
@@ -531,11 +531,11 @@ export class EnvironmentStub implements Environment {
 }
 
 /**
- * GitRepoCloner stub that returns the same GitStub instance instead of creating isolated clones.
+ * GitRepoManager stub that returns the same GitStub instance instead of creating isolated clones.
  * This prevents e2e tests from trying to create actual git clones and run real git commands.
  */
-export class GitRepoClonerStub implements GitRepoCloner {
-  // Track calls to clone() and remove() for testing
+export class GitRepoManagerStub implements GitRepoManager {
+  // Track calls to getIsolatedClone() and removeIsolatedClone() for testing
   public cloneCalls: string[] = []
   public removeCalls: string[] = []
   private cloneCounter = 0
@@ -545,14 +545,22 @@ export class GitRepoClonerStub implements GitRepoCloner {
   }
 
   /**
-   * Configure the stub to throw an error when remove() is called.
+   * Returns the Git stub instance for the current directory (no clone).
+   * This is used in non-test mode where we want to work directly with the current repository.
+   */
+  getCurrentRepo(): Git {
+    return this.gitStub
+  }
+
+  /**
+   * Configure the stub to throw an error when removeIsolatedClone() is called.
    * Useful for testing error handling in cleanup logic.
    */
   setThrowOnRemove(shouldThrow: boolean): void {
     this.shouldThrowOnRemove = shouldThrow
   }
 
-  async clone(): Promise<{ git: Git; directory: string }> {
+  async getIsolatedClone(): Promise<{ git: Git; directory: string }> {
     // Generate unique directory for each clone to simulate real behavior
     const directory = `/tmp/mock-clone-${this.cloneCounter++}`
     this.cloneCalls.push(directory)
@@ -564,7 +572,7 @@ export class GitRepoClonerStub implements GitRepoCloner {
     })
   }
 
-  async remove(directory: string): Promise<void> {
+  async removeIsolatedClone(directory: string): Promise<void> {
     this.removeCalls.push(directory)
 
     if (this.shouldThrowOnRemove) {
