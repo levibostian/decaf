@@ -460,6 +460,7 @@ export class EnvironmentStub implements Environment {
       simulatedMergeTypes?: ("merge" | "rebase" | "squash")[]
       makePullRequestComment?: boolean
       buildUrl?: string
+      failOnDeployVerification?: boolean
     },
   ) {}
 
@@ -524,7 +525,7 @@ export class EnvironmentStub implements Environment {
   }
   getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean } {
     return {
-      failOnDeployVerification: false,
+      failOnDeployVerification: this.args.failOnDeployVerification ?? false,
       makePullRequestComment: this.args.makePullRequestComment ?? false,
     }
   }

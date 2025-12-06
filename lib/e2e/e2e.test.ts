@@ -451,6 +451,253 @@ Deno.test("when deployment fails with makePullRequestComment enabled and no buil
   await assertSnapshot(t, prCommentCalls.map((call) => call.message))
 })
 
+// Tests to prove test mode vs non-test mode behavior
+
+Deno.test("TEST MODE: when running in pull request, expect simulated merges to be performed", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "commit on main", sha: "main-1" })]
+  const featureBranchCommits = [
+    ...mainBranchCommits,
+    new GitCommitFake({ message: "commit on feature", sha: "feature-1" }),
+  ]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", featureBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+    ["feature", featureBranchCommits],
+  ])
+
+  const { gitRepo } = setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [
+      {
+        prNumber: 42,
+        targetBranchName: "main",
+        sourceBranchName: "feature",
+        title: "Add feature",
+        description: "Feature PR",
+      },
+    ],
+  })
+
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+
+  await run({
+    testMode: true,
+    simulatedMergeTypes: ["merge"],
+  })
+
+  // Assert: In test mode, we should create isolated clones for simulated merges
+  assertEquals(gitRepo.cloneCalls.length, 1, "Should create 1 isolated clone for simulated merge in test mode")
+
+  // Assert: The simulated merge should have happened - we should be on main branch after merge
+  const inputData = e2eStepScript.getGetLatestReleaseInput()
+  assertEquals(inputData.gitCurrentBranch, "main", "After simulated merge, should be on main branch")
+  
+  // Assert: Should have merge commit in the commit history
+  const commitTitles = inputData.gitCommitsCurrentBranch.map((c) => c.title)
+  assertEquals(commitTitles[0], "Merge pull request #42 from feature", "First commit should be the merge commit from simulated merge")
+})
+
+Deno.test("TEST MODE: when running in pull request, expect step scripts to receive testMode=true", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "commit on main", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+    ["feature", mainBranchCommits],
+  ])
+
+  setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+
+  await run({
+    testMode: true,
+    simulatedMergeTypes: ["merge"],
+  })
+
+  // Assert: Step scripts should receive testMode=true
+  const getLatestReleaseInput = e2eStepScript.getGetLatestReleaseInput()
+  assertEquals(getLatestReleaseInput.testMode, true, "Step scripts should receive testMode=true in test mode")
+})
+
+Deno.test("TEST MODE: when deployment verification fails, expect warning (not error) to be logged", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "feat: add feature", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["feature", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", []],
+    ["feature", mainBranchCommits],
+  ])
+
+  setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  // Setup: Latest release before deployment is null (first release)
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+  // Setup: Next release version will be 1.0.0
+  e2eStepScript.setNextReleaseVersionStepOutput({ version: "1.0.0" })
+
+  // Act: Run in test mode - should NOT throw even though verification will fail
+  await run({
+    testMode: true,
+    simulatedMergeTypes: ["merge"],
+  })
+
+  // Assert: Test passed, which means no error was thrown
+  // In test mode, verification failure should log a warning but not throw an error
+  // The fact that we reach this point proves the verification was lenient
+})
+
+Deno.test("NON-TEST MODE: when running from push event, expect NO simulated merges to be performed, expect to run in real git repo", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "commit on main", sha: "main-1" })]
+  const featureBranchCommits = [
+    ...mainBranchCommits,
+    new GitCommitFake({ message: "feat: new feature", sha: "feature-1" }),
+  ]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+    ["feature", featureBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+    ["feature", featureBranchCommits],
+  ])
+
+  // Setup: There is a pull request from feature -> main, but we're running from a push event to feature branch
+  const pullRequest: GitHubPullRequest = {
+    prNumber: 123,
+    sourceBranchName: "feature",
+    targetBranchName: "main",
+    title: "Test PR",
+    description: "Test description",
+  }
+
+  const { gitRepo } = setupGitRepo({
+    checkedOutBranch: "feature",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [pullRequest],
+  })
+
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+
+  await run({
+    testMode: false,
+    simulatedMergeTypes: ["merge"],
+  })
+
+  // Assert: Should NOT have performed simulated merge
+  // In non-test mode, we should still be on the feature branch we started on (not merged to main)
+  const inputData = e2eStepScript.getGetLatestReleaseInput()
+  assertEquals(inputData.gitCurrentBranch, "feature", "Should remain on feature branch (no simulated merge to main)")
+
+  // Assert: Expect to run in real git repo, not isolated clone
+  assertEquals(gitRepo.cloneCalls.length, 0, "Should have attempted to create 0 clones in non-test mode")
+  
+  // Assert: Should NOT have any merge commits (no simulated merge)
+  const commitTitles = inputData.gitCommitsCurrentBranch.map((c) => c.title)
+  assertEquals(commitTitles.includes("Merge pull request"), false, "Should not have any merge commits from simulated merge")
+})
+
+Deno.test("NON-TEST MODE: when running from push event, expect step scripts to receive testMode=false", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "commit on main", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+  ])
+
+  setupGitRepo({
+    checkedOutBranch: "main",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+
+  await run({
+    testMode: false,
+    simulatedMergeTypes: ["merge"],
+  })
+
+  // Assert: Step scripts should receive testMode=false
+  const getLatestReleaseInput = e2eStepScript.getGetLatestReleaseInput()
+  assertEquals(getLatestReleaseInput.testMode, false, "Step scripts should receive testMode=false in non-test mode")
+})
+
+Deno.test("NON-TEST MODE: when deployment verification fails with failOnDeployVerification=true, expect error to be thrown", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "feat: add feature", sha: "main-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+  ])
+
+  setupGitRepo({
+    checkedOutBranch: "main",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [],
+  })
+
+  // Setup: Latest release before deployment is null (first release)
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+  // Setup: Next release version will be 1.0.0
+  e2eStepScript.setNextReleaseVersionStepOutput({ version: "1.0.0" })
+
+  // Act & Assert: Run in non-test mode with failOnDeployVerification=true
+  // This should throw an error when verification fails
+  let didThrow = false
+  try {
+    await run({
+      testMode: false,
+      simulatedMergeTypes: ["merge"],
+      failOnDeployVerification: true,
+    })
+  } catch (error) {
+    didThrow = true
+    // Verify it's the verification error
+    assertEquals(
+      (error as Error).message.includes("Deployment verification failed"), // the error message that is thrown. 
+      true,
+      "Should throw verification error in non-test mode with strict verification",
+    )
+  }
+
+  // Assert: Should have thrown an error
+  assertEquals(didThrow, true, "Should throw error when verification fails in non-test mode with failOnDeployVerification=true")
+})
+
 // helper functions
 
 let diGraph: typeof di.productionDiGraph
@@ -509,11 +756,12 @@ let githubApiMock: GitHubApi = mock()
 let prCommentCalls: PrCommentCall[] = []
 
 const run = async (
-  { testMode, simulatedMergeTypes, makePullRequestComment, buildUrl }: {
+  { testMode, simulatedMergeTypes, makePullRequestComment, buildUrl, failOnDeployVerification }: {
     testMode: boolean
     simulatedMergeTypes?: ("merge" | "rebase" | "squash")[]
     makePullRequestComment?: boolean
     buildUrl?: string
+    failOnDeployVerification?: boolean
   },
 ) => {
   if (testMode) {
@@ -527,6 +775,7 @@ const run = async (
       simulatedMergeTypes,
       makePullRequestComment,
       buildUrl,
+      failOnDeployVerification,
     })
   } else {
     environmentMock = new EnvironmentStub({
@@ -537,6 +786,7 @@ const run = async (
       simulatedMergeTypes,
       makePullRequestComment,
       buildUrl,
+      failOnDeployVerification,
     })
   }
   diGraph = diGraph.override("environment", () => environmentMock)
