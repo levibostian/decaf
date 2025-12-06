@@ -10,14 +10,39 @@
  * The script's code that runs when decaf runs this script.
  */
 
-// First, save the input for the test to reference later.
+// First, check if we should throw an error in our script. 
+// Allowing us to test error handling when a deployment step fails.
+const shouldThrowData = Deno.readTextFileSync("/tmp/e2e-should-throw.json")
+const { shouldThrow, errorMessage } = JSON.parse(shouldThrowData)
+if (shouldThrow) {
+  throw new Error(errorMessage)
+}
+
+// Save the input for the test to reference later.
+const inputDataPath = Deno.env.get("DATA_FILE_PATH")!
+const inputData = Deno.readTextFileSync(inputDataPath)
 Deno.writeFileSync(
   "/tmp/e2e-input.json",
-  new TextEncoder().encode(Deno.readTextFileSync(Deno.env.get("DATA_FILE_PATH")!)),
+  new TextEncoder().encode(inputData),
 )
 
-// Next, return the output that the e2e test class said to use.
+// Determine which step is being called based on the input structure
+const input = JSON.parse(inputData)
+let outputFilePath: string
+
+if (input.nextVersionName !== undefined) {
+  // This is a deploy step (has nextVersionName)
+  outputFilePath = "/tmp/e2e-get-next-version-output.json" // Deploy uses same output as get-next-version
+} else if (input.lastRelease !== undefined || input.gitCommitsSinceLastRelease !== undefined) {
+  // This is a get-next-release-version step (has lastRelease or gitCommitsSinceLastRelease)
+  outputFilePath = "/tmp/e2e-get-next-version-output.json"
+} else {
+  // This is a get-latest-release step (only has base fields)
+  outputFilePath = "/tmp/e2e-get-latest-release-output.json"
+}
+
+// Return the output that the e2e test class said to use
 Deno.writeFileSync(
-  Deno.env.get("DATA_FILE_PATH")!,
-  new TextEncoder().encode(Deno.readTextFileSync("/tmp/e2e-output.json")),
+  inputDataPath,
+  new TextEncoder().encode(Deno.readTextFileSync(outputFilePath)),
 )
