@@ -21,11 +21,12 @@ export async function main() {
   const diGraph = di.getGraph()
   const githubApi = diGraph.get("github")
   const environment = diGraph.get("environment")
-  const gitRepoCloner = diGraph.get("gitRepoCloner")
+  const gitRepo = diGraph.get("gitRepoManager")
 
   const pullRequestInfo = environment.isRunningInPullRequest()
   const buildInfo = environment.getBuild()
-  const simulatedMergeTypes = await environment.getSimulatedMergeTypes()
+  let simulatedMergeTypes = await environment.getSimulatedMergeTypes()
+  const isInTestMode = environment.isRunningInPullRequest() !== undefined
   const shouldPostStatusUpdatesOnPullRequest = environment.getUserConfigurationOptions().makePullRequestComment && pullRequestInfo !== undefined
 
   const { owner, repo } = environment.getRepository()
@@ -43,8 +44,24 @@ If this pull request and all of it's parent pull requests are merged using the..
     })
   }
 
+  // If we are actually running a deployment (not test mode), we need the run() function to only run once. 
+  // so, modify the for loop to only run once. 
+  if (!isInTestMode) {
+    simulatedMergeTypes = ["merge"] // this could be any value, doesn't matter. We're not doing any merges in non-test mode.
+  }
   for (const simulatedMergeType of simulatedMergeTypes) {
-    const { git, directory: isolatedCloneDirectory } = await gitRepoCloner.clone()
+    let git
+    let isolatedCloneDirectory: string | undefined
+    
+    if (isInTestMode) {
+      const cloneResult = await gitRepo.getIsolatedClone()
+      git = cloneResult.git
+      isolatedCloneDirectory = cloneResult.directory
+    } else {
+      // In non-test mode, get a Git instance for the current directory (no clone needed)
+      git = gitRepo.getCurrentRepo()
+      isolatedCloneDirectory = undefined
+    }
 
     // Run a complete git fetch in the isolated clone.
     // Many git commands in this tool depend on it, so run it early to avoid any issues.
@@ -110,10 +127,13 @@ If this pull request and all of it's parent pull requests are merged using the..
       throw error
     } finally {
       // Always clean up the isolated git clone, even if an error occurred
-      try {
-        await gitRepoCloner.remove(isolatedCloneDirectory)
-      } catch (cleanupError) {
-        logger.warning(`Failed to remove isolated git clone at ${isolatedCloneDirectory}: ${cleanupError}`)
+      // Only clean up if we created an isolated clone (test mode only)
+      if (isolatedCloneDirectory) {
+        try {
+          await gitRepo.removeIsolatedClone(isolatedCloneDirectory)
+        } catch (cleanupError) {
+          logger.warning(`Failed to remove isolated git clone at ${isolatedCloneDirectory}: ${cleanupError}`)
+        }
       }
     }
   }
