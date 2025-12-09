@@ -15,7 +15,7 @@ export class GitStub implements Git {
   // These properties are needed to match the Git class signature but aren't used in the stub
   private readonly exec: Exec | undefined
   private readonly directory: string | undefined
-  
+
   currentBranch: string
   /** Local commits for all local branches. These are commits that are pulled/merge into branches, not commits that are fetched! */
   localBranchCommits: Map<string, GitCommit[]>
@@ -91,33 +91,33 @@ export class GitStub implements Git {
     return Promise.resolve()
   }
   checkoutBranch = async (args: { branch: string; createBranchIfNotExist: boolean }): Promise<void> => {
-      // Check if branch exists locally or remotely
-      const branchExists = this.localBranchCommits.has(args.branch) || this.branches.includes(args.branch)
+    // Check if branch exists locally or remotely
+    const branchExists = this.localBranchCommits.has(args.branch) || this.branches.includes(args.branch)
 
-      if (!branchExists && !args.createBranchIfNotExist) {
-        throw new Error(`Branch '${args.branch}' does not exist and createBranchIfNotExist is false`)
-      }
-
-      if (!branchExists && args.createBranchIfNotExist) {
-        // Create new branch from current branch
-        const currentBranchCommits = this.localBranchCommits.get(this.currentBranch) || []
-        this.localBranchCommits.set(args.branch, [...currentBranchCommits]) // Copy commits from current branch
-        this.branches.push(args.branch)
-      }
-
-      // If branch exists remotely but not locally, create local tracking branch
-      if (!this.localBranchCommits.has(args.branch) && this.branches.includes(args.branch)) {
-        const branchRef = args.branch
-        if (branchRef.startsWith("origin/")) {
-          const remoteBranchName = branchRef.replace("origin/", "")
-          const remoteCommits = this.remoteRepo.remoteBranches.get(remoteBranchName) || []
-          this.localBranchCommits.set(args.branch, [...remoteCommits])
-        }
-      }
-
-      this.currentBranch = args.branch
-      return Promise.resolve()
+    if (!branchExists && !args.createBranchIfNotExist) {
+      throw new Error(`Branch '${args.branch}' does not exist and createBranchIfNotExist is false`)
     }
+
+    if (!branchExists && args.createBranchIfNotExist) {
+      // Create new branch from current branch
+      const currentBranchCommits = this.localBranchCommits.get(this.currentBranch) || []
+      this.localBranchCommits.set(args.branch, [...currentBranchCommits]) // Copy commits from current branch
+      this.branches.push(args.branch)
+    }
+
+    // If branch exists remotely but not locally, create local tracking branch
+    if (!this.localBranchCommits.has(args.branch) && this.branches.includes(args.branch)) {
+      const branchRef = args.branch
+      if (branchRef.startsWith("origin/")) {
+        const remoteBranchName = branchRef.replace("origin/", "")
+        const remoteCommits = this.remoteRepo.remoteBranches.get(remoteBranchName) || []
+        this.localBranchCommits.set(args.branch, [...remoteCommits])
+      }
+    }
+
+    this.currentBranch = args.branch
+    return Promise.resolve()
+  }
 
   merge = async (args: {
     branchToMergeIn: string
@@ -455,7 +455,7 @@ export class EnvironmentStub implements Environment {
   constructor(
     private args: {
       commandToRunStubStepScript: string
-      runFromPullRequest?: { baseBranch: string; targetBranch: string; prNumber: number; }
+      runFromPullRequest?: { baseBranch: string; targetBranch: string; prNumber: number }
       runFromPush?: { branch: string }
       simulatedMergeTypes?: ("merge" | "rebase" | "squash")[]
       makePullRequestComment?: boolean
@@ -487,7 +487,7 @@ export class EnvironmentStub implements Environment {
     // If explicitly provided, use those types
     if (this.args.simulatedMergeTypes) {
       return Promise.resolve(this.args.simulatedMergeTypes)
-    } 
+    }
 
     throw new Error("No simulated merge types provided in EnvironmentStub")
   }

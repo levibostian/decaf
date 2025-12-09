@@ -73,7 +73,7 @@ export class SimulateMergeImpl implements SimulateMerge {
       commitMessage: string
     },
   ) {
-     const commitReference = await this.git.getLatestCommitOnBranch({ branch: { ref: targetBranch } })
+    const commitReference = await this.git.getLatestCommitOnBranch({ branch: { ref: targetBranch } })
 
     await this.prepareForMerge({ baseBranch, targetBranch })
 
@@ -98,7 +98,7 @@ export class SimulateMergeImpl implements SimulateMerge {
       commitMessage: string
     },
   ) {
-     const commitReference = await this.git.getLatestCommitOnBranch({ branch: { ref: targetBranch } })
+    const commitReference = await this.git.getLatestCommitOnBranch({ branch: { ref: targetBranch } })
 
     await this.prepareForMerge({ baseBranch, targetBranch })
 
@@ -134,7 +134,7 @@ export class SimulateMergeImpl implements SimulateMerge {
       commitMessage: string
     },
   ) {
-     const commitReference = await this.git.getLatestCommitOnBranch({ branch: { ref: targetBranch } })
+    const commitReference = await this.git.getLatestCommitOnBranch({ branch: { ref: targetBranch } })
 
     await this.prepareForMerge({ baseBranch, targetBranch })
 
@@ -152,7 +152,7 @@ export class SimulateMergeImpl implements SimulateMerge {
     }
   }
 
-   private async prepareForMerge({ baseBranch, targetBranch }: { baseBranch: string; targetBranch: string }) {
+  private async prepareForMerge({ baseBranch, targetBranch }: { baseBranch: string; targetBranch: string }) {
     // First, make sure we have the latest changes from both branches
     await this.git.checkoutBranch({ branch: baseBranch, createBranchIfNotExist: false })
     await this.git.pull()

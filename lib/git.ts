@@ -252,7 +252,8 @@ export class GitImpl implements Git {
        * Newlines are not reliable because the commit message body can contain newlines, written
        * by the commit author.
        */
-      command: `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${args.branch.ref}`,
+      command:
+        `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${args.branch.ref}`,
       input: undefined,
       displayLogs: false,
       currentWorkingDirectory: this.directory,

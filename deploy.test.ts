@@ -462,7 +462,7 @@ const setupTestEnvironmentAndRun = async ({
     return { currentGitBranch: pullRequestTargetBranch, commitsCreatedDuringSimulatedMerges: commitsCreatedBySimulatedMerge || [] }
   })
 
-  const gitMock = mock<Git>()  
+  const gitMock = mock<Git>()
 
   await run({
     convenienceStep,
