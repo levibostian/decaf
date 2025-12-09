@@ -10,7 +10,7 @@
  * The script's code that runs when decaf runs this script.
  */
 
-// First, check if we should throw an error in our script. 
+// First, check if we should throw an error in our script.
 // Allowing us to test error handling when a deployment step fails.
 const shouldThrowData = Deno.readTextFileSync("/tmp/e2e-should-throw.json")
 const { shouldThrow, errorMessage } = JSON.parse(shouldThrowData)

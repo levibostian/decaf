@@ -85,7 +85,7 @@ export class EnvironmentImpl implements Environment {
       log.debug(`Repository merge types retrieved from github api: ${JSON.stringify(mergeTypes)}`)
 
       const enabledTypes: ("merge" | "rebase" | "squash")[] = []
-      
+
       if (mergeTypes.allowMergeCommit) {
         enabledTypes.push("merge")
       }

@@ -155,7 +155,7 @@ Deno.test("when running with multiple simulated merge types, expect isolated clo
     remotePullRequests: [],
   })
 
-  // this test only cares to assert the cloner calls. 
+  // this test only cares to assert the cloner calls.
   // so, no need to setup more of the step scripts.
   e2eStepScript.setGetLatestReleaseStepOutput(null)
 
@@ -191,7 +191,7 @@ Deno.test("when cleanup fails, expect warning logged but execution continues", a
 
   gitRepo.setThrowOnRemove(true)
 
-  // this test only cares to assert the cloner calls. 
+  // this test only cares to assert the cloner calls.
   // so, no need to setup more of the step scripts.
   e2eStepScript.setGetLatestReleaseStepOutput(null)
 
@@ -212,7 +212,7 @@ Deno.test("when makePullRequestComment is enabled and deployment succeeds, expec
   const oldCommits = [
     new GitCommitFake({ message: "chore: previous release", sha: "old-commit-sha" }),
   ]
-  
+
   // New commits since last release
   const newCommits = [
     new GitCommitFake({ message: "feat: add new feature", sha: "main-1" }),
@@ -497,7 +497,7 @@ Deno.test("TEST MODE: when running in pull request, expect simulated merges to b
   // Assert: The simulated merge should have happened - we should be on main branch after merge
   const inputData = e2eStepScript.getGetLatestReleaseInput()
   assertEquals(inputData.gitCurrentBranch, "main", "After simulated merge, should be on main branch")
-  
+
   // Assert: Should have merge commit in the commit history
   const commitTitles = inputData.gitCommitsCurrentBranch.map((c) => c.title)
   assertEquals(commitTitles[0], "Merge pull request #42 from feature", "First commit should be the merge commit from simulated merge")
@@ -616,7 +616,7 @@ Deno.test("NON-TEST MODE: when running from push event, expect NO simulated merg
 
   // Assert: Expect to run in real git repo, not isolated clone
   assertEquals(gitRepo.cloneCalls.length, 0, "Should have attempted to create 0 clones in non-test mode")
-  
+
   // Assert: Should NOT have any merge commits (no simulated merge)
   const commitTitles = inputData.gitCommitsCurrentBranch.map((c) => c.title)
   assertEquals(commitTitles.includes("Merge pull request"), false, "Should not have any merge commits from simulated merge")
@@ -688,7 +688,7 @@ Deno.test("NON-TEST MODE: when deployment verification fails with failOnDeployVe
     didThrow = true
     // Verify it's the verification error
     assertEquals(
-      (error as Error).message.includes("Deployment verification failed"), // the error message that is thrown. 
+      (error as Error).message.includes("Deployment verification failed"), // the error message that is thrown.
       true,
       "Should throw verification error in non-test mode with strict verification",
     )
@@ -733,7 +733,7 @@ const setupGitRepo = (
   }
 
   // Override the services with test implementations
-  const gitStub = new GitStub({ currentBranch: checkedOutBranch, remoteRepo: remoteRepository, commits: localCommits })  
+  const gitStub = new GitStub({ currentBranch: checkedOutBranch, remoteRepo: remoteRepository, commits: localCommits })
   // Override gitRepoManager to return the same gitStub instead of creating real clones
   const gitRepo = new GitRepoManagerStub(gitStub)
   diGraph = diGraph.override("gitRepoManager", () => gitRepo)

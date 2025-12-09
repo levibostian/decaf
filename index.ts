@@ -9,8 +9,8 @@ import { ConvenienceStepImpl } from "./lib/steps/convenience.ts"
 import { processCommandLineArgs } from "./cli.ts"
 import * as di from "./lib/di.ts"
 
-// put all the logic in a main function so that the e2e tests can run the 
-// function and be able to have a clean environment for each test. If all this code was defined 
+// put all the logic in a main function so that the e2e tests can run the
+// function and be able to have a clean environment for each test. If all this code was defined
 // at the top level, the e2e tests would not be able to reset the DI graph between tests.
 // Was using dynamic imports in the e2e tests, but code coverage didn't recognize any of this code then.
 export async function main() {
@@ -44,15 +44,15 @@ If this pull request and all of it's parent pull requests are merged using the..
     })
   }
 
-  // If we are actually running a deployment (not test mode), we need the run() function to only run once. 
-  // so, modify the for loop to only run once. 
+  // If we are actually running a deployment (not test mode), we need the run() function to only run once.
+  // so, modify the for loop to only run once.
   if (!isInTestMode) {
     simulatedMergeTypes = ["merge"] // this could be any value, doesn't matter. We're not doing any merges in non-test mode.
   }
   for (const simulatedMergeType of simulatedMergeTypes) {
     let git
     let isolatedCloneDirectory: string | undefined
-    
+
     if (isInTestMode) {
       const cloneResult = await gitRepo.getIsolatedClone()
       git = cloneResult.git
