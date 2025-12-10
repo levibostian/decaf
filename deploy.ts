@@ -235,5 +235,10 @@ export const run = async ({
 
   await environment.setOutput({ key: "new_release_version", value: nextReleaseVersion })
 
+  // In test mode, also set the merge-type-specific output
+  if (runInTestMode) {
+    await environment.setOutput({ key: `new_release_version_simulated_${simulatedMergeType}`, value: nextReleaseVersion })
+  }
+
   return { nextReleaseVersion, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
 }
