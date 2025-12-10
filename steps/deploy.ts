@@ -19,8 +19,21 @@ const compileBinary = async ({ denoTarget, outputFileName }: { denoTarget: strin
 const currentBranch = await $`git rev-parse --abbrev-ref HEAD`.text()
 // While on the current branch, print some commits to tell us what is on this branch for comparison later.
 await $`git log --oneline -n 5`.printCommand()
+
+// Create local branch from remote if it doesn't exist
+// This is necessary because CI performs a shallow clone and doesn't have all branches locally
+const branchToCheckout = "latest"
+const doesBranchExist = (await $`git branch --list ${branchToCheckout}`.text()).trim() !== ""
+if (!doesBranchExist) {
+  // Create a tracking branch that tracks origin/latest
+  await $`git branch --track ${branchToCheckout} origin/${branchToCheckout}`.printCommand()
+}
+
 // checkout the branch where we want the metadata changes to be pushed to.
-await $`git checkout latest`.printCommand()
+await $`git checkout ${branchToCheckout}`.printCommand()
+// Pull the branch from the remote to ensure we have all commits
+// Using --no-rebase to avoid "divergent branches" errors
+await $`git pull --no-rebase origin ${branchToCheckout}`.printCommand()
 // Merge the previous branch into 'latest', prefer fast-forward but allow merge commit if needed
 await $`git merge --ff ${currentBranch}`.printCommand()
 // To help with debugging, print some commits to verify we are on the right branch and the merge was successful
