@@ -357,14 +357,14 @@ Test mode allows you to test your deployment in a pull request before you merge.
 
 In order to do this, decaf needs to know what type of merge you plan on doing (merge, squash, rebase). By default, decaf will call the GitHub API to see what merge types are enabled in the repository settings and run test mode for all of the enabled merge types. If decaf can't authenticate with the GitHub API, it will default to simulating all 3 merge types.
 
-If you would rather explicitly tell decaf what type of merge to simulate, you can provide the `simulated_merge_type` config setting with one of the following values: `merge`, `squash`, or `rebase`.
+If you would rather explicitly tell decaf what type of merge to simulate, you can provide the `simulated_merge_type` config setting. 
 
 ```yml
     steps:
     - uses: actions/checkout
     - uses: levibostian/decaf
       with: 
-        simulated_merge_type: 'merge'
+        simulated_merge_type: 'merge, squash' # provide single values or multiple values separated by commas
         # ... Put rest of your config here. 
 ```
 

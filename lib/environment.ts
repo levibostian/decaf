@@ -66,10 +66,24 @@ export class EnvironmentImpl implements Environment {
 
     try {
       const simulateMergeType = this.getInput(githubActionInputKey)
-      const isValidInput = simulateMergeType === "merge" || simulateMergeType === "rebase" || simulateMergeType === "squash"
-      if (simulateMergeType && isValidInput) {
-        this.simulatedMergeTypeCache = [simulateMergeType]
-        return Promise.resolve([simulateMergeType])
+      if (simulateMergeType) {
+        // Parse comma-separated values and validate each one
+        const types = simulateMergeType.split(",")
+          .map((type) => type.trim())
+          .filter((type) => type !== "")
+
+        const validTypes: ("merge" | "rebase" | "squash")[] = []
+        for (const type of types) {
+          if (type === "merge" || type === "rebase" || type === "squash") {
+            validTypes.push(type)
+          }
+        }
+
+        // If we have at least one valid type, use them
+        if (validTypes.length > 0) {
+          this.simulatedMergeTypeCache = validTypes
+          return Promise.resolve(validTypes)
+        }
       }
     } catch (_error) {
       // Input not set, fall through to GitHub API check
