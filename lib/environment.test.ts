@@ -499,6 +499,35 @@ Deno.test("getSimulatedMergeTypes - should fallback to API when invalid user inp
   assertEquals(apiCalled, true)
 })
 
+Deno.test("getSimulatedMergeTypes - should handle comma-separated merge types", async () => {
+  Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "merge,squash")
+  assertEquals(await environment.getSimulatedMergeTypes(), ["merge", "squash"])
+})
+
+Deno.test("getSimulatedMergeTypes - should handle comma-separated merge types with all three types", async () => {
+  Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "merge,squash,rebase")
+  assertEquals(await environment.getSimulatedMergeTypes(), ["merge", "squash", "rebase"])
+})
+
+Deno.test("getSimulatedMergeTypes - should handle comma-separated merge types with whitespace", async () => {
+  Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", " merge , squash , rebase ")
+  assertEquals(await environment.getSimulatedMergeTypes(), ["merge", "squash", "rebase"])
+})
+
+Deno.test("getSimulatedMergeTypes - should filter out invalid types from comma-separated list", async () => {
+  Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "merge,invalid,squash")
+  assertEquals(await environment.getSimulatedMergeTypes(), ["merge", "squash"])
+})
+
+Deno.test("getSimulatedMergeTypes - should handle comma-separated types with empty strings", async () => {
+  Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "merge,,squash")
+  assertEquals(await environment.getSimulatedMergeTypes(), ["merge", "squash"])
+})
+
+Deno.test("getSimulatedMergeTypes - should handle comma-separated types with duplicates", async () => {
+  Deno.env.set("INPUT_SIMULATED_MERGE_TYPE", "merge,merge,squash")
+  assertEquals(await environment.getSimulatedMergeTypes(), ["merge", "merge", "squash"])
+})
 Deno.test("getUserConfigurationOptions - expect get from command line argument", async () => {
   processCommandLineArgs([
     "--fail_on_deploy_verification=true",
