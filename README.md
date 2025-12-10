@@ -329,11 +329,18 @@ Different features require different permission levels:
   1. If your deployment script pushes commits, creates tags, or creates GitHub Releases
   2. If you want the automatic simulated merge type detection feature to work (only needed if you don't provide the `simulated_merge_type` input)
 
-# Outputs 
+# GitHub Actions Outputs 
 
-This tool provides you with outputs to help you understand what happened during the deployment process.
+If you use the decaf GitHub Action, you can access the following outputs after the action runs.
 
-* `new_release_version` - If a new release was created, this is the version of that release.
+* `new_release_version` - If a new release was created, this is the version of that release. This value is set if in test mode or if a real deployment was done.
+
+**Note:** In version 0.7.0, a new feature was launched to run multiple simulated deployments in test mode. In this case, if multiple simulated merges were run, this output will be the version from the last simulated merge that was run. If your action/repository is setup to only run one merge type, this value will work great for you. Otherwise, it's suggested to use one of the alternative outputs: `new_release_version_merge`, `new_release_version_squash`, or `new_release_version_rebase`.
+
+* `new_release_version_simulated_merge` - In test mode, if a simulated merge was run and created a merge commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
+* `new_release_version_simulated_squash` - In test mode, if a simulated merge was run and created a squash commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
+* `new_release_version_simulated_rebase` - In test mode, if a simulated merge was run and created a rebase commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
+
 * `test_mode_on` - If test mode was on when the tool ran. Value is string values "true" or "false".
 
 # Configuration 
