@@ -8,7 +8,9 @@ jobs:
     steps:
       - checkout
       - gh/install
-      - run: curl -fsSL https://deno.land/install.sh | sh
+      # install 2.5.6 as workaround for bug in 2.6.0
+      # see bug: https://github.com/denoland/deno/issues/31556
+      - run: curl -fsSL https://deno.land/install.sh | sh -s v2.5.6
       - run:
           name: Add Deno to PATH
           command: echo 'export PATH="/home/circleci/.deno/bin:$PATH"' >> $BASH_ENV
