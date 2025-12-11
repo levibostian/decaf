@@ -70,7 +70,7 @@ If this pull request and all of it's parent pull requests are merged using the..
     try {
       const runResult = await run({
         convenienceStep: new ConvenienceStepImpl(environment, git, logger),
-        stepRunner: new StepRunnerImpl(environment, exec, logger),
+        stepRunner: new StepRunnerImpl(environment, exec, logger, git.getDirectory()),
         prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git), git),
         getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git),
         log: logger,

@@ -12,7 +12,7 @@ import { mock, when } from "./mock/mock.ts"
 
 let git: gitModule.Git
 Deno.test.beforeEach(() => {
-  git = new gitModule.GitImpl(exec, undefined)
+  git = new gitModule.GitImpl(exec, Deno.cwd())
 })
 
 describe("snapshot test all of the merge options", () => {

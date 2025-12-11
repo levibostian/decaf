@@ -21,6 +21,7 @@ export interface Git {
   getCommits(args: { branch: { ref: string }; limit?: number }): Promise<GitCommit[]>
   getCurrentBranch(): Promise<string>
   getBranches(): Promise<Map<string, { ref: string }>>
+  getDirectory(): string
 }
 
 /**
@@ -29,9 +30,9 @@ export interface Git {
  */
 export class GitImpl implements Git {
   private readonly exec: Exec
-  private readonly directory: string | undefined
+  private readonly directory: string
 
-  constructor(exec: Exec, directory?: string) {
+  constructor(exec: Exec, directory: string) {
     this.exec = exec
     this.directory = directory
   }
@@ -408,6 +409,10 @@ export class GitImpl implements Git {
 
     return branchMap
   }
+
+  getDirectory(): string {
+    return this.directory
+  }
 }
 
 /**
@@ -443,7 +448,7 @@ export class GitRepoManagerImpl implements GitRepoManager {
   }
 
   getCurrentRepo(): Git {
-    return new GitImpl(this.exec)
+    return new GitImpl(this.exec, Deno.cwd())
   }
 
   async getIsolatedClone(): Promise<{ git: Git; directory: string }> {
@@ -513,7 +518,7 @@ export class GitRepoManagerImpl implements GitRepoManager {
 }
 
 // Factory function for creating a Git instance for the current working directory
-export const createGit = (exec: Exec, directory?: string): Git => {
+export const createGit = (exec: Exec, directory: string): Git => {
   return new GitImpl(exec, directory)
 }
 
