@@ -38,9 +38,36 @@ export class GitImpl implements Git {
   }
 
   async fetch(): Promise<void> {
-    // A *complete* fetch that gets all branches, all commits, all tags.
+    // A *complete* fetch that gets all branches, all commits, all tags, and all blobs.
+    // This handles both shallow clones (GitHub Actions) and blobless clones (CircleCI).
 
-    // First, try to unshallow if the repository is shallow.
+    // First, check if this is a blobless clone (CircleCI) and convert it to a full clone
+    let wasBloblessClone = false
+    try {
+      const { stdout: partialCloneConfig } = await this.exec.run({
+        command: `git config --get remote.origin.partialclonefilter`,
+        input: undefined,
+        currentWorkingDirectory: this.directory,
+        displayLogs: false,
+      })
+
+      // If we get a value, this is a blobless clone. We need to unfilter it.
+      if (partialCloneConfig.trim()) {
+        log.debug(`Detected blobless clone with filter: ${partialCloneConfig.trim()}. Converting to full clone...`)
+        wasBloblessClone = true
+        // Remove the partial clone configuration to get all objects
+        await this.exec.run({
+          command: `git config --unset remote.origin.partialclonefilter`,
+          input: undefined,
+          currentWorkingDirectory: this.directory,
+        })
+      }
+    } catch (_error) {
+      // Config doesn't exist, not a blobless clone - that's fine
+    }
+
+    // Besides blobless, we also need to handle shallow clones (found in GitHub Actions).
+    // Now try to unshallow if the repository is shallow.
     // will be shallow if we use the default actions/checkout configuration.
     try {
       await this.exec.run({
@@ -58,6 +85,28 @@ export class GitImpl implements Git {
         input: undefined,
         currentWorkingDirectory: this.directory,
       })
+    }
+
+    // If this was a blobless clone, we need to explicitly fetch all missing blobs
+    // Even after removing the filter with --unset call, Git won't automatically fetch blobs that were previously filtered out
+    if (wasBloblessClone) {
+      log.debug(`Fetching all missing blobs from blobless clone...`)
+      try {
+        // Fetch all missing objects (blobs) from all reachable commits
+        await this.exec.run({
+          command: `git fetch origin --refetch`,
+          input: undefined,
+          currentWorkingDirectory: this.directory,
+        })
+      } catch (_refetchError) {
+        // --refetch might not be available in older Git versions, fall back to fetching all refs
+        log.debug(`--refetch not supported, trying alternative approach...`)
+        await this.exec.run({
+          command: `git fetch origin '+refs/heads/*:refs/heads/*' --force`,
+          input: undefined,
+          currentWorkingDirectory: this.directory,
+        })
+      }
     }
   }
 
@@ -451,15 +500,10 @@ export class GitRepoManagerImpl implements GitRepoManager {
     return new GitImpl(this.exec, Deno.cwd())
   }
 
+  // note: after the clone, you should checkout the desired branch in the cloned repo.
   async getIsolatedClone(): Promise<{ git: Git; directory: string }> {
     const cloneDirectory = await Deno.makeTempDir({
       prefix: "decaf-clone-",
-    })
-
-    // Get the current repository path to clone from
-    const { stdout: repoPath } = await this.exec.run({
-      command: `git rev-parse --show-toplevel`,
-      input: undefined,
     })
 
     // Get the remote URL from the original repository
@@ -468,32 +512,14 @@ export class GitRepoManagerImpl implements GitRepoManager {
       input: undefined,
     })
 
-    // Get the current branch or commit in the original repo
-    const { stdout: currentRef } = await this.exec.run({
-      command: `git rev-parse HEAD`,
-      input: undefined,
-    })
-
-    // Create a local clone of the repository
-    // This gives us complete isolation - commits in the clone won't affect the original repo
+    // Clone directly from the remote URL instead of the local repository.
+    // This is critical for CI environments that use blobless or shallow clones.
+    // Cloning from a local blobless clone would create another blobless clone,
+    // but cloning from the remote ensures we get all the objects we need.
+    log.debug(`Cloning from remote ${remoteUrl.trim()} to create isolated clone...`)
     await this.exec.run({
-      command: `git clone ${repoPath.trim()} ${cloneDirectory}`,
+      command: `git clone ${remoteUrl.trim()} ${cloneDirectory}`,
       input: undefined,
-    })
-
-    // Update the origin remote to point to the actual remote, not the local path
-    // This ensures that git fetch will fetch from the real remote
-    await this.exec.run({
-      command: `git remote set-url origin ${remoteUrl.trim()}`,
-      input: undefined,
-      currentWorkingDirectory: cloneDirectory,
-    })
-
-    // Checkout the same commit as the original repo to avoid detached HEAD issues
-    await this.exec.run({
-      command: `git checkout ${currentRef.trim()}`,
-      input: undefined,
-      currentWorkingDirectory: cloneDirectory,
     })
 
     log.debug(`Created isolated git clone at ${cloneDirectory}`)
