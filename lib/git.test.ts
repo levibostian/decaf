@@ -8,7 +8,7 @@ import { GitCommit } from "./types/git.ts"
 let git: gitModule.Git
 Deno.test.beforeEach(() => {
   restore()
-  git = new gitModule.GitImpl(exec, undefined)
+  git = new gitModule.GitImpl(exec, Deno.cwd())
 })
 
 describe("checkoutBranch", () => {
@@ -24,14 +24,14 @@ describe("checkoutBranch", () => {
     await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
 
     assertSpyCall(execMock, 0, {
-      args: [{ command: `git checkout main`, input: undefined, currentWorkingDirectory: undefined }],
+      args: [{ command: `git checkout main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
     })
 
     // Now, test with createBranchIfNotExist
     await git.checkoutBranch({ branch: "main", createBranchIfNotExist: true })
 
     assertSpyCall(execMock, 1, {
-      args: [{ command: `git checkout -b main`, input: undefined, currentWorkingDirectory: undefined }],
+      args: [{ command: `git checkout -b main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
     })
   })
 

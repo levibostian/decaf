@@ -394,6 +394,11 @@ export class GitStub implements Git {
     return Promise.resolve(branchMap)
   }
 
+  getDirectory(): string {
+    // If no directory was specified, return the current working directory
+    return this.directory || Deno.cwd()
+  }
+
   createIsolatedClone = async (): Promise<string> => {
     // For testing purposes, just return a mock directory path
     return Promise.resolve("/tmp/mock-clone")
