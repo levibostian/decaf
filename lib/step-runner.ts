@@ -23,7 +23,7 @@ export interface StepRunner {
 }
 
 export class StepRunnerImpl implements StepRunner {
-  constructor(private environment: Environment, private exec: Exec, private logger: Logger) {}
+  constructor(private environment: Environment, private exec: Exec, private logger: Logger, private workingDirectory: string) {}
 
   runGetLatestOnCurrentBranchReleaseStep(input: GetLatestReleaseStepInput): Promise<GetLatestReleaseStepOutput | null> {
     return this.getCommandFromUserAndRun({ step: "get_latest_release_current_branch", input, outputCheck: isGetLatestReleaseStepOutput })
@@ -50,8 +50,15 @@ export class StepRunnerImpl implements StepRunner {
     for (const command of commands) {
       const commandToRun = stringTemplating.render(command, input as unknown as Record<string, unknown>)
 
-      this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
-      const runResult = await this.exec.run({ command: commandToRun, input: input, displayLogs: true })
+      // input contains all git commits. too much data to log.
+      // this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
+      this.logger.debug(`Running step, ${step}. Command: ${commandToRun}`)
+      const runResult = await this.exec.run({
+        command: commandToRun,
+        input: input,
+        displayLogs: true,
+        currentWorkingDirectory: this.workingDirectory,
+      })
       this.logger.debug(`Step ${step} completed. step output: ${runResult.output}`)
 
       // For deploy step, run all commands without checking output

@@ -14,13 +14,13 @@ jobs:
     steps:
       # Workaround to trigger github actions on pull request that we push commits to. 
       # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs 
-      - uses: actions/create-github-app-token@7e473efe3cb98aa54f8d4bac15400b15fad77d94 # v2
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
         id: generate-token
         with:
           app-id: ${{ secrets.CREATE_GH_TOKEN_APP_ID }}
           private-key: ${{ secrets.CREATE_GH_TOKEN_APP_PRIVATE_KEY }}
 
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           # Checkout the PR branch
           ref: ${{ github.head_ref }}

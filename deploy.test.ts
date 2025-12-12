@@ -15,7 +15,6 @@ import { ConvenienceStep } from "./lib/steps/convenience.ts"
 import { GitCommit } from "./lib/types/git.ts"
 import { GitCommitFake } from "./lib/types/git.test.ts"
 import { Git } from "./lib/git.ts"
-import { Exec } from "./lib/exec.ts"
 
 describe("run the tool in different scenarios", () => {
   afterEach(() => {
@@ -161,6 +160,105 @@ describe("test github actions output", () => {
     const didExitEarly = setOutputMock.calls.filter((call) => call.args[0].key === "new_release_version").length === 0
 
     assertEquals(didExitEarly, false)
+  })
+
+  it("should set simulated merge type output when running in test mode with merge type", async () => {
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [
+        new GitCommitFake({
+          message: "feat: trigger a release",
+          sha: "trigger-release",
+        }),
+      ],
+      nextReleaseVersion: "1.0.0",
+      githubActionEventThatTriggeredTool: "pull_request",
+      simulatedMergeType: "merge",
+    })
+
+    const simulatedMergeOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_merge")
+    assertEquals(simulatedMergeOutput?.args[0], { key: "new_release_version_simulated_merge", value: "1.0.0" })
+
+    // Should not set outputs for other merge types
+    const simulatedSquashOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_squash")
+    assertEquals(simulatedSquashOutput, undefined)
+    const simulatedRebaseOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_rebase")
+    assertEquals(simulatedRebaseOutput, undefined)
+  })
+
+  it("should set simulated squash type output when running in test mode with squash type", async () => {
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [
+        new GitCommitFake({
+          message: "feat: trigger a release",
+          sha: "trigger-release",
+        }),
+      ],
+      nextReleaseVersion: "2.5.0",
+      githubActionEventThatTriggeredTool: "pull_request",
+      simulatedMergeType: "squash",
+    })
+
+    const simulatedSquashOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_squash")
+    assertEquals(simulatedSquashOutput?.args[0], { key: "new_release_version_simulated_squash", value: "2.5.0" })
+
+    // Should not set outputs for other merge types
+    const simulatedMergeOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_merge")
+    assertEquals(simulatedMergeOutput, undefined)
+    const simulatedRebaseOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_rebase")
+    assertEquals(simulatedRebaseOutput, undefined)
+  })
+
+  it("should set simulated rebase type output when running in test mode with rebase type", async () => {
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [
+        new GitCommitFake({
+          message: "feat: trigger a release",
+          sha: "trigger-release",
+        }),
+      ],
+      nextReleaseVersion: "3.0.0-beta.1",
+      githubActionEventThatTriggeredTool: "pull_request",
+      simulatedMergeType: "rebase",
+    })
+
+    const simulatedRebaseOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_rebase")
+    assertEquals(simulatedRebaseOutput?.args[0], { key: "new_release_version_simulated_rebase", value: "3.0.0-beta.1" })
+
+    // Should not set outputs for other merge types
+    const simulatedMergeOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_merge")
+    assertEquals(simulatedMergeOutput, undefined)
+    const simulatedSquashOutput = setOutputMock.calls.find((call) => call.args[0].key === "new_release_version_simulated_squash")
+    assertEquals(simulatedSquashOutput, undefined)
+  })
+
+  it("should not set simulated merge type output when not in test mode", async () => {
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [
+        new GitCommitFake({
+          message: "feat: trigger a release",
+          sha: "trigger-release",
+        }),
+      ],
+      nextReleaseVersion: "1.0.0",
+      githubActionEventThatTriggeredTool: "push",
+      simulatedMergeType: "merge",
+    })
+
+    // Should only have test_mode_on and new_release_version outputs, no simulated outputs
+    const simulatedOutputs = setOutputMock.calls.filter((call) => call.args[0].key.startsWith("new_release_version_simulated_"))
+    assertEquals(simulatedOutputs.length, 0)
+  })
+
+  it("should not set simulated merge type output when no release is created in test mode", async () => {
+    const { setOutputMock } = await setupTestEnvironmentAndRun({
+      commitsSinceLatestRelease: [],
+      nextReleaseVersion: undefined,
+      githubActionEventThatTriggeredTool: "pull_request",
+      simulatedMergeType: "merge",
+    })
+
+    const simulatedOutputs = setOutputMock.calls.filter((call) => call.args[0].key.startsWith("new_release_version_simulated_"))
+    assertEquals(simulatedOutputs.length, 0)
   })
 })
 
@@ -337,6 +435,7 @@ const setupTestEnvironmentAndRun = async ({
   currentBranchName,
   commitsCreatedBySimulatedMerge,
   gitCommitsCurrentBranch,
+  simulatedMergeType,
 }: {
   latestRelease?: GetLatestReleaseStepOutput | null
   latestReleaseAfterDeploy?: GetLatestReleaseStepOutput | null
@@ -347,6 +446,7 @@ const setupTestEnvironmentAndRun = async ({
   currentBranchName?: string
   commitsCreatedBySimulatedMerge?: GitCommit[]
   gitCommitsCurrentBranch?: GitCommit[]
+  simulatedMergeType?: "merge" | "rebase" | "squash"
 }) => {
   // Set some defaults.
   const pullRequestTargetBranch = pullRequestTargetBranchName || "main" // assume we are running a pull_request event that merges into main
@@ -432,8 +532,8 @@ const setupTestEnvironmentAndRun = async ({
       }
       : undefined
   })
-  stub(environment, "getSimulatedMergeType", async (): Promise<"merge" | "rebase" | "squash"> => {
-    return "merge"
+  stub(environment, "getSimulatedMergeTypes", async (): Promise<("merge" | "rebase" | "squash")[]> => {
+    return ["merge"]
   })
 
   stub(environment, "getBuild", () => {
@@ -464,7 +564,6 @@ const setupTestEnvironmentAndRun = async ({
   })
 
   const gitMock = mock<Git>()
-  const execMock = mock<Exec>()
 
   await run({
     convenienceStep,
@@ -473,8 +572,8 @@ const setupTestEnvironmentAndRun = async ({
     getCommitsSinceLatestReleaseStep,
     log: logMock,
     git: gitMock,
-    exec: execMock,
     environment,
+    simulatedMergeType: simulatedMergeType || "merge",
   })
 
   return {

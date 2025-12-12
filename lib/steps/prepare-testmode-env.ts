@@ -1,15 +1,14 @@
-import { Exec } from "../exec.ts"
 import { Git } from "../git.ts"
 import { Environment } from "../environment.ts"
 import { GitHubApi } from "../github-api.ts"
-import { logger } from "../log.ts"
 import { SimulateMerge } from "../simulate-merge.ts"
 import { GitCommit } from "../types/git.ts"
 
 export interface PrepareTestModeEnvStep {
-  prepareEnvironmentForTestMode({ owner, repo }: {
+  prepareEnvironmentForTestMode({ owner, repo, simulatedMergeType }: {
     owner: string
     repo: string
+    simulatedMergeType: "merge" | "rebase" | "squash"
   }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitCommit[] } | undefined>
 }
 
@@ -19,20 +18,17 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     private environment: Environment,
     private simulateMerge: SimulateMerge,
     private git: Git,
-    private exec: Exec,
   ) {}
 
-  prepareEnvironmentForTestMode = async ({ owner, repo }: {
+  prepareEnvironmentForTestMode = async ({ owner, repo, simulatedMergeType }: {
     owner: string
     repo: string
+    simulatedMergeType: "merge" | "rebase" | "squash"
   }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitCommit[] } | undefined> => {
     const testModeContext = this.environment.isRunningInPullRequest()
     const runInTestMode = testModeContext !== undefined
 
     if (!runInTestMode) return undefined
-
-    const simulateMergeType = await this.environment.getSimulatedMergeType()
-    logger.debug(`Simulated merge type: ${simulateMergeType}`)
 
     const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingPrNumber: testModeContext.prNumber })
     const commitsCreatedDuringSimulatedMerges: GitCommit[] = []
@@ -40,10 +36,10 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
 
     for await (const pr of pullRequestStack) {
       // make sure that a local branch exists for the PR branches so we can check simulate the merge by running merge commands between the branches.
-      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.sourceBranchName })
-      await this.git.createLocalBranchFromRemote({ exec: this.exec, branch: pr.targetBranchName })
+      await this.git.createLocalBranchFromRemote({ branch: pr.sourceBranchName })
+      await this.git.createLocalBranchFromRemote({ branch: pr.targetBranchName })
 
-      const commitsCreated = await this.simulateMerge.performSimulation(simulateMergeType, {
+      const commitsCreated = await this.simulateMerge.performSimulation(simulatedMergeType, {
         baseBranch: pr.sourceBranchName,
         targetBranch: pr.targetBranchName,
         pullRequestNumber: pr.prNumber,

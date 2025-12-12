@@ -12,7 +12,7 @@ import { mock, when } from "./mock/mock.ts"
 
 let git: gitModule.Git
 Deno.test.beforeEach(() => {
-  git = gitModule.impl()
+  git = new gitModule.GitImpl(exec, Deno.cwd())
 })
 
 describe("snapshot test all of the merge options", () => {
@@ -41,7 +41,7 @@ describe("snapshot test all of the merge options", () => {
 
       return { exitCode: 0, stdout: "success", output: undefined }
     })
-    simulateMerge = new SimulateMergeImpl(git, exec)
+    simulateMerge = new SimulateMergeImpl(git)
   })
 
   afterEach(() => {
@@ -110,7 +110,7 @@ describe("unit tests for commits returned by simulation methods", () => {
     })
 
     git = mock()
-    simulateMerge = new SimulateMergeImpl(git, exec)
+    simulateMerge = new SimulateMergeImpl(git)
   }
 
   // Helper to create a mock commit
@@ -144,7 +144,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getLatestCommitsSince was called with the existing commit as reference
       assertSpyCall(getLatestCommitsSinceStub, 0, {
-        args: [{ exec, commit: existingCommit }],
+        args: [{ commit: existingCommit }],
       })
     })
 
@@ -170,7 +170,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: { ref: "main" } }],
+        args: [{ branch: { ref: "main" } }],
       })
     })
   })
@@ -198,7 +198,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getLatestCommitsSince was called with the existing commit as reference
       assertSpyCall(getLatestCommitsSinceStub, 0, {
-        args: [{ exec, commit: existingCommit }],
+        args: [{ commit: existingCommit }],
       })
     })
 
@@ -223,7 +223,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: { ref: "main" } }],
+        args: [{ branch: { ref: "main" } }],
       })
     })
   })
@@ -252,7 +252,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getLatestCommitsSince was called with the existing commit as reference
       assertSpyCall(getLatestCommitsSinceStub, 0, {
-        args: [{ exec, commit: existingCommit }],
+        args: [{ commit: existingCommit }],
       })
     })
 
@@ -278,7 +278,7 @@ describe("unit tests for commits returned by simulation methods", () => {
 
       // Verify getCommits was called instead of getLatestCommitsSince
       assertSpyCall(getCommitsStub, 0, {
-        args: [{ exec, branch: { ref: "main" } }],
+        args: [{ branch: { ref: "main" } }],
       })
     })
   })

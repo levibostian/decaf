@@ -329,11 +329,18 @@ Different features require different permission levels:
   1. If your deployment script pushes commits, creates tags, or creates GitHub Releases
   2. If you want the automatic simulated merge type detection feature to work (only needed if you don't provide the `simulated_merge_type` input)
 
-# Outputs 
+# GitHub Actions Outputs 
 
-This tool provides you with outputs to help you understand what happened during the deployment process.
+If you use the decaf GitHub Action, you can access the following outputs after the action runs.
 
-* `new_release_version` - If a new release was created, this is the version of that release.
+* `new_release_version` - If a new release was created, this is the version of that release. This value is set if in test mode or if a real deployment was done.
+
+**Note:** In version 0.7.0, a new feature was launched to run multiple simulated deployments in test mode. In this case, if multiple simulated merges were run, this output will be the version from the last simulated merge that was run. If your action/repository is setup to only run one merge type, this value will work great for you. Otherwise, it's suggested to use one of the alternative outputs: `new_release_version_merge`, `new_release_version_squash`, or `new_release_version_rebase`.
+
+* `new_release_version_simulated_merge` - In test mode, if a simulated merge was run and created a merge commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
+* `new_release_version_simulated_squash` - In test mode, if a simulated merge was run and created a squash commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
+* `new_release_version_simulated_rebase` - In test mode, if a simulated merge was run and created a rebase commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
+
 * `test_mode_on` - If test mode was on when the tool ran. Value is string values "true" or "false".
 
 # Configuration 
@@ -348,27 +355,17 @@ See [get next release version](steps/get-next-release/README.md) for more inform
 
 Test mode allows you to test your deployment in a pull request before you merge. It will tell you what will happen if you do decide to merge. 
 
-In order to do this, decaf needs to know what type of merge you plan on doing (merge, squash, rebase). By default, decaf will call the GitHub API to see what merge types are enabled in the repository settings. This is a great behavior, if your team only uses one type of merge. If your team uses multiple types of merges, you can run the tool multiple times with different `simulated_merge_type` config settings to see what would happen for each type of merge. Here is an example: 
+In order to do this, decaf needs to know what type of merge you plan on doing (merge, squash, rebase). By default, decaf will call the GitHub API to see what merge types are enabled in the repository settings and run test mode for all of the enabled merge types. If decaf can't authenticate with the GitHub API, it will default to simulating all 3 merge types.
+
+If you would rather explicitly tell decaf what type of merge to simulate, you can provide the `simulated_merge_type` config setting. 
 
 ```yml
     steps:
-    # You must run checkout before running the tool each time. It resets the git history for the tool to run accurately.
     - uses: actions/checkout
     - uses: levibostian/decaf
       with: 
-        simulated_merge_type: 'merge'
+        simulated_merge_type: 'merge, squash' # provide single values or multiple values separated by commas
         # ... Put rest of your config here. 
-    - uses: actions/checkout
-    - uses: levibostian/decaf
-      with: 
-        simulated_merge_type: 'squash'
-        # ... Put rest of your config here. 
-
-    - uses: actions/checkout
-    - uses: levibostian/decaf
-      with: 
-        simulated_merge_type: 'rebase'
-        # ... Put rest of your config here.  
 ```
 
 ### Performance optimization for large repositories

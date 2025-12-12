@@ -13,57 +13,17 @@ jobs:
       contents: write # required to create git tags and releases
       pull-requests: write # allow commenting on PRs
     steps:
-    # Checkout the repo and make sure to get all commits for all branches. 
-    # This is required by the deploy script because we try to merge the deployment branch into 'latest' branch and 
-    # you will get "unrelated histories" error if you don't have all commits on both branches. 
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
-      with:
-        fetch-depth: 0
-
-    - name: Run deployment, merge method
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+    
+    - name: Run decaf to perform deployment
       uses: ./
       env:
         # required to use 'gh' CLI in my step scripts. 
         GH_TOKEN: ${{ github.token }}
       with: 
-        simulated_merge_type: 'merge'
+        simulated_merge_type: 'merge, squash, rebase' # circleci tests the default behavior that calls the github api. Test all types here. 
         compile_binary: 'true'
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
         get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits
         deploy: './steps/deploy.ts'
-
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
-
-    - name: Run deployment, squash method
-      if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
-      uses: ./      
-      env:
-        # required to use 'gh' CLI in my step scripts. 
-        GH_TOKEN: ${{ github.token }}
-      with: 
-        # purposefully do not pass in a simulated_merge_type here to test that we use the github api 
-        # to get the squash merge type. 
-        # simulated_merge_type: 'squash'
-        compile_binary: 'true'
-        github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits
-        deploy: './steps/deploy.ts'
-
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
-    
-    - name: Run deployment, rebase method
-      if: github.event_name == 'pull_request' # For real deployments, we only need to run the action once. But for PRs, run all of them. 
-      uses: ./      
-      env:
-        # required to use 'gh' CLI in my step scripts. 
-        GH_TOKEN: ${{ github.token }}
-      with: 
-        simulated_merge_type: 'rebase'
-        compile_binary: 'true'
-        github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: './steps/get-latest-release.ts'
-        get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits        
-        deploy: './steps/deploy.ts'
-

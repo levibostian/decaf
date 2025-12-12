@@ -6,7 +6,6 @@ import { SimulateMerge } from "../simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./prepare-testmode-env.ts"
 import { mock, when } from "../mock/mock.ts"
 import { Git } from "../git.ts"
-import { Exec } from "../exec.ts"
 import { GitCommitFake } from "../types/git.test.ts"
 
 describe("prepareEnvironmentForTestMode", () => {
@@ -16,21 +15,18 @@ describe("prepareEnvironmentForTestMode", () => {
   let gitHubApi: GitHubApi
   let simulateMerge: SimulateMerge
   let git: Git
-  let exec: Exec
 
   beforeEach(() => {
     environment = mock()
     gitHubApi = mock()
     simulateMerge = mock()
     git = mock()
-    exec = mock()
 
     step = new PrepareTestModeEnvStepImpl(
       gitHubApi,
       environment,
       simulateMerge,
       git,
-      exec,
     )
   })
 
@@ -40,6 +36,7 @@ describe("prepareEnvironmentForTestMode", () => {
     const result = await step.prepareEnvironmentForTestMode({
       owner: "owner",
       repo: "repo",
+      simulatedMergeType: "merge",
     })
 
     assertEquals(result, undefined)
@@ -49,7 +46,6 @@ describe("prepareEnvironmentForTestMode", () => {
     const givenMergeType: "merge" | "squash" | "rebase" = "merge"
 
     when(git, "createLocalBranchFromRemote", async () => {})
-    when(environment, "getSimulatedMergeType", async () => givenMergeType)
     when(
       environment,
       "isRunningInPullRequest",
@@ -105,6 +101,7 @@ describe("prepareEnvironmentForTestMode", () => {
     const result = await step.prepareEnvironmentForTestMode({
       owner: "owner",
       repo: "repo",
+      simulatedMergeType: givenMergeType,
     })
 
     assertEquals(performSimulatedMergeMock.calls.length, 2)

@@ -7,7 +7,6 @@ import { GitHubCommit } from "./lib/github-api.ts"
 import { StepRunner } from "./lib/step-runner.ts"
 import { ConvenienceStep } from "./lib/steps/convenience.ts"
 import { GetLatestReleaseStepOutput } from "./lib/steps/types/output.ts"
-import { Exec } from "./lib/exec.ts"
 import { Git } from "./lib/git.ts"
 
 export const run = async ({
@@ -17,8 +16,8 @@ export const run = async ({
   getCommitsSinceLatestReleaseStep,
   environment,
   git,
-  exec,
   log,
+  simulatedMergeType,
 }: {
   convenienceStep: ConvenienceStep
   stepRunner: StepRunner
@@ -26,8 +25,8 @@ export const run = async ({
   getCommitsSinceLatestReleaseStep: GetCommitsSinceLatestReleaseStep
   environment: Environment
   git: Git
-  exec: Exec
   log: Logger
+  simulatedMergeType: "merge" | "rebase" | "squash"
 }): Promise<
   { nextReleaseVersion: string | null; commitsSinceLastRelease: GitHubCommit[]; latestRelease: GetLatestReleaseStepOutput | null } | null
 > => {
@@ -65,6 +64,7 @@ export const run = async ({
     const prepareEnvironmentForTestModeResults = await prepareEnvironmentForTestMode.prepareEnvironmentForTestMode({
       owner,
       repo,
+      simulatedMergeType,
     })
 
     const pullRequestBranchBeforeSimulatedMerges = currentBranch
@@ -183,7 +183,7 @@ export const run = async ({
   )
   // Re-run convenience commands to ensure any git changes done in deployment commands are included. This will
   // run a git fetch again and parse commits all over again.
-  await git.fetch({ exec })
+  await git.fetch()
 
   const {
     gitCommitsAllLocalBranches: gitCommitsAllLocalBranchesAfterDeploy,
@@ -234,6 +234,11 @@ export const run = async ({
   )
 
   await environment.setOutput({ key: "new_release_version", value: nextReleaseVersion })
+
+  // In test mode, also set the merge-type-specific output
+  if (runInTestMode) {
+    await environment.setOutput({ key: `new_release_version_simulated_${simulatedMergeType}`, value: nextReleaseVersion })
+  }
 
   return { nextReleaseVersion, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
 }
