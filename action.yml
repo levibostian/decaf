@@ -64,7 +64,7 @@ runs:
       uses: denoland/setup-deno@v1
       with:
         # pinning version until bug fixed: https://github.com/denoland/deno/issues/31556
-        deno-version: v2.5.6
+        deno-version: 2.6.0
 
     - name: Compile binary
       if: ${{ inputs.compile_binary == 'true' }}
