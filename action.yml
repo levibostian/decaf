@@ -36,6 +36,12 @@ inputs:
   commit_limit:
     description: 'Maximum number of commits to retrieve and parse for each branch. This helps improve performance for repositories with many commits. Default is 500.'
     default: ''
+  pull_request_comment_template_file:
+    description: 'Path to a file (relative to the repository root) containing the template for the pull request comment. If both this and pull_request_comment_template are provided, this takes precedence.'
+    default: ''
+  pull_request_comment_template:
+    description: 'Template string for the pull request comment. Used if pull_request_comment_template_file is not provided.'
+    default: ''
 
 outputs:
   new_release_version:
@@ -96,7 +102,9 @@ runs:
           --get_next_release_version "${{ inputs.get_next_release_version }}" \
           --simulated_merge_type "${{ inputs.simulated_merge_type }}" \
           --branch_filters "${{ inputs.branch_filters }}" \
-          --commit_limit "${{ inputs.commit_limit }}"
+          --commit_limit "${{ inputs.commit_limit }}" \
+          --pull_request_comment_template_file "${{ inputs.pull_request_comment_template_file }}" \
+          --pull_request_comment_template "${{ inputs.pull_request_comment_template }}"
       shell: bash
 
 

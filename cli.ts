@@ -13,6 +13,8 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       "debug",
       "branch_filters",
       "commit_limit",
+      "pull_request_comment_template_file",
+      "pull_request_comment_template",
     ],
     // collect: allows repeatable flags (e.g., --deploy staging --deploy prod) -> returns array
     collect: [
@@ -33,6 +35,8 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
       debug: "false",
       branch_filters: "",
       commit_limit: "",
+      pull_request_comment_template_file: "",
+      pull_request_comment_template: "",
     },
   })
 
@@ -49,4 +53,6 @@ export const processCommandLineArgs = (cmdArgs: string[]) => {
   Deno.env.set("INPUT_DEBUG", args.debug)
   Deno.env.set("INPUT_BRANCH_FILTERS", args.branch_filters)
   Deno.env.set("INPUT_COMMIT_LIMIT", args.commit_limit)
+  Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE", args.pull_request_comment_template_file)
+  Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE", args.pull_request_comment_template)
 }
