@@ -2,7 +2,6 @@
   "imports": {
     "@david/service-store": "jsr:@david/service-store@^0.3.0",
     "@david/dax": "jsr:@david/dax@^0.44.0",
-    "@deno-library/template": "jsr:@deno-library/template@^0.2.1",
     "@std/cli": "jsr:@std/cli@^1.0.20",
     "@std/semver": "jsr:@std/semver@^1.0.4",
     "@std/testing": "jsr:@std/testing@^1.0.10",
@@ -11,7 +10,8 @@
     "cathy": "npm:cathy@^1.4.0",
     "env-ci": "npm:env-ci@^11.2.0",
     "shell-quote": "npm:shell-quote@^1.8.2",
-    "globrex": "npm:globrex@^0.1.2"
+    "globrex": "npm:globrex@^0.1.2",
+    "ventojs": "npm:ventojs@^2.2.0"
   },
   "tasks": {
     "test": "deno test --allow-all --clean --junit-path reports/junit.xml --coverage=reports/coverage/",
