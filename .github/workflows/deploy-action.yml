@@ -21,7 +21,6 @@ jobs:
         # required to use 'gh' CLI in my step scripts. 
         GH_TOKEN: ${{ github.token }}
       with: 
-        simulated_merge_type: 'merge, squash, rebase' # circleci tests the default behavior that calls the github api. Test all types here. 
         compile_binary: 'true'
         github_token: ${{ secrets.github_token }}
         get_latest_release_current_branch: './steps/get-latest-release.ts'
