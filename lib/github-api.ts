@@ -357,17 +357,21 @@ const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, c
  * calls GET /repos/{owner}/{repo} and view allow_merge_commit, allow_squash_merge, allow_rebase_merge
  * to determine if merge types are allowed on the repo.
  */
-export const getRepoMergeTypes = async ({ owner, repo }: { owner: string; repo: string }) => {
+export const getRepoMergeTypes = async ({ owner, repo }: { owner: string; repo: string }): Promise<{
+  allowMergeCommit: boolean
+  allowSquashMerge: boolean
+  allowRebaseMerge: boolean
+}> => {
   const response = await githubApiRequest<{
-    allow_merge_commit: boolean
-    allow_squash_merge: boolean
-    allow_rebase_merge: boolean
+    allow_merge_commit?: boolean
+    allow_squash_merge?: boolean
+    allow_rebase_merge?: boolean
   }>(`https://api.github.com/repos/${owner}/${repo}`)
 
   return {
-    allowMergeCommit: response.body.allow_merge_commit,
-    allowSquashMerge: response.body.allow_squash_merge,
-    allowRebaseMerge: response.body.allow_rebase_merge,
+    allowMergeCommit: response.body.allow_merge_commit || false,
+    allowSquashMerge: response.body.allow_squash_merge || false,
+    allowRebaseMerge: response.body.allow_rebase_merge || false,
   }
 }
 

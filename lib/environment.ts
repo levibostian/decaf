@@ -110,16 +110,19 @@ export class EnvironmentImpl implements Environment {
         enabledTypes.push("rebase")
       }
 
-      // GitHub forces you to have at least one selected, so this should never be empty
-      this.simulatedMergeTypeCache = enabledTypes
-      return enabledTypes
+      // If we have at least one valid type, use them.
+      // github api will return zero results if the auth token doesn't have "contents: write" access.
+      if (enabledTypes.length > 0) {
+        this.simulatedMergeTypeCache = enabledTypes
+        return enabledTypes
+      }
     } catch (error) {
       log.debug(`Failed to get repository merge types from GitHub API: ${error}`)
-
-      // use a default of all types if we can't get the info from the API.
-      this.simulatedMergeTypeCache = ["merge", "squash", "rebase"]
-      return ["merge", "squash", "rebase"]
     }
+
+    // use a default of all types if we can't get the info from the API.
+    this.simulatedMergeTypeCache = ["merge", "squash", "rebase"]
+    return ["merge", "squash", "rebase"]
   }
 
   getEventThatTriggeredThisRun(): "push" | "pull_request" | "other" {
