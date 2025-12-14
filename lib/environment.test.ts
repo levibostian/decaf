@@ -576,3 +576,123 @@ Deno.test("getGitConfigInput - expect get from command line argument", async () 
   assertEquals(environment.getGitConfigInput()?.name, "Test User")
   assertEquals(environment.getGitConfigInput()?.email, "test@example.com")
 })
+
+Deno.test("setOutput - should write output to file when INPUT_OUTPUT_FILE is set", async () => {
+  const tempFile = await Deno.makeTempFile({ prefix: "decaf-output-test-" })
+  const githubOutputFile = await Deno.makeTempFile({ prefix: "github-output-" })
+
+  try {
+    Deno.env.set("INPUT_OUTPUT_FILE", tempFile)
+    Deno.env.set("GITHUB_OUTPUT", githubOutputFile)
+
+    await environment.setOutput({ key: "test_key", value: "test_value" })
+    await environment.setOutput({ key: "another_key", value: "another_value" })
+
+    const fileContents = await Deno.readTextFile(tempFile)
+    const parsed = JSON.parse(fileContents)
+
+    assertEquals(parsed, {
+      test_key: "test_value",
+      another_key: "another_value",
+    })
+  } finally {
+    await Deno.remove(tempFile)
+    await Deno.remove(githubOutputFile)
+    Deno.env.delete("INPUT_OUTPUT_FILE")
+    Deno.env.delete("GITHUB_OUTPUT")
+  }
+})
+
+Deno.test("setOutput - should not write output to file when INPUT_OUTPUT_FILE is not set", async () => {
+  const githubOutputFile = await Deno.makeTempFile({ prefix: "github-output-" })
+
+  try {
+    Deno.env.delete("INPUT_OUTPUT_FILE")
+    Deno.env.set("GITHUB_OUTPUT", githubOutputFile)
+
+    // This should not throw an error, just skip writing
+    await environment.setOutput({ key: "test_key", value: "test_value" })
+
+    // No file should be created, so this test passes if no error is thrown
+  } finally {
+    await Deno.remove(githubOutputFile)
+    Deno.env.delete("GITHUB_OUTPUT")
+  }
+})
+
+Deno.test("setOutput - should not write output to file when INPUT_OUTPUT_FILE is empty string", async () => {
+  const githubOutputFile = await Deno.makeTempFile({ prefix: "github-output-" })
+
+  try {
+    Deno.env.set("INPUT_OUTPUT_FILE", "")
+    Deno.env.set("GITHUB_OUTPUT", githubOutputFile)
+
+    // This should not throw an error, just skip writing
+    await environment.setOutput({ key: "test_key", value: "test_value" })
+
+    // No file should be created, so this test passes if no error is thrown
+  } finally {
+    await Deno.remove(githubOutputFile)
+    Deno.env.delete("INPUT_OUTPUT_FILE")
+    Deno.env.delete("GITHUB_OUTPUT")
+  }
+})
+
+Deno.test("setOutput - should accumulate multiple outputs in same file", async () => {
+  const tempFile = await Deno.makeTempFile({ prefix: "decaf-output-test-" })
+  const githubOutputFile = await Deno.makeTempFile({ prefix: "github-output-" })
+
+  try {
+    Deno.env.set("INPUT_OUTPUT_FILE", tempFile)
+    Deno.env.set("GITHUB_OUTPUT", githubOutputFile)
+
+    await environment.setOutput({ key: "first", value: "1" })
+    await environment.setOutput({ key: "second", value: "2" })
+    await environment.setOutput({ key: "third", value: "3" })
+
+    const fileContents = await Deno.readTextFile(tempFile)
+    const parsed = JSON.parse(fileContents)
+
+    assertEquals(parsed, {
+      first: "1",
+      second: "2",
+      third: "3",
+    })
+  } finally {
+    await Deno.remove(tempFile)
+    await Deno.remove(githubOutputFile)
+    Deno.env.delete("INPUT_OUTPUT_FILE")
+    Deno.env.delete("GITHUB_OUTPUT")
+  }
+})
+
+Deno.test("setOutput - should overwrite existing key in file", async () => {
+  const tempFile = await Deno.makeTempFile({ prefix: "decaf-output-test-" })
+  const githubOutputFile = await Deno.makeTempFile({ prefix: "github-output-" })
+
+  try {
+    // Pre-populate the file with an existing key
+    const existingData = { test_key: "old_value", other_key: "keep_this" }
+    await Deno.writeTextFile(tempFile, JSON.stringify(existingData))
+
+    Deno.env.set("INPUT_OUTPUT_FILE", tempFile)
+    Deno.env.set("GITHUB_OUTPUT", githubOutputFile)
+
+    // Overwrite the existing key
+    await environment.setOutput({ key: "test_key", value: "new_value" })
+
+    const fileContents = await Deno.readTextFile(tempFile)
+    const parsed = JSON.parse(fileContents)
+
+    // Should have updated the test_key but kept other_key
+    assertEquals(parsed, {
+      test_key: "new_value",
+      other_key: "keep_this",
+    })
+  } finally {
+    await Deno.remove(tempFile)
+    await Deno.remove(githubOutputFile)
+    Deno.env.delete("INPUT_OUTPUT_FILE")
+    Deno.env.delete("GITHUB_OUTPUT")
+  }
+})

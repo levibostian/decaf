@@ -37,7 +37,12 @@ jobs:
               --get_latest_release_current_branch "./steps/get-latest-release.ts" \
               --get_next_release_version "deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits" \
               --make_pull_request_comment false \
-              --debug false
+              --output_file "/tmp/decaf-output.json" \
+              --debug true 
+
+      - run: 
+          name: Show Output File
+          command: cat /tmp/decaf-output.json
 
 workflows:
   version: 2
