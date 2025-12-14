@@ -355,19 +355,41 @@ Deno.test("getSimulatedMergeTypes - should return cached value on subsequent cal
   assertEquals(await environment.getSimulatedMergeTypes(), ["merge"])
 })
 
-Deno.test("getSimulatedMergeTypes - should return all merge types when INPUT_SIMULATED_MERGE_TYPE is not set and defaults are used", async () => {
+Deno.test("getSimulatedMergeTypes - should return all merge types when INPUT_SIMULATED_MERGE_TYPE is not set and API fails", async () => {
   // Don't set INPUT_SIMULATED_MERGE_TYPE
   Deno.env.delete("INPUT_SIMULATED_MERGE_TYPE")
 
   let apiCalled = false
   when(githubApiMock, "getRepoMergeTypes", async (_args) => {
     apiCalled = true
-    throw new Error("API should not be called when defaults are used")
+    throw new Error("API error")
   })
 
   const result = await environment.getSimulatedMergeTypes()
 
   // When no input is provided and API fails/not available, should default to all types
+  assertEquals(result, ["merge", "squash", "rebase"])
+  assertEquals(apiCalled, true)
+})
+
+Deno.test("getSimulatedMergeTypes - should return all merge types when API returns zero enabled types", async () => {
+  // Don't set INPUT_SIMULATED_MERGE_TYPE
+  Deno.env.delete("INPUT_SIMULATED_MERGE_TYPE")
+
+  let apiCalled = false
+  when(githubApiMock, "getRepoMergeTypes", async (_args) => {
+    apiCalled = true
+    // if github token is valid but it has "content: read" only permission, the API will return zero enabled types.
+    return {
+      allowMergeCommit: false,
+      allowSquashMerge: false,
+      allowRebaseMerge: false,
+    }
+  })
+
+  const result = await environment.getSimulatedMergeTypes()
+
+  // When API returns zero enabled types, should default to all types
   assertEquals(result, ["merge", "squash", "rebase"])
   assertEquals(apiCalled, true)
 })
