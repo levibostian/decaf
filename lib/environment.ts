@@ -293,11 +293,31 @@ export class EnvironmentImpl implements Environment {
     const nameOfOutputFile = Deno.env.get("INPUT_OUTPUT_FILE")
     if (!nameOfOutputFile || nameOfOutputFile.trim() === "") return
 
-    this.outputFileCache[key] = value
+    try {
+      // Read existing file if it exists
+      let existingData: Record<string, string> = {}
+      try {
+        const fileContents = await Deno.readTextFile(nameOfOutputFile)
+        existingData = JSON.parse(fileContents)
+      } catch (_error) {
+        // File doesn't exist or is invalid JSON, start with empty object
+      }
 
-    await Deno.writeFile(
-      nameOfOutputFile,
-      new TextEncoder().encode(JSON.stringify(this.outputFileCache, null, 2)),
-    )
+      // Merge new key-value with existing data
+      existingData[key] = value
+
+      // Update in-memory cache as well
+      this.outputFileCache[key] = value
+
+      // Write merged data back to file
+      await Deno.writeFile(
+        nameOfOutputFile,
+        new TextEncoder().encode(JSON.stringify(existingData, null, 2)),
+      )
+      log.debug(`Output written to file: ${nameOfOutputFile}`)
+    } catch (error) {
+      log.error(`Failed to write output to file ${nameOfOutputFile}: ${error}`)
+      throw error
+    }
   }
 }

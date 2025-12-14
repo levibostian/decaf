@@ -329,19 +329,48 @@ Different features require different permission levels:
   1. If your deployment script pushes commits, creates tags, or creates GitHub Releases
   2. If you want the automatic simulated merge type detection feature to work (only needed if you don't provide the `simulated_merge_type` input)
 
-# GitHub Actions Outputs 
+# Outputs
 
-If you use the decaf GitHub Action, you can access the following outputs after the action runs.
+After the tool runs, you can access data about what happened during the deployment. The tool provides the following output keys:
 
-* `new_release_version` - If a new release was created, this is the version of that release. This value is set if in test mode or if a real deployment was done.
+| Key | Value | When Set |
+|-----|-------|----------|
+| `test_mode_on` | `"true"` or `"false"` | Always set. Indicates if the tool ran in test mode or real deployment mode. |
+| `new_release_version` | Version string (e.g. `"1.2.4"`) or not set | Set only if a new release was created. Contains the version number of the release. |
+| `new_release_version_simulated_merge` | Version string (e.g. `"1.2.4"`) or not set | Set only in test mode when simulating a merge commit. Contains the version that would be released if you merge. |
+| `new_release_version_simulated_squash` | Version string (e.g. `"1.2.4"`) or not set | Set only in test mode when simulating a squash commit. Contains the version that would be released if you squash and merge. |
+| `new_release_version_simulated_rebase` | Version string (e.g. `"1.2.4"`) or not set | Set only in test mode when simulating a rebase commit. Contains the version that would be released if you rebase and merge. |
 
-**Note:** In version 0.7.0, a new feature was launched to run multiple simulated deployments in test mode. In this case, if multiple simulated merges were run, this output will be the version from the last simulated merge that was run. If your action/repository is setup to only run one merge type, this value will work great for you. Otherwise, it's suggested to use one of the alternative outputs: `new_release_version_merge`, `new_release_version_squash`, or `new_release_version_rebase`.
+**Accessing outputs in GitHub Actions:**
+```yaml
+- uses: levibostian/decaf@<version>
+  id: deployment
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    # ... rest of your config
 
-* `new_release_version_simulated_merge` - In test mode, if a simulated merge was run and created a merge commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
-* `new_release_version_simulated_squash` - In test mode, if a simulated merge was run and created a squash commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
-* `new_release_version_simulated_rebase` - In test mode, if a simulated merge was run and created a rebase commit, this is the version of that release. This value is set only in test mode. Use `new_release_version` for real deployments.
+- name: Use outputs
+  run: |
+    echo "New version: ${{ steps.deployment.outputs.new_release_version }}"
+    echo "Test mode: ${{ steps.deployment.outputs.test_mode_on }}"
+```
 
-* `test_mode_on` - If test mode was on when the tool ran. Value is string values "true" or "false".
+**Accessing outputs in other CI systems (CircleCI, Jenkins, GitLab CI, etc.):**
+
+Add the `output_file` parameter to write outputs to a JSON file:
+```bash
+./decaf \
+  --github_token "$GH_TOKEN" \
+  --deploy "./steps/deploy.ts" \
+  --get_latest_release_current_branch "./steps/get-latest-release.ts" \
+  --get_next_release_version "./steps/get-next-release.ts" \
+  --output_file "./deployment-output.json"
+
+# Read outputs from the JSON file
+NEW_VERSION=$(cat deployment-output.json | jq -r '.new_release_version')
+echo "Deployed version: $NEW_VERSION"
+```
+
 
 # Configuration 
 
