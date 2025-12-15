@@ -8,6 +8,7 @@ import { StepRunnerImpl } from "./lib/step-runner.ts"
 import { ConvenienceStepImpl } from "./lib/steps/convenience.ts"
 import { processCommandLineArgs } from "./cli.ts"
 import * as di from "./lib/di.ts"
+import { postPullRequestComment, pullRequestCommentTemplate, PullRequestCommentTemplateData } from "./lib/pull-request-comment.ts"
 
 // put all the logic in a main function so that the e2e tests can run the
 // function and be able to have a clean environment for each test. If all this code was defined
@@ -31,11 +32,25 @@ export async function main() {
 
   const { owner, repo } = environment.getRepository()
 
+  // Get the PR comment template (user-provided or default)
+  const prCommentTemplateString = await environment.getPullRequestCommentTemplate() ?? pullRequestCommentTemplate
+
+  logger.debug(`Using pull request comment template:\n${prCommentTemplateString}`)
+
+  // Initialize the template data structure that will be passed to the template
+  const pullRequestCommentTemplateData: PullRequestCommentTemplateData = {
+    simulatedMergeTypes,
+    results: [],
+    build: buildInfo,
+    pullRequest: pullRequestInfo!,
+    repository: { owner, repo },
+  }
+
+  // Post the initial PR comment
   if (shouldPostStatusUpdatesOnPullRequest) {
-    await githubApi.postStatusUpdateOnPullRequest({
-      message: `## decaf
-Running deployments in test mode. Results will appear below. 
-If this pull request and all of it's parent pull requests are merged using the...`,
+    await postPullRequestComment({
+      templateData: pullRequestCommentTemplateData,
+      templateString: prCommentTemplateString,
       owner,
       repo,
       prNumber: pullRequestInfo.prNumber,
@@ -78,25 +93,20 @@ If this pull request and all of it's parent pull requests are merged using the..
         environment,
         simulatedMergeType,
       })
-      const newReleaseVersion = runResult?.nextReleaseVersion
+
+      // Add the successful result to the template data
+      pullRequestCommentTemplateData.results.push({
+        mergeType: simulatedMergeType,
+        status: "success",
+        nextReleaseVersion: runResult?.nextReleaseVersion,
+        latestRelease: runResult?.latestRelease,
+        commitsSinceLastRelease: runResult?.commitsSinceLastRelease,
+      })
 
       if (shouldPostStatusUpdatesOnPullRequest) {
-        let message = newReleaseVersion
-          ? `...🟩 **${simulatedMergeType}** 🟩 merge method... 🚢 The next version of the project will be: **${newReleaseVersion}**`
-          : `...🟩 **${simulatedMergeType}** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.`
-
-        message += `\n\n<details>
-  <summary>Learn more</summary>
-  <br>
-  Latest release: ${runResult?.latestRelease?.versionName || "none, this is the first release."}<br>
-  Commit of latest release: ${runResult?.latestRelease?.commitSha || "none, this is the first release."}<br>
-  <br>
-  Commits since last release:<br>
-  - ${runResult?.commitsSinceLastRelease.map((commit) => commit.message).join("<br>- ") || "none"}    
-  </details>`
-
-        await githubApi.postStatusUpdateOnPullRequest({
-          message,
+        await postPullRequestComment({
+          templateData: pullRequestCommentTemplateData,
+          templateString: prCommentTemplateString,
           owner,
           repo,
           prNumber: pullRequestInfo.prNumber,
@@ -105,16 +115,16 @@ If this pull request and all of it's parent pull requests are merged using the..
         })
       }
     } catch (error) {
-      if (shouldPostStatusUpdatesOnPullRequest) {
-        let message = `...🟩 **${simulatedMergeType}** 🟩 merge method... ⚠️ There was an error during deployment run.`
-        if (buildInfo.buildUrl) {
-          message += ` [See logs to learn more and fix the issue](${buildInfo.buildUrl}).`
-        } else {
-          message += ` See CI server logs to learn more and fix the issue.`
-        }
+      // Add the error result to the template data
+      pullRequestCommentTemplateData.results.push({
+        mergeType: simulatedMergeType,
+        status: "error",
+      })
 
-        await githubApi.postStatusUpdateOnPullRequest({
-          message,
+      if (shouldPostStatusUpdatesOnPullRequest) {
+        await postPullRequestComment({
+          templateData: pullRequestCommentTemplateData,
+          templateString: prCommentTemplateString,
           owner,
           repo,
           prNumber: pullRequestInfo.prNumber,

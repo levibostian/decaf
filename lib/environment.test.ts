@@ -808,4 +808,3 @@ Deno.test("getPullRequestCommentTemplate - should handle empty file", async () =
     Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
   }
 })
-

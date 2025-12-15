@@ -397,6 +397,31 @@ If you would rather explicitly tell decaf what type of merge to simulate, you ca
         # ... Put rest of your config here. 
 ```
 
+### Customize pull request comments
+
+By default, the tool posts a comment to pull requests showing deployment preview information. You can customize this comment using your own template.
+
+**Example:**
+```yaml
+- uses: levibostian/decaf@<version>
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    pull_request_comment_template: |
+      ## Deployment Preview
+      {{ if (results.length > 0 && results[results.length - 1].nextReleaseVersion) }}
+      ✅ Will deploy version `{{ results[results.length - 1].nextReleaseVersion }}`
+      {{ else }}
+      ⚠️ No deployment triggered
+      {{ /if }}
+```
+
+Templates use [VentoJS](https://vento.js.org/) syntax and have access to deployment data including `results` (array of simulation results), `pullRequest` (PR info), `repository` (repo info), and `build` (CI info). See [the template data interface](lib/pull-request-comment.ts) for all available variables.
+
+**Disable comments:**
+```yaml
+make_pull_request_comment: false
+```
+
 ### Performance optimization for large repositories
 
 If you have a large repository (many branches and/or commits), the tool may run slowly with the default configuration. Here are optional settings to improve performance:
