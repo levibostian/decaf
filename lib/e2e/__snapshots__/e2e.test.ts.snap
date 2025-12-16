@@ -54,7 +54,11 @@ snapshot[`when makePullRequestComment is enabled and deployment succeeds, expect
   "## decaf
 Running deployments in test mode. Results will appear below. 
 If this pull request and all of it's parent pull requests are merged using the...",
-  "...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
+  "## decaf
+Running deployments in test mode. Results will appear below. 
+If this pull request and all of it's parent pull requests are merged using the...
+
+...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
 
 <details>
   <summary>Learn more</summary>
@@ -66,7 +70,7 @@ If this pull request and all of it's parent pull requests are merged using the..
   - Merge pull request #42 from feature
 
 <br>- fix: bug fix<br>- feat: add new feature    
-  </details>",
+</details>",
 ]
 `;
 
@@ -75,7 +79,11 @@ snapshot[`when makePullRequestComment is enabled and no deployment triggered, ex
   "## decaf
 Running deployments in test mode. Results will appear below. 
 If this pull request and all of it's parent pull requests are merged using the...",
-  "...🟩 **merge** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.
+  "## decaf
+Running deployments in test mode. Results will appear below. 
+If this pull request and all of it's parent pull requests are merged using the...
+
+...🟩 **merge** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.
 
 <details>
   <summary>Learn more</summary>
@@ -85,7 +93,7 @@ If this pull request and all of it's parent pull requests are merged using the..
   <br>
   Commits since last release:<br>
   - chore: does not trigger release    
-  </details>",
+</details>",
 ]
 `;
 
@@ -94,7 +102,11 @@ snapshot[`when multiple simulated merge types configured with PR comments, expec
   "## decaf
 Running deployments in test mode. Results will appear below. 
 If this pull request and all of it's parent pull requests are merged using the...",
-  "...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
+  "## decaf
+Running deployments in test mode. Results will appear below. 
+If this pull request and all of it's parent pull requests are merged using the...
+
+...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
 
 <details>
   <summary>Learn more</summary>
@@ -104,8 +116,12 @@ If this pull request and all of it's parent pull requests are merged using the..
   <br>
   Commits since last release:<br>
   - feat: add feature    
-  </details>",
-  "...🟩 **rebase** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
+</details>",
+  "## decaf
+Running deployments in test mode. Results will appear below. 
+If this pull request and all of it's parent pull requests are merged using the...
+
+...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
 
 <details>
   <summary>Learn more</summary>
@@ -115,8 +131,9 @@ If this pull request and all of it's parent pull requests are merged using the..
   <br>
   Commits since last release:<br>
   - feat: add feature    
-  </details>",
-  "...🟩 **squash** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
+</details>
+
+...🟩 **rebase** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
 
 <details>
   <summary>Learn more</summary>
@@ -126,7 +143,46 @@ If this pull request and all of it's parent pull requests are merged using the..
   <br>
   Commits since last release:<br>
   - feat: add feature    
-  </details>",
+</details>",
+  "## decaf
+Running deployments in test mode. Results will appear below. 
+If this pull request and all of it's parent pull requests are merged using the...
+
+...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
+
+<details>
+  <summary>Learn more</summary>
+  <br>
+  Latest release: 1.0.0<br>
+  Commit of latest release: def456prev<br>
+  <br>
+  Commits since last release:<br>
+  - feat: add feature    
+</details>
+
+...🟩 **rebase** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
+
+<details>
+  <summary>Learn more</summary>
+  <br>
+  Latest release: 1.0.0<br>
+  Commit of latest release: def456prev<br>
+  <br>
+  Commits since last release:<br>
+  - feat: add feature    
+</details>
+
+...🟩 **squash** 🟩 merge method... 🚢 The next version of the project will be: **1.1.0**
+
+<details>
+  <summary>Learn more</summary>
+  <br>
+  Latest release: 1.0.0<br>
+  Commit of latest release: def456prev<br>
+  <br>
+  Commits since last release:<br>
+  - feat: add feature    
+</details>",
 ]
 `;
 
@@ -135,7 +191,11 @@ snapshot[`when this is the first release with PR comments enabled, expect 'Learn
   "## decaf
 Running deployments in test mode. Results will appear below. 
 If this pull request and all of it's parent pull requests are merged using the...",
-  "...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **1.0.0**
+  "## decaf
+Running deployments in test mode. Results will appear below. 
+If this pull request and all of it's parent pull requests are merged using the...
+
+...🟩 **merge** 🟩 merge method... 🚢 The next version of the project will be: **1.0.0**
 
 <details>
   <summary>Learn more</summary>
@@ -145,7 +205,7 @@ If this pull request and all of it's parent pull requests are merged using the..
   <br>
   Commits since last release:<br>
   - feat: initial release    
-  </details>",
+</details>",
 ]
 `;
 
@@ -154,7 +214,13 @@ snapshot[`when deployment fails with makePullRequestComment enabled and buildUrl
   "## decaf
 Running deployments in test mode. Results will appear below. 
 If this pull request and all of it's parent pull requests are merged using the...",
-  "...🟩 **merge** 🟩 merge method... ⚠️ There was an error during deployment run. [See logs to learn more and fix the issue](https://github.com/owner/repo/actions/runs/123456).",
+  "## decaf
+Running deployments in test mode. Results will appear below. 
+If this pull request and all of it's parent pull requests are merged using the...
+
+...🟩 **merge** 🟩 merge method... ⚠️ There was an error during deployment run. [See logs to learn more and fix the issue](https://github.com/owner/repo/actions/runs/123456).
+
+",
 ]
 `;
 
@@ -163,6 +229,12 @@ snapshot[`when deployment fails with makePullRequestComment enabled and no build
   "## decaf
 Running deployments in test mode. Results will appear below. 
 If this pull request and all of it's parent pull requests are merged using the...",
-  "...🟩 **merge** 🟩 merge method... ⚠️ There was an error during deployment run. See CI server logs to learn more and fix the issue.",
+  "## decaf
+Running deployments in test mode. Results will appear below. 
+If this pull request and all of it's parent pull requests are merged using the...
+
+...🟩 **merge** 🟩 merge method... ⚠️ There was an error during deployment run. See CI server logs to learn more and fix the issue.
+
+",
 ]
 `;

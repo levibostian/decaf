@@ -83,11 +83,13 @@ export interface SimulatedMergeResult {
  *
  * The old behavior showed each result incrementally, not all at once.
  */
-export const pullRequestCommentTemplate = `{{ if (results.length === 0) }}## decaf
+export const pullRequestCommentTemplate = `## decaf
 Running deployments in test mode. Results will appear below. 
-If this pull request and all of it's parent pull requests are merged using the...{{ else }}{{ set result = results[results.length - 1] }}{{ if (result.status === "success") }}{{ if (result.nextReleaseVersion) }}...🟩 **{{ result.mergeType }}** 🟩 merge method... 🚢 The next version of the project will be: **{{ result.nextReleaseVersion }}**
+If this pull request and all of it's parent pull requests are merged using the...{{ for result of results }}
 
-<details>
+{{ if (result.status === "success") }}{{ if (result.nextReleaseVersion) }}...🟩 **{{ result.mergeType }}** 🟩 merge method... 🚢 The next version of the project will be: **{{ result.nextReleaseVersion }}**{{ else }}...🟩 **{{ result.mergeType }}** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.{{ /if }}{{ else }}...🟩 **{{ result.mergeType }}** 🟩 merge method... ⚠️ There was an error during deployment run.{{ if (build.buildUrl) }} [See logs to learn more and fix the issue]({{ build.buildUrl }}).{{ else }} See CI server logs to learn more and fix the issue.{{ /if }}{{ /if }}
+
+{{ if (result.status === "success") }}<details>
   <summary>Learn more</summary>
   <br>
   Latest release: {{ result.latestRelease?.versionName || "none, this is the first release." }}<br>
@@ -95,14 +97,4 @@ If this pull request and all of it's parent pull requests are merged using the..
   <br>
   Commits since last release:<br>
   - {{ result.commitsSinceLastRelease?.map(commit => commit.message).join("<br>- ") || "none" }}    
-  </details>{{ else }}...🟩 **{{ result.mergeType }}** 🟩 merge method... 🌴 It will not trigger a deployment. No new version will be deployed.
-
-<details>
-  <summary>Learn more</summary>
-  <br>
-  Latest release: {{ result.latestRelease?.versionName || "none, this is the first release." }}<br>
-  Commit of latest release: {{ result.latestRelease?.commitSha || "none, this is the first release." }}<br>
-  <br>
-  Commits since last release:<br>
-  - {{ result.commitsSinceLastRelease?.map(commit => commit.message).join("<br>- ") || "none" }}    
-  </details>{{ /if }}{{ else }}...🟩 **{{ result.mergeType }}** 🟩 merge method... ⚠️ There was an error during deployment run.{{ if (build.buildUrl) }} [See logs to learn more and fix the issue]({{ build.buildUrl }}).{{ else }} See CI server logs to learn more and fix the issue.{{ /if }}{{ /if }}{{ /if }}`
+</details>{{ /if }}{{ /for }}`
