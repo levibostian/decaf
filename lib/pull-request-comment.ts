@@ -1,9 +1,7 @@
 import { GitHubCommit } from "./github-api.ts"
 import { GetLatestReleaseStepOutput } from "./steps/types/output.ts"
 import * as di from "./di.ts"
-
-import * as ventolib from "ventojs"
-const vento = ventolib.default()
+import { renderStringTemplate } from "./utils.ts"
 
 export const postPullRequestComment = async (args: {
   templateData: PullRequestCommentTemplateData
@@ -19,10 +17,7 @@ export const postPullRequestComment = async (args: {
   const diGraph = di.getGraph()
   const githubApi = diGraph.get("github")
 
-  const renderedComment = (await vento.runString(
-    templateString,
-    templateData as unknown as Record<string, unknown>,
-  )).content
+  const renderedComment = await renderStringTemplate(templateString, templateData as unknown as Record<string, unknown>)
 
   await githubApi.postStatusUpdateOnPullRequest({
     message: renderedComment,
