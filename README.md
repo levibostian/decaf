@@ -406,13 +406,18 @@ By default, the tool posts a comment to pull requests showing deployment preview
 - uses: levibostian/decaf@<version>
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    # Use 1 of these 2 options to customize the PR comment:
+    # 1. Provide a path to a markdown file containing your template
+    pull_request_comment_template_file: "./decaf-pr-comment-template.md"
+    # 2. Provide the template directly in the config file
     pull_request_comment_template: |
-      ## Deployment Preview
-      {{ if (results.length > 0 && results[results.length - 1].nextReleaseVersion) }}
-      ✅ Will deploy version `{{ results[results.length - 1].nextReleaseVersion }}`
-      {{ else }}
-      ⚠️ No deployment triggered
+      ## decaf deployment results 
+      If this pull request is merged using the specified merge method, the deployment results will be as follows:{{ for result of results }}
+      {{ if (result.status === "success") }}
+      {{ if (result.nextReleaseVersion) }}✅**{{ result.mergeType }}**... 🚢 The next version of the project will be: **{{ result.nextReleaseVersion }}**{{ else }}✅**{{ result.mergeType }}**... 🌴 It will not trigger a deployment. No new version will be deployed.{{ /if }}
+      {{ else }}✅**{{ result.mergeType }}**... ⚠️ There was an error during deployment run.{{ if (build.buildUrl) }} [See logs to learn more and fix the issue]({{ build.buildUrl }}).{{ else }} See CI server logs to learn more and fix the issue.{{ /if }}
       {{ /if }}
+      {{ /for }}
 ```
 
 Templates use [VentoJS](https://vento.js.org/) syntax and have access to deployment data including `results` (array of simulation results), `pullRequest` (PR info), `repository` (repo info), and `build` (CI info). See [the template data interface](lib/pull-request-comment.ts) for all available variables.
