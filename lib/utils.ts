@@ -129,7 +129,13 @@ export async function renderStringTemplate<T extends Record<string, unknown> = R
   templateString: string,
   data: T,
 ): Promise<string> {
-  const vento = ventolib.default()
-  const result = await vento.runString(templateString, data)
-  return result.content
+  try {
+    const vento = ventolib.default()
+    const result = await vento.runString(templateString, data)
+    return result.content
+  } catch (error) {
+    throw new Error(
+      `Failed to render the string template. The template given is:\n${templateString}\n\nChanges are there is a syntax error in the template, I suggest you double check it.\nOriginal error thrown: ${error}`,
+    )
+  }
 }
