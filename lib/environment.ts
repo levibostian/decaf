@@ -15,6 +15,7 @@ export interface Environment {
   getBranchFilters(): string[]
   getCommitLimit(): number
   setOutput({ key, value }: { key: string; value: string }): Promise<void>
+  getPullRequestCommentTemplate(): Promise<string | undefined>
   // A catch-all method to get inputs that dont match the other methods.
   getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean }
 }
@@ -239,6 +240,40 @@ export class EnvironmentImpl implements Environment {
     } catch (_error) {
       return defaultCommitLimit // Default fallback on error
     }
+  }
+
+  async getPullRequestCommentTemplate(): Promise<string | undefined> {
+    // First, try to get the template from a file
+    let templateFile: string | undefined
+    try {
+      templateFile = this.getInput("pull_request_comment_template_file")
+    } catch (_error) {
+      // Input not set, continue to check the direct template
+    }
+
+    if (templateFile) {
+      // Read the file contents
+      try {
+        const fileContents = await Deno.readTextFile(templateFile)
+        return fileContents
+      } catch (error) {
+        log.error(`Failed to read pull request comment template file at "${templateFile}": ${error}`)
+        throw error
+      }
+    }
+
+    // If no file was provided, try to get the template string directly
+    try {
+      const template = this.getInput("pull_request_comment_template")
+      if (template) {
+        return template
+      }
+    } catch (_error) {
+      // Input not set
+    }
+
+    // Neither was provided
+    return undefined
   }
 
   getGitConfigInput(): { name: string; email: string } | undefined {

@@ -696,3 +696,115 @@ Deno.test("setOutput - should overwrite existing key in file", async () => {
     Deno.env.delete("GITHUB_OUTPUT")
   }
 })
+
+Deno.test("getPullRequestCommentTemplate - should return undefined when neither input is set", async () => {
+  Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
+  Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE")
+
+  const result = await environment.getPullRequestCommentTemplate()
+
+  assertEquals(result, undefined)
+})
+
+Deno.test("getPullRequestCommentTemplate - should return undefined when both inputs are empty strings", async () => {
+  Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE", "")
+  Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE", "")
+
+  const result = await environment.getPullRequestCommentTemplate()
+
+  assertEquals(result, undefined)
+})
+
+Deno.test("getPullRequestCommentTemplate - should return template string when only template is set", async () => {
+  Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
+  Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE", "This is a test template")
+
+  const result = await environment.getPullRequestCommentTemplate()
+
+  assertEquals(result, "This is a test template")
+})
+
+Deno.test("getPullRequestCommentTemplate - should return template string with special characters", async () => {
+  Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
+  Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE", "## Test Template\n\nVersion: {{version}}\n\nCommits:\n- {{commit1}}\n- {{commit2}}")
+
+  const result = await environment.getPullRequestCommentTemplate()
+
+  assertEquals(result, "## Test Template\n\nVersion: {{version}}\n\nCommits:\n- {{commit1}}\n- {{commit2}}")
+})
+
+Deno.test("getPullRequestCommentTemplate - should return file contents when only template file is set", async () => {
+  const tempFile = await Deno.makeTempFile({ prefix: "pr-template-test-" })
+
+  try {
+    const templateContent = "# Pull Request Template\n\nThis is from a file."
+    await Deno.writeTextFile(tempFile, templateContent)
+
+    Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE", tempFile)
+    Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE")
+
+    const result = await environment.getPullRequestCommentTemplate()
+
+    assertEquals(result, templateContent)
+  } finally {
+    await Deno.remove(tempFile)
+    Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
+  }
+})
+
+Deno.test("getPullRequestCommentTemplate - should return file contents when both are set (file takes precedence)", async () => {
+  const tempFile = await Deno.makeTempFile({ prefix: "pr-template-test-" })
+
+  try {
+    const templateContent = "Template from file"
+    await Deno.writeTextFile(tempFile, templateContent)
+
+    Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE", tempFile)
+    Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE", "Template from string")
+
+    const result = await environment.getPullRequestCommentTemplate()
+
+    // File should take precedence
+    assertEquals(result, templateContent)
+  } finally {
+    await Deno.remove(tempFile)
+    Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
+    Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE")
+  }
+})
+
+Deno.test("getPullRequestCommentTemplate - should throw error when file does not exist", async () => {
+  const nonExistentFile = "/tmp/this-file-does-not-exist-" + Date.now() + ".txt"
+
+  Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE", nonExistentFile)
+  Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE")
+
+  let errorThrown = false
+  try {
+    await environment.getPullRequestCommentTemplate()
+  } catch (_error) {
+    // Verify it's the expected file read error
+    errorThrown = true
+  }
+
+  assertEquals(errorThrown, true)
+  Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
+})
+
+Deno.test("getPullRequestCommentTemplate - should handle empty file", async () => {
+  const tempFile = await Deno.makeTempFile({ prefix: "pr-template-test-" })
+
+  try {
+    await Deno.writeTextFile(tempFile, "")
+
+    Deno.env.set("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE", tempFile)
+    Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE")
+
+    const result = await environment.getPullRequestCommentTemplate()
+
+    assertEquals(result, "")
+  } finally {
+    await Deno.remove(tempFile)
+    Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
+  }
+})

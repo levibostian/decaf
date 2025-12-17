@@ -397,6 +397,36 @@ If you would rather explicitly tell decaf what type of merge to simulate, you ca
         # ... Put rest of your config here. 
 ```
 
+### Customize pull request comments
+
+By default, the tool posts a comment to pull requests showing deployment preview information. You can customize this comment using your own template.
+
+**Example:**
+```yaml
+- uses: levibostian/decaf@<version>
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    # Use 1 of these 2 options to customize the PR comment:
+    # 1. Provide a path to a markdown file containing your template
+    pull_request_comment_template_file: "./decaf-pr-comment-template.md"
+    # 2. Provide the template directly in the config file
+    pull_request_comment_template: |
+      ## decaf deployment results 
+      If this pull request is merged using the specified merge method, the deployment results will be as follows:{{ for result of results }}
+      {{ if (result.status === "success") }}
+      {{ if (result.nextReleaseVersion) }}✅**{{ result.mergeType }}**... 🚢 The next version of the project will be: **{{ result.nextReleaseVersion }}**{{ else }}✅**{{ result.mergeType }}**... 🌴 It will not trigger a deployment. No new version will be deployed.{{ /if }}
+      {{ else }}✅**{{ result.mergeType }}**... ⚠️ There was an error during deployment run.{{ if (build.buildUrl) }} [See logs to learn more and fix the issue]({{ build.buildUrl }}).{{ else }} See CI server logs to learn more and fix the issue.{{ /if }}
+      {{ /if }}
+      {{ /for }}
+```
+
+Templates use [VentoJS](https://vento.js.org/) syntax and have access to deployment data including `results` (array of simulation results), `pullRequest` (PR info), `repository` (repo info), and `build` (CI info). See [the template data interface](lib/pull-request-comment.ts) for all available variables.
+
+**Disable comments:**
+```yaml
+make_pull_request_comment: false
+```
+
 ### Performance optimization for large repositories
 
 If you have a large repository (many branches and/or commits), the tool may run slowly with the default configuration. Here are optional settings to improve performance:

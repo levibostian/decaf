@@ -345,7 +345,7 @@ const postStatusUpdateOnPullRequest = async ({ message, owner, repo, prNumber, c
     githubRepo: `${owner}/${repo}`,
     githubIssue: prNumber,
     updateExisting: true,
-    appendToExisting: true,
+    appendToExisting: false,
     // 2 IDs which allow us to delete PR comments made in the PR for previous pushes/builds.
     // But also, both IDs are unique between CI services so if you run multiple CI services against the same PR,
     // they won't delete each other's comments.

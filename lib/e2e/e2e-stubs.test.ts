@@ -528,6 +528,9 @@ export class EnvironmentStub implements Environment {
   setOutput({ key: _key, value: _value }: { key: string; value: string }): Promise<void> {
     return Promise.resolve()
   }
+  getPullRequestCommentTemplate(): Promise<string | undefined> {
+    return Promise.resolve(undefined)
+  }
   getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean } {
     return {
       failOnDeployVerification: this.args.failOnDeployVerification ?? false,

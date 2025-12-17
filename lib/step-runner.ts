@@ -1,8 +1,4 @@
-import { jsonParse } from "./utils.ts"
-import Template from "@deno-library/template"
-const stringTemplating = new Template({
-  isEscape: false,
-})
+import { jsonParse, renderStringTemplate } from "./utils.ts"
 import { Environment } from "./environment.ts"
 import { Exec } from "./exec.ts"
 import { AnyStepInput, DeployStepInput, GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "./types/environment.ts"
@@ -13,7 +9,6 @@ import {
   isGetLatestReleaseStepOutput,
   isGetNextReleaseVersionStepOutput,
 } from "./steps/types/output.ts"
-import "./utils.ts"
 import { Logger } from "./log.ts"
 
 export interface StepRunner {
@@ -48,7 +43,7 @@ export class StepRunnerImpl implements StepRunner {
 
     // Run each command in the array
     for (const command of commands) {
-      const commandToRun = stringTemplating.render(command, input as unknown as Record<string, unknown>)
+      const commandToRun = await renderStringTemplate(command, input as unknown as Record<string, unknown>)
 
       // input contains all git commits. too much data to log.
       // this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)

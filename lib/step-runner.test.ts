@@ -95,7 +95,7 @@ Deno.test("supports template engine in command string", async () => {
     // The real getCommandsForStep takes an object: { stepName: AnyStepName }
     // We'll return a template string that uses input.gitCurrentBranch and input.gitRepoOwner
     () => [
-      `echo '{"versionName": "{{gitCurrentBranch}}", "gitRepo": "{{gitRepoOwner}}/{{gitRepoName}}", "commitSha": "{{gitCommitsCurrentBranch.0.sha}}" }'`,
+      `echo '{"versionName": "{{gitCurrentBranch}}", "gitRepo": "{{gitRepoOwner}}/{{gitRepoName}}", "commitSha": "{{gitCommitsCurrentBranch[0].sha}}" }'`,
     ],
   )
   const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
