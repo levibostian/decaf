@@ -26,17 +26,3 @@ jobs:
         get_latest_release_current_branch: './steps/get-latest-release.ts'
         get_next_release_version: deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits
         deploy: './steps/deploy.ts'
-        pull_request_comment_template: |
-          ## Yooooooooooooo! 🚀
-          {{ for result of results }}
-          {{ if (result.status === "success") }}{{ if (result.nextReleaseVersion) }}...🟩 **{{ result.mergeType }}** 🟩 merge method... 🚢 It ships. **{{ result.nextReleaseVersion }}**{{ else }}...🟩 **{{ result.mergeType }}** 🟩 merge method... 🌴 Nah.{{ /if }}{{ else }}...🟩 **{{ result.mergeType }}** 🟩 merge method... ⚠️ There was an error during deployment run.{{ if (build.buildUrl) }} [See logs to learn more and fix the issue]({{ build.buildUrl }}).{{ else }} See CI server logs to learn more and fix the issue.{{ /if }}{{ /if }}
-
-          {{ if (result.status === "success") }}<details>
-            <summary>Learn more inside here.</summary>
-            <br>
-            Latest release: {{ result.latestRelease?.versionName || "none, this is the first release." }}<br>
-            Commit of latest release: {{ result.latestRelease?.commitSha || "none, this is the first release." }}<br>
-            <br>
-            Commits since last release:<br>
-            - {{ result.commitsSinceLastRelease?.map(commit => commit.message).join("<br>- ") || "none" }}    
-          </details>{{ /if }}{{ /for }}
