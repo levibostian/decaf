@@ -67,7 +67,7 @@ runs:
 
     - name: Set up Deno
       if: ${{ inputs.compile_binary == 'true' }}
-      uses: denoland/setup-deno@v2
+      uses: asdf-vm/actions/install@v4
 
     - name: Compile binary
       if: ${{ inputs.compile_binary == 'true' }}
