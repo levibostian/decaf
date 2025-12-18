@@ -72,7 +72,9 @@ runs:
     - name: Compile binary
       if: ${{ inputs.compile_binary == 'true' }}
       working-directory: ${{ github.action_path }}
-      run: OUTPUT_FILE_NAME=decaf DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+      run: |
+        deno -v 
+        OUTPUT_FILE_NAME=decaf DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
       shell: bash
 
     # when this action is being executed by *this decaf project*, we dont want to run this cp command because 
