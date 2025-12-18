@@ -8,12 +8,19 @@ jobs:
     steps:
       - checkout
       - gh/install
-      # install 2.5.6 as workaround for bug in 2.6.0
-      # see bug: https://github.com/denoland/deno/issues/31556
-      - run: curl -fsSL https://deno.land/install.sh | sh -s v2.5.6
-      - run:
-          name: Add Deno to PATH
-          command: echo 'export PATH="/home/circleci/.deno/bin:$PATH"' >> $BASH_ENV
+      
+      # Install asdf and the tools specified in .tool-versions
+      - run: git clone https://github.com/brandoncc/circleci-asdf-installer.git ~/circleci-asdf-installer
+      - run: ~/circleci-asdf-installer/bin/clone-asdf
+      - restore_cache:
+          keys:
+            - tools-cache-{{ checksum ".tool-versions" }}
+      - run: ~/circleci-asdf-installer/bin/install-asdf-plugins-and-versions
+      - save_cache:
+          key: tools-cache-{{ checksum ".tool-versions" }}
+          paths:
+            - "~/.asdf/plugins"
+            - "~/.asdf/installs"
 
       # Install a specific version of the tool (recommended for teams)
       # - run: curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash "1.0.0"
