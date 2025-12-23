@@ -72,10 +72,12 @@ await $`git add version.txt && git commit -m "Bump version to ${input.nextVersio
 console.log(`to help with debugging, log the recently created commit including all the file changes made`)
 await $`git show HEAD`.printCommand()
 
-if (!input.testMode) {
-  // Push the commit that was made to action.yml
-  await $`git push`.printCommand()
+// Push the commit that was made to action.yml
+const gitPushArgs = ["push"]
+if (input.testMode) {
+  gitPushArgs.push("--dry-run")
 }
+await $`git ${gitPushArgs}`.printCommand()
 
 await $`deno ${[
   `run`,
