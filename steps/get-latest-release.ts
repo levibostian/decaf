@@ -36,7 +36,9 @@ const latestCommitOnBothBranches = commitsForLatestBranch.find((commit) =>
 )
 
 if (!latestCommitOnBothBranches) {
-  Deno.exit(0) // No commits found that are present on both branches, exit early without writing output.
+  console.log("No commits found that are present on both 'latest' and current branch.")
+  console.log("This shouldn't happen, so exiting early with error to avoid creating a broken release.")
+  Deno.exit(1) // No commits found that are present on both branches, exit early without writing output.
 }
 
 const output: GetLatestReleaseStepOutput = {
