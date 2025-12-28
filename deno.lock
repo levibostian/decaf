@@ -29,7 +29,8 @@
     "npm:env-ci@^11.2.0": "11.2.0",
     "npm:globrex@~0.1.2": "0.1.2",
     "npm:shell-quote@^1.8.2": "1.8.3",
-    "npm:ventojs@^2.2.0": "2.2.0"
+    "npm:ventojs@^2.2.0": "2.2.0",
+    "npm:yoctocolors@2.1.2": "2.1.2"
   },
   "jsr": {
     "@david/console-static-text@0.3.0": {
@@ -226,6 +227,9 @@
         "isexe"
       ],
       "bin": true
+    },
+    "yoctocolors@2.1.2": {
+      "integrity": "sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug=="
     }
   },
   "remote": {

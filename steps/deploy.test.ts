@@ -14,6 +14,7 @@ import { DeployStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
 import { $ } from "@david/dax"
 import { afterEach } from "@std/testing/bdd"
+import { assertSnapshot } from "@std/testing/snapshot"
 
 afterEach(async () => {
   // reset files that are modified in tests to create a clean state for each test
@@ -155,4 +156,23 @@ const command = args[0];
     `'jsr:@levibostian/decaf-script-github-releases' set`,
     "Last command should be GitHub release 'set' command",
   )
+})
+
+Deno.test("assert logs from script are human readable and explain the deployment process", async (t) => {
+  await mockBin(
+    "git",
+    "#!/usr/bin/env -S deno run --quiet --allow-all",
+    `
+const args = Deno.args;
+const command = args[0];
+`,
+  )
+
+  const version = "3.0.0"
+  const input = getScriptInput(version)
+
+  const { code, stdout } = await runScript<DeployStepInput, void>("deno run --allow-all steps/deploy.ts", input)
+  assertEquals(code, 0, "Deploy should succeed")
+
+  await assertSnapshot(t, stdout.join("\n"))
 })
