@@ -7,7 +7,7 @@ import { AnyStepInput } from "../lib/types/environment.ts"
 export async function runScript<TInput extends AnyStepInput, TOutput = GetLatestReleaseStepOutput>(
   runScriptShellCommand: string,
   input: TInput,
-): Promise<{ code: number; output: TOutput | null; stdout: string }> {
+): Promise<{ code: number; output: TOutput | null; stdout: string[] }> {
   // Write script input to a temp file
   const tempFile = await Deno.makeTempFile()
   const inputFileContents = JSON.stringify(input)
@@ -30,11 +30,33 @@ export async function runScript<TInput extends AnyStepInput, TOutput = GetLatest
   })
 
   const child = process.spawn()
-  const { code, stdout, stderr } = await child.output()
-  // Combine stdout and stderr for the test assertions
-  const combinedOutput = new TextDecoder().decode(stdout) + new TextDecoder().decode(stderr)
 
-  console.log(combinedOutput) // output to console for visibility during tests
+  const combinedOutput: string[] = []
+
+  child.stdout.pipeTo(
+    new WritableStream({
+      write(chunk) {
+        const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+
+        console.log(decodedChunk)
+
+        combinedOutput.push(decodedChunk)
+      },
+    }),
+  )
+  child.stderr.pipeTo(
+    new WritableStream({
+      write(chunk) {
+        const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+
+        console.log(decodedChunk)
+
+        combinedOutput.push(decodedChunk)
+      },
+    }),
+  )
+
+  const code = (await child.status).code
 
   const outputFileContents = await Deno.readTextFile(tempFile)
   let output: TOutput | null = null
@@ -52,9 +74,8 @@ export const arrayDifferences = <T>(arr1: T[], arr2: T[]): T[] => {
   return [...uniqueDifferences]
 }
 
-export const getCommandsExecuted = (stdout: string): string[] => {
+export const getCommandsExecuted = (stdout: string[]): string[] => {
   return stdout
-    .split("\n") // convert string into array
     .filter((line) => line.startsWith(">")) // keep only lines that are commands
     .map((line) => line.slice(2).trim()) // remove the "> " prefix
 }
