@@ -14,7 +14,7 @@ Deno.test("get-latest-release given no releases created, expect exit early witho
 
   const input: GetLatestReleaseStepInput = {} as unknown as GetLatestReleaseStepInput
 
-  const { code, output } = await runScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 0)
   assertEquals(output, null)
@@ -66,7 +66,7 @@ Deno.test("get-latest-release given latest release exists but no commits on both
     },
   }
 
-  const { code, output } = await runScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 1)
   assertEquals(output, null)
@@ -117,7 +117,7 @@ Deno.test("get-latest-release given latest release exists with matching commits 
     },
   }
 
-  const { code, output } = await runScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 0)
   assertEquals(output, {
@@ -156,7 +156,7 @@ Deno.test("get-latest-release given latest branch does not exist, expect exit ea
     },
   }
 
-  const { code, output } = await runScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 1)
   assertEquals(output, null)
@@ -222,7 +222,7 @@ Deno.test("get-latest-release given multiple commits on both branches, expect fi
     },
   }
 
-  const { code, output } = await runScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 0)
   assertEquals(output, {
