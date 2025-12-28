@@ -1,17 +1,7 @@
 #!/usr/bin/env -S deno run --quiet --allow-all
 
 import { DeployStepInput } from "../lib/types/environment.ts"
-import { build$ } from "@david/dax"
-
-const $ = build$({
-  commandBuilder: (builder) => {
-    // custom logger to print commands without colors to more easily run assertions in tests. Also, dont mind not using color in prod.
-    builder.setPrintCommandLogger((cmd) => {
-      console.log(`> ${cmd.toString()}`)
-    })
-    return builder
-  },
-})
+import { $ } from "@david/dax"
 
 const input: DeployStepInput = JSON.parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
 

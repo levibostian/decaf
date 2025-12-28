@@ -16,6 +16,7 @@ export async function runScript<TInput extends AnyStepInput, TOutput = GetLatest
   const env: Record<string, string> = {
     INPUT_GITHUB_TOKEN: "abcd1234",
     DATA_FILE_PATH: tempFile,
+    NO_COLOR: "1", // disable color output (anscii) for easier testing. https://docs.deno.com/api/deno/~/Deno.noColor
     ...Deno.env.toObject(),
   }
 
