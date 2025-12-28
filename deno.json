@@ -14,7 +14,7 @@
     "ventojs": "npm:ventojs@^2.2.0"
   },
   "tasks": {
-    "test": "deno test --allow-all --clean --junit-path reports/junit.xml --coverage=reports/coverage/",
+    "test": "deno test --allow-all --clean --junit-path reports/junit.xml --coverage=reports/coverage/ --coverage-raw-data-only && deno coverage reports/coverage/ --include=$(pwd)",
     "test-update": "deno task test -- --update",
     "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts",
     "format": "deno fmt",
