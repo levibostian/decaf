@@ -8,6 +8,7 @@ import { runScript } from "./test-sdk.test.ts"
 import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
+import { assertSnapshot } from "@std/testing/snapshot"
 
 Deno.test("get-latest-release given no releases created, expect exit early without setting any output", async (_t) => {
   await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('');") // mock gh to return nothing
@@ -20,7 +21,7 @@ Deno.test("get-latest-release given no releases created, expect exit early witho
   assertEquals(output, null)
 })
 
-Deno.test("get-latest-release given latest release exists but no commits on both branches, expect exit early without setting any output", async (_t) => {
+Deno.test("get-latest-release given latest release exists but no commits on both branches, expect exit early without setting any output, expect good human readable logs", async (t) => {
   await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.0.0');") // mock gh to return a release
 
   // TODO: making these commit objects is too verbose. consider
@@ -66,13 +67,14 @@ Deno.test("get-latest-release given latest release exists but no commits on both
     },
   }
 
-  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output, stdout } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 1)
   assertEquals(output, null)
+  assertSnapshot(t, stdout)
 })
 
-Deno.test("get-latest-release given latest release exists with matching commits on both branches, expect output with version and commit sha", async (_t) => {
+Deno.test("get-latest-release given latest release exists with matching commits on both branches, expect output with version and commit sha, expect good human readable logs", async (t) => {
   await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.2.3');") // mock gh to return a release
 
   const sharedCommit: GitCommit = {
@@ -117,16 +119,17 @@ Deno.test("get-latest-release given latest release exists with matching commits 
     },
   }
 
-  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output, stdout } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 0)
   assertEquals(output, {
     versionName: "v1.2.3",
     commitSha: "shared123",
   })
+  assertSnapshot(t, stdout)
 })
 
-Deno.test("get-latest-release given latest branch does not exist, expect exit early without setting any output", async (_t) => {
+Deno.test("get-latest-release given latest branch does not exist, expect exit early without setting any output, expect good human readable logs", async (t) => {
   await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.0.0');") // mock gh to return a release
 
   const currentBranchCommit: GitCommit = {
@@ -156,13 +159,14 @@ Deno.test("get-latest-release given latest branch does not exist, expect exit ea
     },
   }
 
-  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output, stdout } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 1)
   assertEquals(output, null)
+  assertSnapshot(t, stdout)
 })
 
-Deno.test("get-latest-release given multiple commits on both branches, expect first matching commit", async (_t) => {
+Deno.test("get-latest-release given multiple commits on both branches, expect first matching commit, expect good human readable logs", async (t) => {
   await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v2.0.0');") // mock gh to return a release
 
   const oldestSharedCommit: GitCommit = {
@@ -222,11 +226,12 @@ Deno.test("get-latest-release given multiple commits on both branches, expect fi
     },
   }
 
-  const { code, output } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output, stdout } = await runScript<GetLatestReleaseStepInput>("deno run --allow-all steps/get-latest-release.ts", input)
 
   assertEquals(code, 0)
   assertEquals(output, {
     versionName: "v2.0.0",
     commitSha: "middle456", // Should find the first matching commit from latest branch
   })
+  assertSnapshot(t, stdout)
 })

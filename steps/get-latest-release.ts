@@ -18,11 +18,15 @@ import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
 
 const input: GetLatestReleaseStepInput = JSON.parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
 
+console.log(`Getting the list of GitHub Releases for GitHub repository: ${input.gitRepoOwner}/${input.gitRepoName}...`)
+
 // First, get the latest release version.
 const latestReleaseVersionName = await $`gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].name'`
+  .printCommand()
   .text()
 
 if (latestReleaseVersionName.trim() === "") {
+  console.log(`No GitHub releases exist for ${input.gitRepoOwner}/${input.gitRepoName}`)
   Deno.exit(0) // No releases found, exit early without writing output.
 }
 
@@ -45,5 +49,7 @@ const output: GetLatestReleaseStepOutput = {
   versionName: latestReleaseVersionName,
   commitSha: latestCommitOnBothBranches.sha,
 }
+
+console.log(`Found latest release from GitHub Releases! Version: ${output.versionName}, commit ${output.commitSha}`)
 
 await Deno.writeTextFile(Deno.env.get("DATA_FILE_PATH")!, JSON.stringify(output))

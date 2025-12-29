@@ -1,0 +1,35 @@
+export const snapshot = {};
+
+snapshot[`get-latest-release given latest release exists but no commits on both branches, expect exit early without setting any output, expect good human readable logs 1`] = `
+[
+  "Getting the list of GitHub Releases for GitHub repository: test-owner/test-repo...",
+  "> gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].name'",
+  "No commits found that are present on both 'latest' and current branch.
+This shouldn't happen, so exiting early with error to avoid creating a broken release.",
+]
+`;
+
+snapshot[`get-latest-release given latest release exists with matching commits on both branches, expect output with version and commit sha, expect good human readable logs 1`] = `
+[
+  "Getting the list of GitHub Releases for GitHub repository: test-owner/test-repo...",
+  "> gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].name'",
+  "Found latest release from GitHub Releases! Version: v1.2.3, commit shared123",
+]
+`;
+
+snapshot[`get-latest-release given latest branch does not exist, expect exit early without setting any output, expect good human readable logs 1`] = `
+[
+  "Getting the list of GitHub Releases for GitHub repository: test-owner/test-repo...",
+  "> gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].name'",
+  "No commits found that are present on both 'latest' and current branch.
+This shouldn't happen, so exiting early with error to avoid creating a broken release.",
+]
+`;
+
+snapshot[`get-latest-release given multiple commits on both branches, expect first matching commit, expect good human readable logs 1`] = `
+[
+  "Getting the list of GitHub Releases for GitHub repository: test-owner/test-repo...",
+  "> gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].name'",
+  "Found latest release from GitHub Releases! Version: v2.0.0, commit middle456",
+]
+`;
