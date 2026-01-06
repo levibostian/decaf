@@ -51,9 +51,10 @@ jobs:
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
     - name: Run install script
-      run: bash install v0.0.1
+      run: ./install
 
     - name: Verify binary was installed
       run: |
         test -f "$HOME/.local/bin/decaf"
         test -x "$HOME/.local/bin/decaf"
+        "$HOME/.local/bin/decaf" --help
