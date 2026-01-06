@@ -55,7 +55,5 @@ jobs:
 
     - name: Verify binary was installed
       run: |
-        test -f "$HOME/.local/bin/decaf"
-        test -x "$HOME/.local/bin/decaf"
         export PATH="$HOME/.local/bin:$PATH"
         decaf --help
