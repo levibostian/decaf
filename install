@@ -23,7 +23,13 @@ echo "Installing version: $VERSION - $OS - $ARCH..."
 
 # Download release binary for the specified version
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/$BINARY_FILE"
-DEST="./$BINARY_NAME"
+
+# Install to ~/.local/bin (standard location for user binaries)
+INSTALL_DIR="${HOME}/.local/bin"
+DEST="${INSTALL_DIR}/${BINARY_NAME}"
+
+# Create installation directory if it doesn't exist
+mkdir -p "$INSTALL_DIR"
 
 if ! curl -fsSL "$DOWNLOAD_URL" -o "$DEST"; then
     echo "\nNo binary found for OS '$OS' and architecture '$ARCH'." >&2
@@ -32,5 +38,18 @@ if ! curl -fsSL "$DOWNLOAD_URL" -o "$DEST"; then
 fi
 chmod +x "$DEST"
 
-echo "Install complete! Run the tool with:"
-echo "  ./decaf [args]"
+echo "Install complete! Binary installed to: $DEST"
+
+# Check if ~/.local/bin is in PATH
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+    echo ""
+    echo "⚠️  Note: $INSTALL_DIR is not in your PATH."
+    echo "   Add it by running:"
+    echo "     export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo ""
+    echo "   Or run the tool directly with:"
+    echo "     $DEST [args]"
+else
+    echo "Run the tool with:"
+    echo "  $BINARY_NAME [args]"
+fi
