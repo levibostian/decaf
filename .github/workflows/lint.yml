@@ -9,9 +9,7 @@ jobs:
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
     - name: Set up Deno
-      uses: denoland/setup-deno@v1
-      with:
-        deno-version: v2.x
+      uses: asdf-vm/actions/install@v4
 
     - name: Run formatter and fail if not formatted
       run: |
@@ -25,9 +23,7 @@ jobs:
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
     - name: Set up Deno
-      uses: denoland/setup-deno@v1
-      with:
-        deno-version: v2.x
+      uses: asdf-vm/actions/install@v4
 
     - name: Run lint and fail if there are errors
       run: |
