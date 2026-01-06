@@ -10,7 +10,9 @@ jobs:
   update-lockfile:
     # Only run on PRs from branches with 'renovate/' prefix in the same repository (not forks)
     if: github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'renovate/')    
-    runs-on: ubuntu-latest        
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # required to commit and push lock file changes        
     steps:
       # Workaround to trigger github actions on pull request that we push commits to. 
       # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs 
