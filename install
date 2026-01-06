@@ -39,17 +39,3 @@ fi
 chmod +x "$DEST"
 
 echo "Install complete! Binary installed to: $DEST"
-
-# Check if ~/.local/bin is in PATH
-if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    echo ""
-    echo "⚠️  Note: $INSTALL_DIR is not in your PATH."
-    echo "   Add it by running:"
-    echo "     export PATH=\"\$HOME/.local/bin:\$PATH\""
-    echo ""
-    echo "   Or run the tool directly with:"
-    echo "     $DEST [args]"
-else
-    echo "Run the tool with:"
-    echo "  $BINARY_NAME [args]"
-fi
