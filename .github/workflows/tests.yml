@@ -57,4 +57,5 @@ jobs:
       run: |
         test -f "$HOME/.local/bin/decaf"
         test -x "$HOME/.local/bin/decaf"
-        "$HOME/.local/bin/decaf" --help
+        export PATH="$HOME/.local/bin:$PATH"
+        decaf --help
