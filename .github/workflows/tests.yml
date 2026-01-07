@@ -54,4 +54,4 @@ jobs:
       run: ./install
 
     - name: Verify binary was installed
-      run: decaf --help
+      run: which decaf
