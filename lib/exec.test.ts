@@ -276,3 +276,21 @@ Deno.test("command with both input and custom envVars", async () => {
   assertEquals(exitCode, 0)
   assertEquals(stdout.startsWith("custom_value-"), true)
 })
+
+Deno.test("GitHub remote script: handles non-existent repository gracefully", async () => {
+  // This tests that GitHub URL errors are handled properly
+  let caughtError = false
+  try {
+    await exec.run({
+      command: `github.com/nonexistent-owner/nonexistent-repo/script.sh@main`,
+      input: givenPluginInput,
+    })
+  } catch (error) {
+    caughtError = true
+    const errorMessage = (error as Error).message
+    // Should contain information about the failed download
+    assertEquals(errorMessage.includes("Failed to download script"), true)
+  }
+
+  assertEquals(caughtError, true)
+})

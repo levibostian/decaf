@@ -298,6 +298,45 @@ const input = JSON.parse(fs.readFileSync(path, 'utf8'));
 
 > Tip: The tool will verify that the latest release version is updated after deployment. If the deployment does not result in a new release, the workflow will fail (unless you set `fail_on_deploy_verification: false`).
 
+## Using Remote Scripts from GitHub
+
+Instead of writing scripts in your repository, you can reference scripts hosted on GitHub. This is useful for sharing common deployment scripts across multiple projects or using community-maintained scripts.
+
+**Format:** `github.com/owner/repo/path/to/script@ref [args...]`
+
+**Example:**
+```yaml
+# GitHub Actions
+with:
+  get_latest_release_current_branch: github.com/your-org/deployment-scripts/get-latest-release.sh@main
+  get_next_release_version: github.com/your-org/deployment-scripts/get-next-version.ts@v1.0.0 --mode=semver
+  deploy: github.com/your-org/deployment-scripts/deploy.sh@abc123
+```
+
+**Requirements:**
+- Scripts must start with a shebang line (e.g., `#!/usr/bin/env bash`, `#!/usr/bin/env -S deno run --allow-all`)
+- Scripts follow the same input/output contract as local scripts
+- The `@ref` can be a branch name, tag, or commit hash
+- Optional arguments can be passed after the URL
+
+**Example remote script:**
+```bash
+#!/usr/bin/env bash
+# get-latest-release.sh
+
+# Read input
+INPUT=$(cat "$DATA_FILE_PATH")
+
+# Your logic here...
+VERSION="1.0.0"
+COMMIT="abc123"
+
+# Write output
+echo "{\"versionName\": \"$VERSION\", \"commitSha\": \"$COMMIT\"}" > "$DATA_FILE_PATH"
+```
+
+> **Security Note:** Only use remote scripts from repositories you trust, as they will execute with full access to your deployment environment.
+
 # Push git commits with the correct PR message
 
 Some git commits that you push to your deployment branch should be released (features, bug fixes), and some git commits should not be released (docs changes, adding new tests, refactors). You tell the tool if a deployment should be done by formatting your git commit message in a specific format called [conventional commits](https://www.conventionalcommits.org). 
