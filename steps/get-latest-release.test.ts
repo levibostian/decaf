@@ -3,15 +3,32 @@
  */
 
 // deno-lint-ignore-file no-import-prefix
-import { mockBin } from "jsr:@levibostian/mock-a-bin@1.0.0"
+import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.0.0"
 import { runGetLatestReleaseScript } from "jsr:@levibostian/decaf-sdk@0.3.0/testing"
 import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
 import { assertSnapshot } from "@std/testing/snapshot"
+import { $ } from "@david/dax"
+
+// Track cleanup functions for mocked binaries
+let mockCleanups: MockBinCleanup[] = []
+
+Deno.test.afterEach(async () => {
+  // Clean up any mocked binaries first so git restore can work
+  for (const cleanup of mockCleanups) {
+    cleanup()
+  }
+  mockCleanups = []
+
+  // reset files that are modified in tests to create a clean state for each test
+  await $`git restore version.txt`.noThrow()
+  await $`rm -rf dist`.noThrow()
+})
 
 Deno.test("get-latest-release given no releases created, expect exit early without setting any output", async (_t) => {
-  await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('');") // mock gh to return nothing
+  const cleanup = await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('');") // mock gh to return nothing
+  mockCleanups.push(cleanup)
 
   const input: GetLatestReleaseStepInput = {} as unknown as GetLatestReleaseStepInput
 
@@ -22,7 +39,8 @@ Deno.test("get-latest-release given no releases created, expect exit early witho
 })
 
 Deno.test("get-latest-release given latest release exists but no commits on both branches, expect exit early without setting any output, expect good human readable logs", async (t) => {
-  await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.0.0');") // mock gh to return a release
+  const cleanup = await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.0.0');") // mock gh to return a release
+  mockCleanups.push(cleanup)
 
   // TODO: making these commit objects is too verbose. consider
   const latestBranchCommit: GitCommit = {
@@ -75,7 +93,8 @@ Deno.test("get-latest-release given latest release exists but no commits on both
 })
 
 Deno.test("get-latest-release given latest release exists with matching commits on both branches, expect output with version and commit sha, expect good human readable logs", async (t) => {
-  await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.2.3');") // mock gh to return a release
+  const cleanup = await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.2.3');") // mock gh to return a release
+  mockCleanups.push(cleanup)
 
   const sharedCommit: GitCommit = {
     sha: "shared123",
@@ -130,7 +149,8 @@ Deno.test("get-latest-release given latest release exists with matching commits 
 })
 
 Deno.test("get-latest-release given latest branch does not exist, expect exit early without setting any output, expect good human readable logs", async (t) => {
-  await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.0.0');") // mock gh to return a release
+  const cleanup = await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v1.0.0');") // mock gh to return a release
+  mockCleanups.push(cleanup)
 
   const currentBranchCommit: GitCommit = {
     sha: "current123",
@@ -167,7 +187,8 @@ Deno.test("get-latest-release given latest branch does not exist, expect exit ea
 })
 
 Deno.test("get-latest-release given multiple commits on both branches, expect first matching commit, expect good human readable logs", async (t) => {
-  await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v2.0.0');") // mock gh to return a release
+  const cleanup = await mockBin("gh", "#!/usr/bin/env -S deno run --quiet --allow-all", "console.log('v2.0.0');") // mock gh to return a release
+  mockCleanups.push(cleanup)
 
   const oldestSharedCommit: GitCommit = {
     sha: "oldest123",

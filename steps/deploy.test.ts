@@ -7,17 +7,25 @@
  */
 
 // deno-lint-ignore-file no-import-prefix
-import { mockBin } from "jsr:@levibostian/mock-a-bin@1.0.0"
+import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.0.0"
 import { arrayDifferences, getCommandsExecuted } from "./test-sdk.test.ts"
 import { runDeployScript } from "jsr:@levibostian/decaf-sdk@0.3.0/testing"
 import { assertArrayIncludes, assertEquals, assertStringIncludes } from "@std/assert"
 import { DeployStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
 import { $ } from "@david/dax"
-import { afterEach } from "@std/testing/bdd"
 import { assertSnapshot } from "@std/testing/snapshot"
 
-afterEach(async () => {
+// Track cleanup functions for mocked binaries
+let mockCleanups: MockBinCleanup[] = []
+
+Deno.test.afterEach(async () => {
+  // Clean up any mocked binaries first so git restore can work
+  for (const cleanup of mockCleanups) {
+    cleanup()
+  }
+  mockCleanups = []
+
   // reset files that are modified in tests to create a clean state for each test
   await $`git restore version.txt`.noThrow()
   await $`rm -rf dist`.noThrow()
@@ -59,7 +67,7 @@ const getScriptInput = (nextVersionName: string, testMode = false): DeployStepIn
 }
 
 Deno.test("assert differences between test mode and production mode.", async () => {
-  await mockBin(
+  const cleanup = await mockBin(
     "git",
     "#!/usr/bin/env -S deno run --quiet --allow-all",
     `
@@ -67,6 +75,7 @@ const args = Deno.args;
 const command = args[0];
 `,
   )
+  mockCleanups.push(cleanup)
 
   const version = "1.0.0"
 
@@ -91,7 +100,7 @@ const command = args[0];
 })
 
 Deno.test("compiles binaries and passes correct paths to set-github-release-assets", async () => {
-  await mockBin(
+  const cleanup = await mockBin(
     "git",
     "#!/usr/bin/env -S deno run --quiet --allow-all",
     `
@@ -99,6 +108,7 @@ const args = Deno.args;
 const command = args[0];
 `,
   )
+  mockCleanups.push(cleanup)
 
   const version = "2.5.0"
 
@@ -133,7 +143,7 @@ const command = args[0];
 })
 
 Deno.test("final command should be updating single-source-version (github releases)", async () => {
-  await mockBin(
+  const cleanup = await mockBin(
     "git",
     "#!/usr/bin/env -S deno run --quiet --allow-all",
     `
@@ -141,6 +151,7 @@ const args = Deno.args;
 const command = args[0];
 `,
   )
+  mockCleanups.push(cleanup)
 
   const version = "3.0.0"
   const input = getScriptInput(version)
@@ -160,7 +171,7 @@ const command = args[0];
 })
 
 Deno.test("assert logs from script are human readable and explain the deployment process", async (t) => {
-  await mockBin(
+  const cleanup = await mockBin(
     "git",
     "#!/usr/bin/env -S deno run --quiet --allow-all",
     `
@@ -168,6 +179,7 @@ const args = Deno.args;
 const command = args[0];
 `,
   )
+  mockCleanups.push(cleanup)
 
   const version = "3.0.0"
   const input = getScriptInput(version)
