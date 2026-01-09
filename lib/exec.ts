@@ -1,5 +1,6 @@
 import * as log from "./log.ts"
 import { AnyStepInput } from "./types/environment.ts"
+import { convertGitHubUrlToCommand, isGitHubRemoteScript } from "./github-remote-script.ts"
 
 export interface RunResult {
   exitCode: number
@@ -40,6 +41,14 @@ const run = async (
     currentWorkingDirectory?: string
   },
 ): Promise<RunResult> => {
+  // Check if this is a GitHub remote script URL and convert it to an executable command
+  let commandToExecute = command
+  if (isGitHubRemoteScript(command)) {
+    log.debug(`Detected GitHub remote script: ${command}`)
+    commandToExecute = await convertGitHubUrlToCommand(command)
+    log.debug(`Converted to command: ${commandToExecute}`)
+  }
+
   if (displayLogs) {
     log.message(` $> ${command}`)
   } else {
@@ -75,7 +84,7 @@ const run = async (
   // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
   // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
   const process = new Deno.Command("sh", {
-    args: ["-c", command],
+    args: ["-c", commandToExecute],
     stdout: "piped",
     stderr: "piped",
     env: environmentVariablesToPassToCommand,
