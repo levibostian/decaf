@@ -14,7 +14,9 @@ Treat script testing like writing unit tests for your codebase. Because decaf sc
 
 ### Test Input/Output
 
-Arguably the most important responsibility of a decaf script is to take in decaf input data and generate decaf output data. Therefore, a key strategy for testing your scripts is to run your scripts by passing in some pure decaf input data, and then asserting on the decaf output data that your script generates. To learn how to do this, check out the `runScript` function in `steps/test-sdk.test.ts`. Sure, this code is written in TypeScript/Deno, but the strategy is language-agnostic and can be applied in any stack. 
+Arguably the most important responsibility of a decaf script is to take in decaf input data and generate decaf output data. Therefore, a key strategy for testing your scripts is to run your scripts by passing in some pure decaf input data, and then asserting on the decaf output data that your script generates. 
+
+The [decaf SDK](https://github.com/levibostian/decaf-sdk-deno/) (version 0.3.0+) provides testing functions to help you run your scripts in a test environment. For example, you can use `runDeployScript()`, `runGetLatestReleaseScript()`, or `runGetNextReleaseVersionScript()` to run your scripts with test input data and capture the output. Check out the `.test.ts` files in the `steps/` directory to see examples of how to use these testing functions. 
 
 ### Test Console Output 
 
@@ -32,7 +34,9 @@ When writing automated tests for your scripts, make sure to cover this edge case
 
 ### Run your decaf scripts 
 
-In order to write automated tests for your decaf scripts, you need a way to run your scripts programmatically from your test code. We plan on providing official test tooling for you to do this in the future, but for now, check out the `runScript` function in `steps/test-sdk.test.ts` of this project. Sure, this code is written in TypeScript/Deno, but the strategy is language-agnostic and can be applied in any stack. 
+In order to write automated tests for your decaf scripts, you need a way to run your scripts programmatically from your test code. The [decaf SDK](https://github.com/levibostian/decaf-sdk-deno/) provides official testing utilities starting with version 0.3.0. The SDK includes functions like `runDeployScript()`, `runGetLatestReleaseScript()`, and `runGetNextReleaseVersionScript()` that allow you to run your scripts with test input data and capture the output, exit code, and console output.
+
+Check out the `.test.ts` files in the `steps/` directory of this project for examples of how to use these testing utilities in practice. While these examples are written in TypeScript/Deno, the SDK works with Deno, Node.js, and Bun, and the testing strategies can be adapted to any language and testing framework. 
 
 ### Mock Shell Commands
 
