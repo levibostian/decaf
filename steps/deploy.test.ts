@@ -8,7 +8,8 @@
 
 // deno-lint-ignore-file no-import-prefix
 import { mockBin } from "jsr:@levibostian/mock-a-bin@1.0.0"
-import { arrayDifferences, getCommandsExecuted, runScript } from "./test-sdk.test.ts"
+import { arrayDifferences, getCommandsExecuted } from "./test-sdk.test.ts"
+import { runDeployScript } from "jsr:@levibostian/decaf-sdk@0.3.0/testing"
 import { assertArrayIncludes, assertEquals, assertStringIncludes } from "@std/assert"
 import { DeployStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
@@ -70,12 +71,12 @@ const command = args[0];
   const version = "1.0.0"
 
   // Run in test mode
-  const testResult = await runScript<DeployStepInput, void>("deno run --allow-all steps/deploy.ts", getScriptInput(version, true))
+  const testResult = await runDeployScript("deno run --allow-all steps/deploy.ts", getScriptInput(version, true))
   assertEquals(testResult.code, 0, "Test mode should succeed")
   const commandsExecutedInTestMode = getCommandsExecuted(testResult.stdout)
 
   // Run in production mode
-  const prodResult = await runScript<DeployStepInput, void>("deno run --allow-all steps/deploy.ts", getScriptInput(version, false))
+  const prodResult = await runDeployScript("deno run --allow-all steps/deploy.ts", getScriptInput(version, false))
   assertEquals(prodResult.code, 0, "Production mode should succeed")
   const commandsExecutedInProdMode = getCommandsExecuted(prodResult.stdout)
 
@@ -101,7 +102,7 @@ const command = args[0];
 
   const version = "2.5.0"
 
-  const { code, stdout } = await runScript<DeployStepInput, void>("deno run --allow-all steps/deploy.ts", getScriptInput(version))
+  const { code, stdout } = await runDeployScript("deno run --allow-all steps/deploy.ts", getScriptInput(version))
   assertEquals(code, 0, "Deploy should succeed")
 
   // Define expected binary paths (from deploy.ts)
@@ -144,7 +145,7 @@ const command = args[0];
   const version = "3.0.0"
   const input = getScriptInput(version)
 
-  const { code, stdout } = await runScript<DeployStepInput, void>("deno run --allow-all steps/deploy.ts", input)
+  const { code, stdout } = await runDeployScript("deno run --allow-all steps/deploy.ts", input)
   assertEquals(code, 0, "Deploy should succeed")
 
   const commandsExecuted = getCommandsExecuted(stdout)
@@ -171,7 +172,7 @@ const command = args[0];
   const version = "3.0.0"
   const input = getScriptInput(version)
 
-  const { code, stdout } = await runScript<DeployStepInput, void>("deno run --allow-all steps/deploy.ts", input)
+  const { code, stdout } = await runDeployScript("deno run --allow-all steps/deploy.ts", input)
   assertEquals(code, 0, "Deploy should succeed")
 
   await assertSnapshot(t, stdout.join("\n"))

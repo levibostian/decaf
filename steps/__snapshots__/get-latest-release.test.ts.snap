@@ -4,8 +4,8 @@ snapshot[`get-latest-release given latest release exists but no commits on both 
 [
   "Getting the list of GitHub Releases for GitHub repository: test-owner/test-repo...",
   "> gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].name'",
-  "No commits found that are present on both 'latest' and current branch.
-This shouldn't happen, so exiting early with error to avoid creating a broken release.",
+  "No commits found that are present on both 'latest' and current branch.",
+  "This shouldn't happen, so exiting early with error to avoid creating a broken release.",
 ]
 `;
 
@@ -21,8 +21,8 @@ snapshot[`get-latest-release given latest branch does not exist, expect exit ear
 [
   "Getting the list of GitHub Releases for GitHub repository: test-owner/test-repo...",
   "> gh release list --exclude-drafts --order desc --json name,isLatest,isPrerelease,tagName --jq '.[0].name'",
-  "No commits found that are present on both 'latest' and current branch.
-This shouldn't happen, so exiting early with error to avoid creating a broken release.",
+  "No commits found that are present on both 'latest' and current branch.",
+  "This shouldn't happen, so exiting early with error to avoid creating a broken release.",
 ]
 `;
 

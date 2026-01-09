@@ -1,11 +1,21 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@cross/deepmerge@1": "1.0.0",
+    "jsr:@cross/dir@^1.1.0": "1.1.0",
+    "jsr:@cross/env@1": "1.0.3",
+    "jsr:@cross/env@^1.0.3": "1.0.3",
+    "jsr:@cross/fs@~0.1.11": "0.1.13",
+    "jsr:@cross/fs@~0.1.13": "0.1.13",
+    "jsr:@cross/runtime@1": "1.2.1",
+    "jsr:@cross/utils@0.16": "0.16.0",
+    "jsr:@cross/utils@0.7": "0.7.1",
     "jsr:@david/console-static-text@0.3": "0.3.0",
     "jsr:@david/dax@0.44": "0.44.1",
     "jsr:@david/path@0.2": "0.2.0",
     "jsr:@david/service-store@0.3": "0.3.0",
     "jsr:@david/which@~0.4.1": "0.4.1",
+    "jsr:@levibostian/decaf-sdk@0.3.0": "0.3.0",
     "jsr:@levibostian/mock-a-bin@1.0.0": "1.0.0",
     "jsr:@std/assert@^1.0.12": "1.0.16",
     "jsr:@std/assert@^1.0.15": "1.0.16",
@@ -20,6 +30,7 @@
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/io@0.225": "0.225.2",
     "jsr:@std/path@1": "1.1.3",
+    "jsr:@std/path@^1.0.8": "1.1.3",
     "jsr:@std/path@^1.1.2": "1.1.3",
     "jsr:@std/path@^1.1.3": "1.1.3",
     "jsr:@std/semver@^1.0.4": "1.0.5",
@@ -33,6 +44,49 @@
     "npm:yoctocolors@2.1.2": "2.1.2"
   },
   "jsr": {
+    "@cross/deepmerge@1.0.0": {
+      "integrity": "1e1318a74e31ba1959b9aa0acae8bd417b806f74ffd25ac07c90e12f83ad6b1d"
+    },
+    "@cross/dir@1.1.0": {
+      "integrity": "41eb779daf160f53bc33ef91f593f332fffc52ec9b81f87178db564718534e59",
+      "dependencies": [
+        "jsr:@cross/env@1",
+        "jsr:@cross/runtime",
+        "jsr:@cross/utils@0.7"
+      ]
+    },
+    "@cross/env@1.0.3": {
+      "integrity": "218d2dd68bec55cf047d1670a8bddc304b9c011a8ad22e647afa916bb796c8b4",
+      "dependencies": [
+        "jsr:@cross/deepmerge",
+        "jsr:@cross/runtime"
+      ]
+    },
+    "@cross/fs@0.1.13": {
+      "integrity": "73fefaee0afd4bded3dab53d0af99fedf675c4ccb29707b73f525cb0e7584e8e",
+      "dependencies": [
+        "jsr:@cross/dir",
+        "jsr:@cross/env@1",
+        "jsr:@cross/runtime",
+        "jsr:@std/path@^1.0.8"
+      ]
+    },
+    "@cross/runtime@1.2.1": {
+      "integrity": "f462fcf2fd678f9073291b4e55209b90f58c8d508764a84205d178abdcf22fc9"
+    },
+    "@cross/utils@0.7.1": {
+      "integrity": "6cc50ad31b0904364188c43d10e3d4888d817a3d415528b014c27deb8a35564e",
+      "dependencies": [
+        "jsr:@cross/runtime"
+      ]
+    },
+    "@cross/utils@0.16.0": {
+      "integrity": "c6333cafd9be41a04c449655120989b8f3601322f7344db30f9d00eef7bc942f",
+      "dependencies": [
+        "jsr:@cross/fs@~0.1.11",
+        "jsr:@cross/runtime"
+      ]
+    },
     "@david/console-static-text@0.3.0": {
       "integrity": "2dfb46ecee525755f7989f94ece30bba85bd8ffe3e8666abc1bf926e1ee0698d"
     },
@@ -60,6 +114,14 @@
     },
     "@david/which@0.4.1": {
       "integrity": "896a682b111f92ab866cc70c5b4afab2f5899d2f9bde31ed00203b9c250f225e"
+    },
+    "@levibostian/decaf-sdk@0.3.0": {
+      "integrity": "4f87170d0e28caab3d8f30bcd19673230c1d73df6c84ec10b4c46d5ad07f36f6",
+      "dependencies": [
+        "jsr:@cross/env@^1.0.3",
+        "jsr:@cross/fs@~0.1.13",
+        "jsr:@cross/utils@0.16"
+      ]
     },
     "@levibostian/mock-a-bin@1.0.0": {
       "integrity": "b7ad9f788bf2a3ae47cef856909685373cf542d7e88acc6a049c72f154d23384"
