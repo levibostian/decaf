@@ -69,22 +69,15 @@ runs:
       if: ${{ inputs.compile_binary == 'true' }}
       uses: asdf-vm/actions/install@v4
 
+    # compile binary and put into a location in PATH. the path matches what's in the ./install script.
     - name: Compile binary
       if: ${{ inputs.compile_binary == 'true' }}
       working-directory: ${{ github.action_path }}
-      run: OUTPUT_FILE_NAME=decaf DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
-      shell: bash
-
-    # when this action is being executed by *this decaf project*, we dont want to run this cp command because 
-    # the decaf binary will already exist in our workspace directory. But if I want to run a pre-production version of this tool 
-    # from a different project, not this one, I need to cp the compiled binary created above into the relative path so we can call it. 
-    - name: Copy compiled binary to workspace
-      if: ${{ inputs.compile_binary == 'true' }}
-      shell: bash
       run: |
-        if [ ! -f "${{ github.workspace }}/decaf" ]; then
-          cp ${{ github.action_path }}/decaf ${{ github.workspace }}/decaf
-        fi
+        OUTPUT_FILE_NAME=decaf DENO_TARGET="$(uname -m)-unknown-linux-gnu" deno task compile
+        mkdir -p "${HOME}/.local/bin"
+        mv ./decaf "${HOME}/.local/bin"
+      shell: bash
 
     # if you provide a template string in the actions workflow file, it probably has quotes in it that need to be escaped in order to pass 
     # it as a CLI command argument. The easiest way to do that is to write it to a temp file and pass the file path instead.
@@ -103,7 +96,7 @@ runs:
       # The directories we are giving permission to read and write to are the temp directories for all of the OSes that GitHub Actions supports. /tmp for linux and /var/folders for macOS.
       run: |
         PULL_REQUEST_COMMENT_TEMPLATE=${{ inputs.pull_request_comment_template }}
-        ./decaf \
+        decaf \
           --github_token "${{ inputs.github_token }}" \
           --git_config "${{ inputs.git_config }}" \
           --deploy "${{ inputs.deploy }}" \
