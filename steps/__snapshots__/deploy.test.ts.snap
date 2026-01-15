@@ -43,7 +43,7 @@ How?
 > git branch --track latest origin/latest
 > git checkout latest
 > git pull --no-rebase origin latest
-> git merge --ff ''
+> git merge --ff main
 > git log --oneline -n 5
 > git add version.txt && git commit -m "Bump version to '3.0.0'"
 to help with debugging, log the recently created commit including all the file changes made
@@ -62,8 +62,8 @@ We run the script, @levibostian/decaf-script-github-releases, with the 'set-gith
 passing in the list of compiled binaries we created earlier. That script will handle uploading the binaries to the GitHub release.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-> deno run '--quiet' '--allow-all' 'jsr:@levibostian/decaf-script-github-releases' 'set-github-release-assets' 'dist/bin-x86_64-Linux#bin-x86_64-Linux' 'dist/bin-aarch64-Linux#bin-aarch64-Linux' 'dist/bin-x86_64-Darwin#bin-x86_64-Darwin' 'dist/bin-aarch64-Darwin#bin-aarch64-Darwin'
-No git tags found on the current branch. Therefore, there has never been a release on this branch.
+> deno run '--allow-all' 'jsr:@levibostian/decaf-script-github-releases@1.1.0' 'set-github-release-assets' 'dist/bin-x86_64-Linux#bin-x86_64-Linux' 'dist/bin-aarch64-Linux#bin-aarch64-Linux' 'dist/bin-x86_64-Darwin#bin-x86_64-Darwin' 'dist/bin-aarch64-Darwin#bin-aarch64-Darwin'
+mocked deno run command: run --allow-all jsr:@levibostian/decaf-script-github-releases@1.1.0 set-github-release-assets dist/bin-x86_64-Linux#bin-x86_64-Linux dist/bin-aarch64-Linux#bin-aarch64-Linux dist/bin-x86_64-Darwin#bin-x86_64-Darwin dist/bin-aarch64-Darwin#bin-aarch64-Darwin
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Create the GitHub Release 
@@ -79,6 +79,6 @@ We run the script, @levibostian/decaf-script-github-releases, with the 'set' com
 We pass in a target commit SHA so that the release is associated with the correct code changes we made to the version.txt file.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-> deno run '--quiet' '--allow-all' 'jsr:@levibostian/decaf-script-github-releases' set '--generate-notes' '--latest' '--target' ''
-No git tags found on the current branch. Therefore, there has never been a release on this branch.\`
+> deno run '--allow-all' 'jsr:@levibostian/decaf-script-github-releases@1.1.0' set '--generate-notes' '--latest' '--target' commit12345
+mocked deno run command: run --allow-all jsr:@levibostian/decaf-script-github-releases@1.1.0 set --generate-notes --latest --target commit12345\`
 `;

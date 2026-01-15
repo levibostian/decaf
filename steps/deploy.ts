@@ -139,9 +139,8 @@ passing in the list of compiled binaries we created earlier. That script will ha
 
 await $`deno ${[
   `run`,
-  `--quiet`,
   `--allow-all`,
-  `jsr:@levibostian/decaf-script-github-releases`,
+  `jsr:@levibostian/decaf-script-github-releases@1.1.0`,
   `set-github-release-assets`,
   ...githubReleaseAssets,
 ]}`.printCommand()
@@ -166,9 +165,8 @@ const latestGitCommitSha = (await $`git rev-parse HEAD`.text()).trim()
 
 await $`deno ${[
   `run`,
-  `--quiet`,
   `--allow-all`,
-  `jsr:@levibostian/decaf-script-github-releases`,
+  `jsr:@levibostian/decaf-script-github-releases@1.1.0`,
   `set`,
   `--generate-notes`,
   `--latest`,

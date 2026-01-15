@@ -19,6 +19,7 @@
     "jsr:@levibostian/decaf-sdk@0.4.0": "0.4.0",
     "jsr:@levibostian/decaf-sdk@0.4.1": "0.4.1",
     "jsr:@levibostian/mock-a-bin@1.0.0": "1.0.0",
+    "jsr:@levibostian/mock-a-bin@1.1.0": "1.1.0",
     "jsr:@std/assert@^1.0.12": "1.0.16",
     "jsr:@std/assert@^1.0.15": "1.0.16",
     "jsr:@std/async@^1.0.15": "1.0.15",
@@ -159,6 +160,9 @@
     },
     "@levibostian/mock-a-bin@1.0.0": {
       "integrity": "b7ad9f788bf2a3ae47cef856909685373cf542d7e88acc6a049c72f154d23384"
+    },
+    "@levibostian/mock-a-bin@1.1.0": {
+      "integrity": "6f0207183f68585378c629e7774cfe0e2a3451be1fce31debab7be14a42fe961"
     },
     "@std/assert@1.0.16": {
       "integrity": "6a7272ed1eaa77defe76e5ff63ca705d9c495077e2d5fd0126d2b53fc5bd6532",

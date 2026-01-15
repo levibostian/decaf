@@ -7,7 +7,7 @@
  */
 
 // deno-lint-ignore-file no-import-prefix
-import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.0.0"
+import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.1.0"
 import { arrayDifferences, getCommandsExecuted } from "./test-sdk.test.ts"
 import { runDeployScript } from "jsr:@levibostian/decaf-sdk@0.4.1/testing"
 import { assertArrayIncludes, assertEquals, assertStringIncludes } from "@std/assert"
@@ -18,6 +18,36 @@ import { assertSnapshot } from "@std/testing/snapshot"
 
 // Track cleanup functions for mocked binaries
 let mockCleanups: MockBinCleanup[] = []
+
+Deno.test.beforeEach(async () => {
+  // Mock git commands used in the deploy script
+  mockCleanups.push(
+    await mockBin(
+      "git",
+      "#!/usr/bin/env -S deno run --quiet --allow-all",
+      `
+    if (Deno.args[0] === "rev-parse" && Deno.args[1] === "HEAD") { // to get last commit sha
+      console.log("commit12345")
+      Deno.exit(0)
+    } 
+    
+    if (Deno.args[0] === "rev-parse" && Deno.args[1] === "--abbrev-ref") { // to get current branch
+      console.log("main")
+      Deno.exit(0)
+    }
+    `,
+    ),
+  )
+
+  // Always mock the deno run commands inside of the deploy script to prevent actual execution
+  mockCleanups.push(
+    await mockBin(
+      { binName: "deno", pattern: "^deno run .* jsr:.*" },
+      "bash",
+      'echo "mocked deno run command: $*"',
+    ),
+  )
+})
 
 Deno.test.afterEach(async () => {
   // Clean up any mocked binaries first so git restore can work
@@ -67,16 +97,6 @@ const getScriptInput = (nextVersionName: string, testMode = false): DeployStepIn
 }
 
 Deno.test("assert differences between test mode and production mode.", async () => {
-  const cleanup = await mockBin(
-    "git",
-    "#!/usr/bin/env -S deno run --quiet --allow-all",
-    `
-const args = Deno.args;
-const command = args[0];
-`,
-  )
-  mockCleanups.push(cleanup)
-
   const version = "1.0.0"
 
   // Run in test mode
@@ -100,16 +120,6 @@ const command = args[0];
 })
 
 Deno.test("compiles binaries and passes correct paths to set-github-release-assets", async () => {
-  const cleanup = await mockBin(
-    "git",
-    "#!/usr/bin/env -S deno run --quiet --allow-all",
-    `
-const args = Deno.args;
-const command = args[0];
-`,
-  )
-  mockCleanups.push(cleanup)
-
   const version = "2.5.0"
 
   const { code, stdout } = await runDeployScript("deno run --allow-all steps/deploy.ts", getScriptInput(version))
@@ -143,16 +153,6 @@ const command = args[0];
 })
 
 Deno.test("final command should be updating single-source-version (github releases)", async () => {
-  const cleanup = await mockBin(
-    "git",
-    "#!/usr/bin/env -S deno run --quiet --allow-all",
-    `
-const args = Deno.args;
-const command = args[0];
-`,
-  )
-  mockCleanups.push(cleanup)
-
   const version = "3.0.0"
   const input = getScriptInput(version)
 
@@ -162,25 +162,16 @@ const command = args[0];
   const commandsExecuted = getCommandsExecuted(stdout)
   const lastCommand = commandsExecuted[commandsExecuted.length - 1]
 
-  // Verify the last command is the GitHub release 'set' command
-  assertStringIncludes(
-    lastCommand,
-    `'jsr:@levibostian/decaf-script-github-releases' set`,
-    "Last command should be GitHub release 'set' command",
+  // Verify the last command matches the expected regex pattern
+  const expectedPattern = /'jsr:@levibostian\/decaf-script-github-releases.*' set/
+  assertEquals(
+    expectedPattern.test(lastCommand),
+    true,
+    `Last command should match the pattern: ${expectedPattern}`,
   )
 })
 
 Deno.test("assert logs from script are human readable and explain the deployment process", async (t) => {
-  const cleanup = await mockBin(
-    "git",
-    "#!/usr/bin/env -S deno run --quiet --allow-all",
-    `
-const args = Deno.args;
-const command = args[0];
-`,
-  )
-  mockCleanups.push(cleanup)
-
   const version = "3.0.0"
   const input = getScriptInput(version)
 
