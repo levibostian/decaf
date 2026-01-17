@@ -38,7 +38,7 @@ jobs:
 
     - name: Annotate failed tests
       if: always() # Run with test/lint failures.
-      uses: granodigital/report-annotate@ee4a47b09c47081abeab3758097a77a5589bc7f1 # v3.1.1
+      uses: granodigital/report-annotate@ddcd40bef0983d35ee307943d2a5088654519c40 # v3.1.3
       with:
         reports: |
           junit|reports/junit.xml
