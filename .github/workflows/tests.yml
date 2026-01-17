@@ -19,9 +19,6 @@ jobs:
     - name: Run Deno tests
       run: deno task test
 
-    - name: Generate coverage report 
-      run: deno coverage --lcov --output=reports/coverage.lcov reports/coverage/
-
     - name: Upload test results
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
       with:

@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main] # PRs that target the main branch
     paths: # only run if these files are changed
-      - 'deno.json'
+      - 'deno.jsonc'
 
 jobs:
   update-lockfile:

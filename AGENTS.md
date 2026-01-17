@@ -13,7 +13,7 @@
 ## Deno v2 Project Notes
 - This is a Deno v2 project using JSR for external dependencies
 - All external packages should be imported from JSR (e.g., `@std/cli`, `@david/dax`)
-- Use `deno.json` for configuration and task definitions
+- Use `deno.jsonc` for configuration and task definitions
 
 ## Code Style Guidelines
 
@@ -24,7 +24,7 @@
 
 ### Formatting & Types
 - Line width: 150 characters
-- No semicolons (configured in deno.json)
+- No semicolons (configured in deno.jsonc)
 - Use TypeScript interfaces for all public APIs
 - Use type guards for runtime type checking (see `lib/steps/types/output.ts`)
 - Prefer explicit return types for public functions

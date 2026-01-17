@@ -183,6 +183,8 @@ You are responsible for writing the scripts that perform each deployment step. T
 
 > **💡 Pro tip:** Use the [decaf SDK](https://github.com/levibostian/decaf-sdk-deno/) to make writing your step scripts easier! The SDK provides helpful utilities and handles the input/output contract for you. It supports Deno, Node.js, and Bun.
 
+> **💡 Testing your scripts:** Want to write automated tests for your deployment scripts? Check out the [testing guide](docs/test-your-scripts.md) to learn strategies and tools for testing your scripts.
+
 Below are instructions for each required step. The `steps/` directory in this repository contains example scripts for deploying this codebase, but you should write your own scripts for your project. Use the examples only for reference.
 
 ### 1. Get latest release

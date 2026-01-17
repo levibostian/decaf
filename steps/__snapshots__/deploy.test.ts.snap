@@ -1,0 +1,84 @@
+export const snapshot = {};
+
+snapshot[`assert logs from script are human readable and explain the deployment process 1`] = `
+\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Compile Deno binaries
+
+Why? 
+We want to provide pre-compiled binaries for various platforms so users can easily download and use them without needing to have Deno installed.
+
+How? 
+We will compile the Deno script into binaries for the following platforms:
+- Linux x86_64
+- Linux aarch64
+- macOS x86_64
+- macOS aarch64
+
+These binaries will be stored in the 'dist' directory and uploaded as assets to the GitHub release.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> OUTPUT_FILE_NAME=dist/'bin-x86_64-Linux' DENO_TARGET='x86_64-unknown-linux-gnu' deno task compile
+> OUTPUT_FILE_NAME=dist/'bin-aarch64-Linux' DENO_TARGET='aarch64-unknown-linux-gnu' deno task compile
+> OUTPUT_FILE_NAME=dist/'bin-x86_64-Darwin' DENO_TARGET='x86_64-apple-darwin' deno task compile
+> OUTPUT_FILE_NAME=dist/'bin-aarch64-Darwin' DENO_TARGET='aarch64-apple-darwin' deno task compile
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Update version.txt on 'latest' branch and push to git repository
+
+Why? 
+We need to modify the version.txt file, commit it, and push it to our git repository.
+We want to make the commit on the 'latest' branch instead of the 'main' branch
+so we can keep our 'main' branch clean from these release commits that we make. 
+
+How? 
+- Checkout the 'latest' branch
+- Merge the current branch ('main') into 'latest'
+- Modify version.txt with the new version
+- Commit the changes to version.txt
+- Push the changes to 'latest' after we make our version.txt commit
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> git log --oneline -n 5
+> git branch --track latest origin/latest
+> git checkout latest
+> git pull --no-rebase origin latest
+> git merge --ff main
+> git log --oneline -n 5
+> git add version.txt && git commit -m "Bump version to '3.0.0'"
+to help with debugging, log the recently created commit including all the file changes made
+> git show HEAD
+> git push
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Pass the compiled binaries to the GitHub release so they are included as assets
+
+Why? 
+The compiled binaries need to be uploaded to a server so users can download them. 
+We use GitHub releases to host these binaries, attaching them as assets to the release we will create. 
+
+How? 
+We run the script, @levibostian/decaf-script-github-releases, with the 'set-github-release-assets' command,
+passing in the list of compiled binaries we created earlier. That script will handle uploading the binaries to the GitHub release.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> deno run '--allow-all' 'jsr:@levibostian/decaf-script-github-releases@1.1.0' 'set-github-release-assets' 'dist/bin-x86_64-Linux#bin-x86_64-Linux' 'dist/bin-aarch64-Linux#bin-aarch64-Linux' 'dist/bin-x86_64-Darwin#bin-x86_64-Darwin' 'dist/bin-aarch64-Darwin#bin-aarch64-Darwin'
+mocked deno run command: run --allow-all jsr:@levibostian/decaf-script-github-releases@1.1.0 set-github-release-assets dist/bin-x86_64-Linux#bin-x86_64-Linux dist/bin-aarch64-Linux#bin-aarch64-Linux dist/bin-x86_64-Darwin#bin-x86_64-Darwin dist/bin-aarch64-Darwin#bin-aarch64-Darwin
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Create the GitHub Release 
+
+Why? 
+When using decaf, we need to update the single-source-of-truth for the latest release that has been made. 
+This project uses GitHub Releases to store the single-source-of-truth. So, we need to create a GitHub Release for the new version.
+
+IMPORTANT: This MUST be the last step in this script. After the GitHub Release is created, decaf will consider the release process complete.
+
+How? 
+We run the script, @levibostian/decaf-script-github-releases, with the 'set' command. This script will create the GitHub Release for us. 
+We pass in a target commit SHA so that the release is associated with the correct code changes we made to the version.txt file.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> deno run '--allow-all' 'jsr:@levibostian/decaf-script-github-releases@1.1.0' set '--generate-notes' '--latest' '--target' commit12345
+mocked deno run command: run --allow-all jsr:@levibostian/decaf-script-github-releases@1.1.0 set --generate-notes --latest --target commit12345\`
+`;
