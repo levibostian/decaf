@@ -15,6 +15,7 @@
   },
   "tasks": {
     "test-only": "deno test --allow-all --clean --junit-path reports/junit.xml --coverage=reports/coverage/ --coverage-raw-data-only",
+    // runs coverage twice - once for showing a table in terminal, once for generating lcov file for codecov
     "test": "deno task test-only && deno coverage reports/coverage/ --include=$(pwd) && deno coverage reports/coverage/ --include=$(pwd) --lcov --output=reports/coverage.lcov",
     "test-update": "deno task test-only -- --update",
     "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts",
