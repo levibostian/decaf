@@ -66,6 +66,11 @@ const run = async (
       inputDataFileContents,
     )
 
+    // Set environment variable to pass the file path to the user script.
+    //
+    // In v1.0, we plan to change the name of this environment variable to DECAF_COMM_FILE_PATH and remove the old one DATA_FILE_PATH.
+    // For now, we set both for backward compatibility.
+    environmentVariablesToPassToCommand["DECAF_COMM_FILE_PATH"] = tempFilePathToCommunicateWithCommand
     environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
   }
 
