@@ -19,7 +19,7 @@ if (shouldThrow) {
 }
 
 // Save the input for the test to reference later.
-const inputDataPath = Deno.env.get("DATA_FILE_PATH")!
+const inputDataPath = Deno.env.get("DECAF_COMM_FILE_PATH")!
 const inputData = Deno.readTextFileSync(inputDataPath)
 Deno.writeFileSync(
   "/tmp/e2e-input.json",
