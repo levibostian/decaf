@@ -62,7 +62,7 @@ Deno.test("allow commands that use >> for output redirection", async () => {
 
 Deno.test("given contextual input data, expect the executed command receives the input data", async () => {
   const { exitCode, stdout } = await exec.run({
-    command: `python3 -c "import os; print(open(os.getenv('DATA_FILE_PATH'), 'r').read());"`,
+    command: `python3 -c "import os; print(open(os.getenv('DECAF_COMM_FILE_PATH'), 'r').read());"`,
     input: givenPluginInput,
   })
 
@@ -81,7 +81,7 @@ Deno.test("given command forgets to write the output, expect to get undefined fo
 
 Deno.test("given command writes output data to file, expect to get that data back", async () => {
   const { output } = await exec.run({
-    command: `python3 -c 'import json, os; json.dump({"filesToCommit": ["foo.txt"]}, open(os.getenv("DATA_FILE_PATH"), "w"));'`,
+    command: `python3 -c 'import json, os; json.dump({"filesToCommit": ["foo.txt"]}, open(os.getenv("DECAF_COMM_FILE_PATH"), "w"));'`,
     input: givenPluginInput,
   })
 
@@ -268,7 +268,7 @@ Deno.test("complex multi-line command", async () => {
 
 Deno.test("command with both input and custom envVars", async () => {
   const { exitCode, stdout } = await exec.run({
-    command: `python3 -c "import os; print(os.getenv('CUSTOM_ENV') + '-' + os.getenv('DATA_FILE_PATH')[:6])"`,
+    command: `python3 -c "import os; print(os.getenv('CUSTOM_ENV') + '-' + os.getenv('DECAF_COMM_FILE_PATH')[:6])"`,
     input: givenPluginInput,
     envVars: { CUSTOM_ENV: "custom_value" },
   })

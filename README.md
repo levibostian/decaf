@@ -192,7 +192,7 @@ Below are instructions for each required step. The `steps/` directory in this re
 Write a script that determines the current/latest release version of your project.
 
 **Requirements:**
-- Read input from the JSON file at the path provided by the `DATA_FILE_PATH` environment variable. Input format:
+- Read input from the JSON file at the path provided by the `DECAF_COMM_FILE_PATH` environment variable. Input format:
   ```json
   {
     "gitCurrentBranch": "main",
@@ -213,7 +213,7 @@ Write a script that determines the current/latest release version of your projec
 ```js
 // get-latest-release.js
 const fs = require('fs');
-const path = process.env.DATA_FILE_PATH;
+const path = process.env.DECAF_COMM_FILE_PATH;
 const input = JSON.parse(fs.readFileSync(path, 'utf8'));
 
 // TODO: Replace with your logic to get the latest release version and commit SHA
@@ -231,7 +231,7 @@ fs.writeFileSync(path, JSON.stringify(latestRelease));
 Write a script that determines what the next release version should be (e.g., bumping major, minor, or patch).
 
 **Requirements:**
-- Read input from the JSON file at the path provided by the `DATA_FILE_PATH` environment variable. Input format:
+- Read input from the JSON file at the path provided by the `DECAF_COMM_FILE_PATH` environment variable. Input format:
   ```json
   {
     "gitCurrentBranch": "main",
@@ -256,7 +256,7 @@ Write a script that determines what the next release version should be (e.g., bu
 ```js
 // get-next-release.js
 const fs = require('fs');
-const path = process.env.DATA_FILE_PATH;
+const path = process.env.DECAF_COMM_FILE_PATH;
 const input = JSON.parse(fs.readFileSync(path, 'utf8'));
 
 // TODO: Replace with your logic to determine the next version (e.g., using commit messages)
@@ -273,7 +273,7 @@ fs.writeFileSync(path, JSON.stringify(nextVersion));
 Write a script that performs the deployment.
 
 **Requirements:**
-- Read input from the JSON file at the path provided by the `DATA_FILE_PATH` environment variable. Input format:
+- Read input from the JSON file at the path provided by the `DECAF_COMM_FILE_PATH` environment variable. Input format:
   ```json
   {
     "gitCurrentBranch": "main",
@@ -292,7 +292,7 @@ Write a script that performs the deployment.
 ```js
 // deploy.js
 const fs = require('fs');
-const path = process.env.DATA_FILE_PATH;
+const path = process.env.DECAF_COMM_FILE_PATH;
 const input = JSON.parse(fs.readFileSync(path, 'utf8'));
 
 // TODO: Replace with your deployment logic (update files, push to server, etc.)
