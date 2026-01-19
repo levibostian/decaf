@@ -112,11 +112,14 @@ Deno.test("assert differences between test mode and production mode.", async () 
   const differences = arrayDifferences(commandsExecutedInTestMode, commandsExecutedInProdMode)
 
   assertEquals(differences, [
-    `git push '--dry-run'`,
     `git push`,
   ])
 
-  assertArrayIncludes(commandsExecutedInTestMode, [`git push '--dry-run'`], "Test mode should include --dry-run")
+  assertArrayIncludes(
+    commandsExecutedInProdMode,
+    [`git push`],
+    "Production should git push, asserting that the difference indicates that test mode does not push",
+  )
 })
 
 Deno.test("compiles binaries and passes correct paths to set-github-release-assets", async () => {

@@ -117,11 +117,11 @@ console.log(`to help with debugging, log the recently created commit including a
 await $`git show HEAD`.printCommand()
 
 // Push the commit
-const gitPushArgs = ["push"]
 if (input.testMode) {
-  gitPushArgs.push("--dry-run")
+  console.log(blue(`Test mode is enabled, so skipping git push`))
+} else {
+  await $`git push`.printCommand()
 }
-await $`git ${gitPushArgs}`.printCommand()
 
 console.log(blue(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
