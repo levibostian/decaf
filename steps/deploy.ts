@@ -1,9 +1,14 @@
 #!/usr/bin/env -S deno run --quiet --allow-all
 
-// deno-lint-ignore-file no-import-prefix
 import { DeployStepInput } from "../lib/types/environment.ts"
-import { $ } from "@david/dax"
-import { blue } from "npm:yoctocolors@2.1.2"
+import { blue } from "yoctocolors"
+import { build$ } from "@david/dax"
+
+const $ = build$({
+  commandBuilder: (builder) =>
+    builder
+      .cwd(".."),
+})
 
 const input: DeployStepInput = JSON.parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
 
