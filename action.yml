@@ -42,6 +42,9 @@ inputs:
   pull_request_comment_template:
     description: 'Template string for the pull request comment. Used if pull_request_comment_template_file is not provided.'
     default: ''
+  current_working_directory:
+    description: 'The working directory to run all user scripts from. If not provided, defaults to the git repository root directory.'
+    default: ''
 
 outputs:
   new_release_version:
@@ -105,6 +108,7 @@ runs:
           --simulated_merge_type "${{ inputs.simulated_merge_type }}" \
           --branch_filters "${{ inputs.branch_filters }}" \
           --commit_limit "${{ inputs.commit_limit }}" \
+          --current_working_directory "${{ inputs.current_working_directory }}" \
           --pull_request_comment_template_file "${{ inputs.pull_request_comment_template_file || env.DECAF_TEMPLATE_FILE }}"
       shell: bash
 

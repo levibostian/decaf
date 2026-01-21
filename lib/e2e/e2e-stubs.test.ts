@@ -531,6 +531,9 @@ export class EnvironmentStub implements Environment {
   getPullRequestCommentTemplate(): Promise<string | undefined> {
     return Promise.resolve(undefined)
   }
+  getUserScriptCurrentWorkingDirectory(gitDirectory: string): string {
+    return gitDirectory
+  }
   getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean } {
     return {
       failOnDeployVerification: this.args.failOnDeployVerification ?? false,

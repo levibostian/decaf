@@ -360,6 +360,7 @@
       "jsr:@david/service-store@0.3",
       "jsr:@std/assert@^1.0.12",
       "jsr:@std/cli@^1.0.20",
+      "jsr:@std/path@^1.1.4",
       "jsr:@std/semver@^1.0.4",
       "jsr:@std/testing@^1.0.10",
       "npm:ansi-styles@6.2.3",

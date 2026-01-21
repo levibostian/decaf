@@ -187,6 +187,8 @@ You are responsible for writing the scripts that perform each deployment step. T
 
 Below are instructions for each required step. The `steps/` directory in this repository contains example scripts for deploying this codebase, but you should write your own scripts for your project. Use the examples only for reference.
 
+> Tip: Use the `current_working_directory` option to run all commands from a subdirectory (e.g., `current_working_directory: "./deployment"`). This keeps deployment scripts and dependencies separate from your application code.
+
 ### 1. Get latest release
 
 Write a script that determines the current/latest release version of your project.
