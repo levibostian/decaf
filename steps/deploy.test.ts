@@ -9,7 +9,7 @@
 // deno-lint-ignore-file no-import-prefix
 import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.1.0"
 import { arrayDifferences, getCommandsExecuted } from "./test-sdk.test.ts"
-import { runDeployScript } from "jsr:@levibostian/decaf-sdk@0.4.1/testing"
+import { runDeployScript } from "jsr:@levibostian/decaf-sdk@0.5.0/testing"
 import { assertArrayIncludes, assertEquals, assertStringIncludes } from "@std/assert"
 import { DeployStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"

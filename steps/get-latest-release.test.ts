@@ -4,7 +4,7 @@
 
 // deno-lint-ignore-file no-import-prefix
 import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.1.0"
-import { runGetLatestReleaseScript } from "jsr:@levibostian/decaf-sdk@0.4.1/testing"
+import { runGetLatestReleaseScript } from "jsr:@levibostian/decaf-sdk@0.5.0/testing"
 import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
