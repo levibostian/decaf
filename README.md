@@ -187,7 +187,7 @@ You are responsible for writing the scripts that perform each deployment step. T
 
 Below are instructions for each required step. The `steps/` directory in this repository contains example scripts for deploying this codebase, but you should write your own scripts for your project. Use the examples only for reference.
 
-> Tip: Use the `current_working_directory` option to run all commands from a subdirectory (e.g., `current_working_directory: "./deployment"`). This keeps deployment scripts and dependencies separate from your application code.
+> Tip: Use the `current_working_directory` option to run all commands from a subdirectory (e.g., `current_working_directory: "./deployment"`). This keeps deployment scripts and dependencies separate from your application code. decaf also sets the `DECAF_ROOT_WORKING_DIRECTORY` environment variable to the root of your repository (where decaf is executed from), so you can change back to the root directory in your script. 
 
 ### 1. Get latest release
 

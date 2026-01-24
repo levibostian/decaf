@@ -85,7 +85,13 @@ export async function main() {
     try {
       const runResult = await run({
         convenienceStep: new ConvenienceStepImpl(environment, git, logger),
-        stepRunner: new StepRunnerImpl(environment, exec, logger, environment.getUserScriptCurrentWorkingDirectory(git.getDirectory())),
+        stepRunner: new StepRunnerImpl({
+          environment,
+          exec,
+          logger,
+          gitRootDirectory: git.getDirectory(),
+          userScriptCurrentWorkingDirectory: environment.getUserScriptCurrentWorkingDirectory(git.getDirectory()),
+        }),
         prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git), git),
         getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git),
         log: logger,
