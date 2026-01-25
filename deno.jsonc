@@ -23,7 +23,7 @@
     // main test task that runs *all* tests and coverage commands. 
     "test": "deno task test-deploy-scripts && deno task run-tests && deno task run-coverage", 
     "test-update": "deno task test-only -- --update",
-    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts",
+    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts",
     "format": "deno fmt",
     "lint": "deno fmt && deno lint --fix"
   },
