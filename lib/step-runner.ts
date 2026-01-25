@@ -18,7 +18,25 @@ export interface StepRunner {
 }
 
 export class StepRunnerImpl implements StepRunner {
-  constructor(private environment: Environment, private exec: Exec, private logger: Logger, private workingDirectory: string) {}
+  private environment: Environment
+  private exec: Exec
+  private logger: Logger
+  private gitRootDirectory: string
+  private userScriptCurrentWorkingDirectory: string
+
+  constructor(options: {
+    environment: Environment
+    exec: Exec
+    logger: Logger
+    gitRootDirectory: string
+    userScriptCurrentWorkingDirectory: string
+  }) {
+    this.environment = options.environment
+    this.exec = options.exec
+    this.logger = options.logger
+    this.gitRootDirectory = options.gitRootDirectory
+    this.userScriptCurrentWorkingDirectory = options.userScriptCurrentWorkingDirectory
+  }
 
   runGetLatestOnCurrentBranchReleaseStep(input: GetLatestReleaseStepInput): Promise<GetLatestReleaseStepOutput | null> {
     return this.getCommandFromUserAndRun({ step: "get_latest_release_current_branch", input, outputCheck: isGetLatestReleaseStepOutput })
@@ -52,7 +70,10 @@ export class StepRunnerImpl implements StepRunner {
         command: commandToRun,
         input: input,
         displayLogs: true,
-        currentWorkingDirectory: this.workingDirectory,
+        currentWorkingDirectory: this.userScriptCurrentWorkingDirectory,
+        envVars: {
+          DECAF_ROOT_WORKING_DIRECTORY: this.gitRootDirectory,
+        },
       })
       this.logger.debug(`Step ${step} completed. step output: ${runResult.output}`)
 

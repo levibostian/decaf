@@ -13,8 +13,10 @@
  */
 
 import { GetLatestReleaseStepOutput } from "../lib/steps/types/output.ts"
-import $ from "@david/dax"
 import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
+import { $ } from "@david/dax"
+
+Deno.chdir(Deno.env.get("DECAF_ROOT_WORKING_DIRECTORY")!)
 
 const input: GetLatestReleaseStepInput = JSON.parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
 

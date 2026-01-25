@@ -19,7 +19,13 @@ Deno.test("given output is in stdout, expect return latest step", async () => {
 
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => [`echo '${JSON.stringify(expect)}'`])
-  const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const testInput: GetLatestReleaseStepInput = {
     gitCurrentBranch: "main",
@@ -39,7 +45,13 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => [`echo '${JSON.stringify(expect)}'`])
   const exec = { run: () => Promise.resolve({ output: undefined, stdout: JSON.stringify(expect), exitCode: 0 }) }
-  const stepRunner = new StepRunnerImpl(environment, exec as unknown as typeof exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec: exec as unknown as typeof exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
     gitCurrentBranch: "main",
@@ -55,7 +67,13 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
 Deno.test("given no command for step, expect return null", async () => {
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => undefined)
-  const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const testInput: GetLatestReleaseStepInput = {
     gitCurrentBranch: "main",
@@ -71,7 +89,13 @@ Deno.test("given no command for step, expect return null", async () => {
 Deno.test("given output is not valid, expect null is returned", async () => {
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => [`echo 'not json'`])
-  const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const testInput: GetLatestReleaseStepInput = {
     gitCurrentBranch: "main",
@@ -98,7 +122,13 @@ Deno.test("supports template engine in command string", async () => {
       `echo '{"versionName": "{{gitCurrentBranch}}", "gitRepo": "{{gitRepoOwner}}/{{gitRepoName}}", "commitSha": "{{gitCommitsCurrentBranch[0].sha}}" }'`,
     ],
   )
-  const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
     gitCurrentBranch: "main",
@@ -140,7 +170,13 @@ Deno.test("runGetLatestOnCurrentBranchReleaseStep - given return latest release 
     assertEquals(args.stepName, "get_latest_release_current_branch")
     return [`echo '${JSON.stringify(expect)}'`]
   })
-  const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const testInput: GetLatestReleaseStepInput = {
     gitCurrentBranch: "main",
@@ -162,7 +198,13 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
     assertEquals(args.stepName, "get_next_release_version")
     return [`echo '${JSON.stringify(expect)}'`]
   })
-  const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const testInput: GetNextReleaseVersionStepInput = {
     gitCurrentBranch: "main",
@@ -184,7 +226,13 @@ Deno.test("runDeployStep - given deploy command, expect to run successfully with
     assertEquals(args.stepName, "deploy")
     return [`echo 'deployment complete'`]
   })
-  const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const deployInput: DeployStepInput = {
     gitCurrentBranch: "main",
@@ -218,7 +266,13 @@ Deno.test("deploy step runs all commands in order", async () => {
     },
   }
 
-  const stepRunner = new StepRunnerImpl(environment, mockExec as unknown as typeof exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec: mockExec as unknown as typeof exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const deployInput: DeployStepInput = {
     gitCurrentBranch: "main",
@@ -263,7 +317,13 @@ Deno.test("non-deploy step returns output from first command with valid output",
     },
   }
 
-  const stepRunner = new StepRunnerImpl(environment, mockExec as unknown as typeof exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec: mockExec as unknown as typeof exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const testInput: GetLatestReleaseStepInput = {
     gitCurrentBranch: "main",
@@ -299,7 +359,13 @@ Deno.test("non-deploy step tries next command if first returns invalid output", 
     },
   }
 
-  const stepRunner = new StepRunnerImpl(environment, mockExec as unknown as typeof exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec: mockExec as unknown as typeof exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const testInput: GetLatestReleaseStepInput = {
     gitCurrentBranch: "main",
@@ -322,7 +388,13 @@ Deno.test("non-deploy step returns null if all commands have invalid output", as
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => ["echo 'invalid1'", "echo 'invalid2'", "echo 'invalid3'"])
 
-  const stepRunner = new StepRunnerImpl(environment, exec, logger, Deno.cwd())
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec,
+    logger,
+    gitRootDirectory: Deno.cwd(),
+    userScriptCurrentWorkingDirectory: Deno.cwd(),
+  })
 
   const testInput: GetLatestReleaseStepInput = {
     gitCurrentBranch: "main",
@@ -343,12 +415,13 @@ Deno.test("non-deploy step returns null if all commands have invalid output", as
  * Tests for working directory behavior.
  */
 
-Deno.test("all step runner methods run commands from the working directory passed to constructor", async () => {
-  const testWorkingDirectory = "/test/working/directory"
+Deno.test("all step runner methods run commands from user script working directory and set DECAF_ROOT_WORKING_DIRECTORY env var", async () => {
+  const testGitRootDirectory = "/test/git/root"
+  const testUserScriptWorkingDirectory = "/test/git/root/subdirectory"
   const getLatestReleaseOutput: GetLatestReleaseStepOutput = { versionName: "1.0.0", commitSha: "abc" }
   const getNextVersionOutput: GetNextReleaseVersionStepOutput = { version: "2.0.0" }
 
-  const capturedCalls: Array<{ command: string; workingDirectory: string | undefined }> = []
+  const capturedCalls: Array<{ command: string; workingDirectory: string | undefined; envVars?: { [key: string]: string } }> = []
 
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", (_args) => {
@@ -356,8 +429,8 @@ Deno.test("all step runner methods run commands from the working directory passe
   })
 
   const mockExec = {
-    run: (args: { command: string; currentWorkingDirectory?: string }) => {
-      capturedCalls.push({ command: args.command, workingDirectory: args.currentWorkingDirectory })
+    run: (args: { command: string; currentWorkingDirectory?: string; envVars?: { [key: string]: string } }) => {
+      capturedCalls.push({ command: args.command, workingDirectory: args.currentWorkingDirectory, envVars: args.envVars })
 
       if (args.command.includes(JSON.stringify(getLatestReleaseOutput))) {
         return Promise.resolve({ output: undefined, stdout: JSON.stringify(getLatestReleaseOutput), exitCode: 0 })
@@ -369,7 +442,13 @@ Deno.test("all step runner methods run commands from the working directory passe
     },
   }
 
-  const stepRunner = new StepRunnerImpl(environment, mockExec as unknown as typeof exec, logger, testWorkingDirectory)
+  const stepRunner = new StepRunnerImpl({
+    environment,
+    exec: mockExec as unknown as typeof exec,
+    logger,
+    gitRootDirectory: testGitRootDirectory,
+    userScriptCurrentWorkingDirectory: testUserScriptWorkingDirectory,
+  })
 
   // Run all three public step methods
   await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
@@ -407,16 +486,33 @@ Deno.test("all step runner methods run commands from the working directory passe
   // Verify we ran three different commands
   assertEquals(capturedCalls.length, 3, "should have run three commands")
 
-  // Verify all three commands ran from the same working directory
+  // Verify all three commands ran from the user script working directory
   assertEquals(
     capturedCalls[0].workingDirectory,
-    testWorkingDirectory,
-    "runGetLatestOnCurrentBranchReleaseStep should run from constructor working directory",
+    testUserScriptWorkingDirectory,
+    "runGetLatestOnCurrentBranchReleaseStep should run from user script working directory",
   )
   assertEquals(
     capturedCalls[1].workingDirectory,
-    testWorkingDirectory,
-    "determineNextReleaseVersionStep should run from constructor working directory",
+    testUserScriptWorkingDirectory,
+    "determineNextReleaseVersionStep should run from user script working directory",
   )
-  assertEquals(capturedCalls[2].workingDirectory, testWorkingDirectory, "runDeployStep should run from constructor working directory")
+  assertEquals(capturedCalls[2].workingDirectory, testUserScriptWorkingDirectory, "runDeployStep should run from user script working directory")
+
+  // Verify all three commands received DECAF_ROOT_WORKING_DIRECTORY env var with correct value
+  assertEquals(
+    capturedCalls[0].envVars?.DECAF_ROOT_WORKING_DIRECTORY,
+    testGitRootDirectory,
+    "runGetLatestOnCurrentBranchReleaseStep should pass DECAF_ROOT_WORKING_DIRECTORY env var",
+  )
+  assertEquals(
+    capturedCalls[1].envVars?.DECAF_ROOT_WORKING_DIRECTORY,
+    testGitRootDirectory,
+    "determineNextReleaseVersionStep should pass DECAF_ROOT_WORKING_DIRECTORY env var",
+  )
+  assertEquals(
+    capturedCalls[2].envVars?.DECAF_ROOT_WORKING_DIRECTORY,
+    testGitRootDirectory,
+    "runDeployStep should pass DECAF_ROOT_WORKING_DIRECTORY env var",
+  )
 })

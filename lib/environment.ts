@@ -3,6 +3,7 @@ import * as log from "./log.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
 import envCi from "env-ci"
 import { GitHubApi } from "./github-api.ts"
+import { isAbsolute, resolve } from "@std/path"
 
 export interface Environment {
   getRepository(): { owner: string; repo: string }
@@ -16,6 +17,7 @@ export interface Environment {
   getCommitLimit(): number
   setOutput({ key, value }: { key: string; value: string }): Promise<void>
   getPullRequestCommentTemplate(): Promise<string | undefined>
+  getUserScriptCurrentWorkingDirectory(gitDirectory: string): string
   // A catch-all method to get inputs that dont match the other methods.
   getUserConfigurationOptions(): { failOnDeployVerification: boolean; makePullRequestComment: boolean }
 }
@@ -274,6 +276,56 @@ export class EnvironmentImpl implements Environment {
 
     // Neither was provided
     return undefined
+  }
+
+  getUserScriptCurrentWorkingDirectory(gitDirectory: string): string {
+    let cwd: string
+    try {
+      cwd = this.getInput("current_working_directory")
+    } catch (_error) {
+      // Input not set, return the git directory
+      return gitDirectory
+    }
+
+    // If empty or whitespace, use git directory
+    cwd = cwd.trim()
+    if (cwd === "") {
+      return gitDirectory
+    }
+
+    // Only allow relative paths, not absolute paths
+    // This is important because decaf creates temporary/isolated directories in test mode,
+    // so absolute paths would point to the wrong location
+    if (isAbsolute(cwd)) {
+      throw new Error(
+        `The current_working_directory must be a relative path, not an absolute path. Got: "${cwd}". ` +
+          `Use a relative path like "." or "scripts/" instead.`,
+      )
+    }
+
+    // Resolve the relative path against the git directory
+    const resolvedPath = resolve(gitDirectory, cwd)
+
+    // Validate that the directory exists
+    try {
+      const stat = Deno.statSync(resolvedPath)
+      if (!stat.isDirectory) {
+        throw new Error(
+          `The configured current_working_directory "${cwd}" (resolved to "${resolvedPath}") is not a directory`,
+        )
+      }
+      log.debug(`Using configured working directory: ${resolvedPath}`)
+      // Use realpath to resolve symlinks for consistent paths (e.g., /private/var -> /var on macOS)
+      return Deno.realPathSync(resolvedPath)
+    } catch (error) {
+      if (error instanceof Deno.errors.NotFound) {
+        throw new Error(
+          `The configured current_working_directory "${cwd}" (resolved to "${resolvedPath}") does not exist`,
+        )
+      }
+      // Re-throw other errors (like permission errors or the "not a directory" error we threw)
+      throw error
+    }
   }
 
   getGitConfigInput(): { name: string; email: string } | undefined {

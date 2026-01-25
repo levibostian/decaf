@@ -2,9 +2,8 @@
  * automated tests for the steps/get-latest-release.ts file.
  */
 
-// deno-lint-ignore-file no-import-prefix
-import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.1.0"
-import { runGetLatestReleaseScript } from "jsr:@levibostian/decaf-sdk@0.4.1/testing"
+import { mockBin, MockBinCleanup } from "@levibostian/mock-a-bin"
+import { runGetLatestReleaseScript } from "@levibostian/decaf-sdk/testing"
 import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
@@ -32,7 +31,9 @@ Deno.test("get-latest-release given no releases created, expect exit early witho
 
   const input: GetLatestReleaseStepInput = {} as unknown as GetLatestReleaseStepInput
 
-  const { code, output } = await runGetLatestReleaseScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output } = await runGetLatestReleaseScript("deno run --allow-all get-latest-release.ts", input, {
+    currentWorkingDirectory: "steps/",
+  })
 
   assertEquals(code, 0)
   assertEquals(output, null)
@@ -85,7 +86,9 @@ Deno.test("get-latest-release given latest release exists but no commits on both
     },
   }
 
-  const { code, output, stdout } = await runGetLatestReleaseScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output, stdout } = await runGetLatestReleaseScript("deno run --allow-all get-latest-release.ts", input, {
+    currentWorkingDirectory: "steps/",
+  })
 
   assertEquals(code, 1)
   assertEquals(output, null)
@@ -138,7 +141,9 @@ Deno.test("get-latest-release given latest release exists with matching commits 
     },
   }
 
-  const { code, output, stdout } = await runGetLatestReleaseScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output, stdout } = await runGetLatestReleaseScript("deno run --allow-all get-latest-release.ts", input, {
+    currentWorkingDirectory: "steps/",
+  })
 
   assertEquals(code, 0)
   assertEquals(output, {
@@ -179,7 +184,9 @@ Deno.test("get-latest-release given latest branch does not exist, expect exit ea
     },
   }
 
-  const { code, output, stdout } = await runGetLatestReleaseScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output, stdout } = await runGetLatestReleaseScript("deno run --allow-all get-latest-release.ts", input, {
+    currentWorkingDirectory: "steps/",
+  })
 
   assertEquals(code, 1)
   assertEquals(output, null)
@@ -247,7 +254,9 @@ Deno.test("get-latest-release given multiple commits on both branches, expect fi
     },
   }
 
-  const { code, output, stdout } = await runGetLatestReleaseScript("deno run --allow-all steps/get-latest-release.ts", input)
+  const { code, output, stdout } = await runGetLatestReleaseScript("deno run --allow-all get-latest-release.ts", input, {
+    currentWorkingDirectory: "steps/",
+  })
 
   assertEquals(code, 0)
   assertEquals(output, {

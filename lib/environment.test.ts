@@ -808,3 +808,209 @@ Deno.test("getPullRequestCommentTemplate - should handle empty file", async () =
     Deno.env.delete("INPUT_PULL_REQUEST_COMMENT_TEMPLATE_FILE")
   }
 })
+
+// Tests for getUserScriptCurrentWorkingDirectory()
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should return git directory when input is not set", () => {
+  Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+
+  const gitDirectory = Deno.cwd()
+
+  const result = environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+
+  assertEquals(result, gitDirectory)
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should return git directory when input is empty string", () => {
+  Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", "")
+  const gitDirectory = Deno.cwd()
+
+  const result = environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+
+  assertEquals(result, gitDirectory)
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should return git directory when input is whitespace only", () => {
+  Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", "   ")
+  const gitDirectory = Deno.cwd()
+
+  const result = environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+
+  assertEquals(result, gitDirectory)
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should throw error when absolute path is provided", async () => {
+  const tempDir = await Deno.makeTempDir({ prefix: "decaf-cwd-test-" })
+
+  try {
+    Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", tempDir)
+    const gitDirectory = Deno.cwd()
+
+    let errorThrown = false
+    let errorMessage = ""
+    try {
+      environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+    } catch (error) {
+      errorThrown = true
+      errorMessage = (error as Error).message
+    }
+
+    assertEquals(errorThrown, true)
+    assertEquals(errorMessage.includes("must be a relative path"), true)
+    assertEquals(errorMessage.includes("not an absolute path"), true)
+  } finally {
+    await Deno.remove(tempDir)
+    Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+  }
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should resolve relative path when valid relative directory is provided", async () => {
+  const tempDir = await Deno.makeTempDir({ prefix: "decaf-cwd-test-" })
+
+  try {
+    // Create a subdirectory
+    const subDir = `${tempDir}/subdir`
+    await Deno.mkdir(subDir)
+
+    // Use tempDir as the git directory
+    const gitDirectory = tempDir
+
+    Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", "subdir")
+
+    const result = environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+
+    // Should resolve to absolute path (with symlinks resolved)
+    assertEquals(result, Deno.realPathSync(subDir))
+  } finally {
+    await Deno.remove(tempDir, { recursive: true })
+    Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+  }
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should resolve relative path with .. navigation", async () => {
+  const tempDir = await Deno.makeTempDir({ prefix: "decaf-cwd-test-" })
+
+  try {
+    // Create nested directories: tempDir/a/b
+    const dirA = `${tempDir}/a`
+    const dirB = `${dirA}/b`
+    await Deno.mkdir(dirA)
+    await Deno.mkdir(dirB)
+
+    // Use dirB as the git directory
+    const gitDirectory = dirB
+
+    // Set relative path that goes up one level
+    Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", "..")
+
+    const result = environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+
+    // Should resolve to dirA (with symlinks resolved)
+    assertEquals(result, Deno.realPathSync(dirA))
+  } finally {
+    await Deno.remove(tempDir, { recursive: true })
+    Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+  }
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should throw error when directory does not exist", () => {
+  const nonExistentDir = "this-directory-does-not-exist-" + Date.now()
+  const gitDirectory = Deno.cwd()
+
+  Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", nonExistentDir)
+
+  let errorThrown = false
+  let errorMessage = ""
+  try {
+    environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+  } catch (error) {
+    errorThrown = true
+    errorMessage = (error as Error).message
+  }
+
+  assertEquals(errorThrown, true)
+  assertEquals(errorMessage.includes("does not exist"), true)
+  assertEquals(errorMessage.includes(nonExistentDir), true)
+
+  Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should throw error when path is a file not a directory", async () => {
+  const tempDir = await Deno.makeTempDir({ prefix: "decaf-cwd-test-" })
+  const tempFile = `${tempDir}/test-file.txt`
+  await Deno.writeTextFile(tempFile, "test content")
+
+  try {
+    // Use relative path to the file
+    Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", "test-file.txt")
+    const gitDirectory = tempDir
+
+    let errorThrown = false
+    let errorMessage = ""
+    try {
+      environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+    } catch (error) {
+      errorThrown = true
+      errorMessage = (error as Error).message
+    }
+
+    assertEquals(errorThrown, true)
+    assertEquals(errorMessage.includes("is not a directory"), true)
+    assertEquals(errorMessage.includes("test-file.txt"), true)
+  } finally {
+    await Deno.remove(tempDir, { recursive: true })
+    Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+  }
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should handle path with trailing slash", async () => {
+  const tempDir = await Deno.makeTempDir({ prefix: "decaf-cwd-test-" })
+  const subDir = `${tempDir}/subdir`
+  await Deno.mkdir(subDir)
+
+  try {
+    // Use relative path with trailing slash
+    Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", "subdir/")
+    const gitDirectory = tempDir
+
+    const result = environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+
+    // Should still work and return the directory (normalized and with symlinks resolved)
+    assertEquals(result, Deno.realPathSync(subDir))
+  } finally {
+    await Deno.remove(tempDir, { recursive: true })
+    Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+  }
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should handle current directory specified as .", async () => {
+  const gitDirectory = Deno.cwd()
+
+  Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", ".")
+
+  const result = environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+
+  assertEquals(result, gitDirectory)
+
+  Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+})
+
+Deno.test("getUserScriptCurrentWorkingDirectory - should trim whitespace from input", async () => {
+  const tempDir = await Deno.makeTempDir({ prefix: "decaf-cwd-test-" })
+  const subDir = `${tempDir}/subdir`
+  await Deno.mkdir(subDir)
+
+  try {
+    // Use relative path with whitespace
+    Deno.env.set("INPUT_CURRENT_WORKING_DIRECTORY", `  subdir  `)
+    const gitDirectory = tempDir
+
+    const result = environment.getUserScriptCurrentWorkingDirectory(gitDirectory)
+
+    // Should trim whitespace and resolve symlinks
+    assertEquals(result, Deno.realPathSync(subDir))
+  } finally {
+    await Deno.remove(tempDir, { recursive: true })
+    Deno.env.delete("INPUT_CURRENT_WORKING_DIRECTORY")
+  }
+})
