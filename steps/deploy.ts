@@ -1,9 +1,10 @@
 #!/usr/bin/env -S deno run --quiet --allow-all
 
-// deno-lint-ignore-file no-import-prefix
 import { DeployStepInput } from "../lib/types/environment.ts"
+import { blue } from "yoctocolors"
 import { $ } from "@david/dax"
-import { blue } from "npm:yoctocolors@2.1.2"
+
+Deno.chdir(Deno.env.get("DECAF_ROOT_WORKING_DIRECTORY")!)
 
 const input: DeployStepInput = JSON.parse(await Deno.readTextFile(Deno.env.get("DATA_FILE_PATH")!))
 

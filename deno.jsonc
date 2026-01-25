@@ -3,6 +3,7 @@
     "@david/service-store": "jsr:@david/service-store@^0.3.0",
     "@david/dax": "jsr:@david/dax@^0.44.0",
     "@std/cli": "jsr:@std/cli@^1.0.20",
+    "@std/path": "jsr:@std/path@^1.1.4",
     "@std/semver": "jsr:@std/semver@^1.0.4",
     "@std/testing": "jsr:@std/testing@^1.0.10",
     "@std/assert": "jsr:@std/assert@^1.0.12",
@@ -14,9 +15,13 @@
     "ventojs": "npm:ventojs@^2.2.0"
   },
   "tasks": {
-    "test-only": "deno test --allow-all --clean --junit-path reports/junit.xml --coverage=reports/coverage/ --coverage-raw-data-only",
+    // run tests for deployment scripts. separate from main tests as they are different codebases. 
+    "test-deploy-scripts": "deno test --allow-all --config=steps/deno.jsonc", 
+    "run-tests": "deno test --allow-all --junit-path reports/junit.xml --coverage=reports/coverage/ --coverage-raw-data-only",    
     // runs coverage twice - once for showing a table in terminal, once for generating lcov file for codecov
-    "test": "deno task test-only && deno coverage reports/coverage/ --include=$(pwd) && deno coverage reports/coverage/ --include=$(pwd) --lcov --output=reports/coverage.lcov",
+    "run-coverage": "deno coverage reports/coverage/ --include=$(pwd) && deno coverage reports/coverage/ --include=$(pwd) --lcov --output=reports/coverage.lcov",    
+    // main test task that runs *all* tests and coverage commands. 
+    "test": "deno task test-deploy-scripts && deno task run-tests && deno task run-coverage", 
     "test-update": "deno task test-only -- --update",
     "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read=/tmp,/var/folders,/home/runner/work/_temp --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts",
     "format": "deno fmt",
@@ -36,5 +41,9 @@
   "lock": {
     "path": "./deno.lock",
     "frozen": true
+  },
+  "test": {
+    // run the deploy script tests separately. 
+    "exclude": ["steps/"]
   }
 }

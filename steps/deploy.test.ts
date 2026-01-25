@@ -6,10 +6,9 @@
  * Some tests may take longer as they allow real deno compilation to happen.
  */
 
-// deno-lint-ignore-file no-import-prefix
-import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.1.0"
+import { mockBin, MockBinCleanup } from "@levibostian/mock-a-bin"
 import { arrayDifferences, getCommandsExecuted } from "./test-sdk.test.ts"
-import { runDeployScript } from "jsr:@levibostian/decaf-sdk@0.4.1/testing"
+import { runDeployScript } from "@levibostian/decaf-sdk/testing"
 import { assertArrayIncludes, assertEquals, assertStringIncludes } from "@std/assert"
 import { DeployStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
@@ -100,12 +99,16 @@ Deno.test("assert differences between test mode and production mode.", async () 
   const version = "1.0.0"
 
   // Run in test mode
-  const testResult = await runDeployScript("deno run --allow-all steps/deploy.ts", getScriptInput(version, true))
+  const testResult = await runDeployScript("deno run --allow-all deploy.ts", getScriptInput(version, true), {
+    currentWorkingDirectory: "steps/",
+  })
   assertEquals(testResult.code, 0, "Test mode should succeed")
   const commandsExecutedInTestMode = getCommandsExecuted(testResult.stdout)
 
   // Run in production mode
-  const prodResult = await runDeployScript("deno run --allow-all steps/deploy.ts", getScriptInput(version, false))
+  const prodResult = await runDeployScript("deno run --allow-all deploy.ts", getScriptInput(version, false), {
+    currentWorkingDirectory: "steps/",
+  })
   assertEquals(prodResult.code, 0, "Production mode should succeed")
   const commandsExecutedInProdMode = getCommandsExecuted(prodResult.stdout)
 
@@ -122,10 +125,12 @@ Deno.test("assert differences between test mode and production mode.", async () 
   )
 })
 
-Deno.test("compiles binaries and passes correct paths to set-github-release-assets", async () => {
+Deno.test("compiles binaries and passes correct paths to set-github-release-assets, expect version.txt file updated", async () => {
   const version = "2.5.0"
 
-  const { code, stdout } = await runDeployScript("deno run --allow-all steps/deploy.ts", getScriptInput(version))
+  const { code, stdout } = await runDeployScript("deno run --allow-all deploy.ts", getScriptInput(version), {
+    currentWorkingDirectory: "steps/",
+  })
   assertEquals(code, 0, "Deploy should succeed")
 
   // Define expected binary paths (from deploy.ts)
@@ -153,13 +158,19 @@ Deno.test("compiles binaries and passes correct paths to set-github-release-asse
       `set-github-release-assets should include ${expectedBinary}#${expectedBinary.replace("dist/", "")}`,
     )
   }
+
+  // Verify version.txt was updated correctly
+  const versionTxtContent = await Deno.readTextFile("version.txt")
+  assertEquals(versionTxtContent, version, "version.txt should contain the correct version")
 })
 
 Deno.test("final command should be updating single-source-version (github releases)", async () => {
   const version = "3.0.0"
   const input = getScriptInput(version)
 
-  const { code, stdout } = await runDeployScript("deno run --allow-all steps/deploy.ts", input)
+  const { code, stdout } = await runDeployScript("deno run --allow-all deploy.ts", input, {
+    currentWorkingDirectory: "steps/",
+  })
   assertEquals(code, 0, "Deploy should succeed")
 
   const commandsExecuted = getCommandsExecuted(stdout)
@@ -178,7 +189,9 @@ Deno.test("assert logs from script are human readable and explain the deployment
   const version = "3.0.0"
   const input = getScriptInput(version)
 
-  const { code, stdout } = await runDeployScript("deno run --allow-all steps/deploy.ts", input)
+  const { code, stdout } = await runDeployScript("deno run --allow-all deploy.ts", input, {
+    currentWorkingDirectory: "steps/",
+  })
   assertEquals(code, 0, "Deploy should succeed")
 
   await assertSnapshot(t, stdout.join("\n"))
