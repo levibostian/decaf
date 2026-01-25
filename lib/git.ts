@@ -503,6 +503,9 @@ export class GitRepoManagerImpl implements GitRepoManager {
   // note: after the clone, you should checkout the desired branch in the cloned repo.
   async getIsolatedClone(): Promise<{ git: Git; directory: string }> {
     const cloneDirectory = await Deno.makeTempDir({
+      // making the temp directory in the codebase. This is because of deno runtime permission flags.
+      // without this, test mode is not as close to the real deployment environment as possible.
+      dir: Deno.cwd(),
       prefix: "decaf-clone-",
     })
 
