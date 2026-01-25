@@ -6,10 +6,9 @@
  * Some tests may take longer as they allow real deno compilation to happen.
  */
 
-// deno-lint-ignore-file no-import-prefix
-import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.1.0"
+import { mockBin, MockBinCleanup } from "@levibostian/mock-a-bin"
 import { arrayDifferences, getCommandsExecuted } from "./test-sdk.test.ts"
-import { runDeployScript } from "jsr:@levibostian/decaf-sdk@0.7.0/testing"
+import { runDeployScript } from "@levibostian/decaf-sdk/testing"
 import { assertArrayIncludes, assertEquals, assertStringIncludes } from "@std/assert"
 import { DeployStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"

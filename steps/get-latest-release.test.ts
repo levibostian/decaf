@@ -2,9 +2,8 @@
  * automated tests for the steps/get-latest-release.ts file.
  */
 
-// deno-lint-ignore-file no-import-prefix
-import { mockBin, MockBinCleanup } from "jsr:@levibostian/mock-a-bin@1.1.0"
-import { runGetLatestReleaseScript } from "jsr:@levibostian/decaf-sdk@0.7.0/testing"
+import { mockBin, MockBinCleanup } from "@levibostian/mock-a-bin"
+import { runGetLatestReleaseScript } from "@levibostian/decaf-sdk/testing"
 import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepInput } from "../lib/types/environment.ts"
 import { GitCommit } from "../lib/types/git.ts"
