@@ -1,130 +1,348 @@
+![GitHub Release](https://img.shields.io/github/v/release/levibostian/decaf?color=%236F4E37)
+![Coveralls](https://img.shields.io/coverallsCoverage/github/levibostian/decaf?branch=main&color=%236F4E37)
+![GitHub branch check runs](https://img.shields.io/github/check-runs/levibostian/decaf/main?color=%236F4E37)
+
 # decaf
 
 Simple, calm, and flexible tool to automate your project's deployments. 
 
 **No more coffee breaks to deploy your code.**
 
-> [!WARNING] 
-> This tool is early on in development and will likely introduce breaking 
-> changes as it reaches a 1.0 release. Be prepared to manually update through 
-> each version. 
+> **Status: Pre-1.0**
+> Breaking changes can occur at any time before reaching 1.0. Feel free to use 
+> the tool in production, but be prepared to manually update through each 
+> version and it's recommended to pin to a specific version of decaf in your CI. 
+> Check the GitHub Release notes for details on each release.
 
-### Why use this tool? 
+## What are automated deployments?
 
-1. **Learn in a couple of minutes** - New engineer onboarding on your team? Send
-   them the logs of your last deployment and that should be enough to teach them
-   how to use the tool.
-2. **Flexible** - No matter what type of project your team is deploying. No
-   matter what language your team is comfortable with. You can use this tool.
-   Everything can be customized to your preferred workflow.
-3. **Calm deployments** - When you install this tool in your project, you should
-   not be scared to run it in fear something bad will happen. Test your
-   configuration & fail gracefully with this tool.
+Your entire deployment process runs on a CI server (e.g., GitHub Actions, CircleCI, etc.) each time you merge a pull request. Bumping versions, updating metadata files, compiling, pushing code to servers, creating git tags, and more, all done automatically for you.
 
-> [!WARNING] 
-> This tool is early on in development and some of the bullet points above have 
-> not been fully developed yet. Your feedback is always welcome throughout development! 
+This tool simplifies your development workflow by completely eliminating the deployment step. 
 
-# How does this tool work? 
+Write code -> Open pull request - > Review & merge pull request -> ~~Deploy code~~ -> Repeat.
 
-You might be wondering, *What do you mean you can automate a deployment?* An automated deployment means that all you need to do to deploy your code is merge a pull request and that's it. The entire deployment process will be done for you in the background while you move onto other tasks of your project. 
+### Highlights 
 
-Think of all the steps that you do to deploy your code. Some examples might be...
-* Bump the semantic version of your software to the next major, minor, or patch version. 
-* Update metadata files with the new version. 
-* Push the code to deployment server. 
-* Create git tag and GitHub Release with the new version. 
-
-This tool automates all of these steps for you each time you merge your code. You just need to write the scripts that perform each step, and the tool will run them in order. 
+- When you open a pull request, decaf simulates merging and deploying the code so you can see what will happen before you actually merge. 
+- Use any programming language you want to write your deployment scripts. 
+- Every part of the deployment process is customizable to fit your workflow. 
+- Works with any tech stack, any framework, anything that needs deploying.
+- Optionally write automated tests for your deployment scripts to ensure they work as expected.
+- Great developer experience - designed to be simple and quick to set up.
+- Works with any CI/CD provider. 
+- Fast. Installs in 2 seconds.
+- Packaged as pre-built binaries so you know it will work today and tomorrow. 
 
 # Getting started
 
 Just follow these 3 steps. 
 
-1. [Install the tool](#install-the-tool)
-2. [Write your step scripts](#write-your-step-scripts)
-3. [Push git commits to your deployment branch](#push-git-commits-with-the-correct-pr-message)
+1. [Install](#install) decaf on your CI server
+2. [Write your deployment scripts](#write-your-deployment-scripts)
+3. [Push git commits to your deployment branch](#push-git-commits-to-your-deployment-branch)
 
-# Install the tool
+# Install
 
-You can install and run the tool in two ways:
+Install decaf on your CI server using either the CLI or the GitHub Action. If you don't use GitHub Actions, use the CLI.
 
-## 1. GitHub Actions
+## GitHub Actions
 
-Here is an example workflow file to install and run the tool in your project. Read the comments to learn about the requirements for setting up the project. 
+Here is an example workflow file to install and run the tool in your project. Be sure to read the comments in the code snippet below for important details.
 
 ```yaml
-# In your project, what branch do you merge code into when it's ready to ship?
-# Replace 'main' below with the branch your project uses.
 on:
   push: [main]
+  pull_request: 
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      # Required permissions for the tool to run: 
-      # By default, this tool only needs read permissions to the repository.
-      # contents: read
-      # pull-requests: read
-
-      # For most projects, these are the permissions you want to grant: 
-      contents: write # If your deploy script that you write needs to push a git commit, git tag, or create a GitHub Release.
-      pull-requests: write # If you enable pull request comments (they are enabled by default).
     steps:
       - uses: actions/checkout@v4
-      
-      # This block installs the tool and configures it for your project. 
       - uses: levibostian/decaf@<version>
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }} # See "GitHub Authentication" section for token requirements
-          get_latest_release_current_branch: python scripts/get_latest_release.py
-          get_next_release_version: python scripts/get_next_release.py
-          deploy: python scripts/deploy.py
 ```
 
-> Note: Replace `<version>` with the version of the tool you want to use. You can find the latest version on the [GitHub releases page](https://github.com/levibostian/decaf/releases).
+> Note: Replace `<version>` with [the latest version](https://github.com/levibostian/decaf/releases): ![GitHub Release](https://img.shields.io/github/v/release/levibostian/decaf?color=%236F4E37)
 
-> Reminder: You must provide a script for each step. The tool will execute your scripts in order and expects them to follow the input/output contract described below.
+## 2. CLI
 
-## 2. CLI Usage (Any CI/CD, e.g., CircleCI)
+Install the CLI tool on your CI server and run it. [This is the list of CI services this tool supports](https://github.com/semantic-release/env-ci#supported-ci). 
 
-You can run the tool as a standalone CLI in any environment. This is useful for CircleCI, Azure devops, whatever CI service you want! [This is the list of CI services this tool supports](https://github.com/semantic-release/env-ci#supported-ci). 
+```sh 
+# Install a specific version of the tool (recommended for teams)
+curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash "1.0.0"
 
-> Note: Some of the CI services have not been tested yet, so please report any issues you find.
+# To always install the latest version (not recommended for teams):
+curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash
 
-```yaml
-# Example CircleCI config for running the deployment tool as a CLI
-jobs:
-  build:
-    machine:
-      image: ubuntu-2404:2024.11.1 
-    steps:
-      - checkout # Check out your code
-      - run:
-          name: Install CLI Tool
-          command: |
-            # Install a specific version of the tool (recommended for teams)
-            curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash "1.0.0"
-
-            # To always install the latest version (not recommended for teams):
-            # curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash
-      - run:
-          name: Run CLI Tool
-          command: |
-            # You must provide a GitHub personal access token (PAT).
-            # See the "GitHub Authentication" section in the README for detailed permission requirements.
-            ./decaf \
-              --github_token "$GH_TOKEN" \
-              --deploy "./steps/deploy.ts" \
-              --get_latest_release_current_branch "./steps/get-latest-release.ts" \
-              --get_next_release_version "./steps/get-next-release.ts" \
-              --simulated_merge_type "rebase" \
-              --make_pull_request_comment false              
-            # --make_pull_request_comment true # Enable this if you want PR comments (requires pull-requests:write)
+~/.local/bin/decaf --args-go-here 
+# dont worry about the arguments yet, we will go over them in the remaining sections
 ```
 
-## Running multiple commands per step
+## Options
+
+For both the GitHub Action and CLI, you can provide the following options to customize the tool's behavior. 
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `deploy` | Command to run to deploy your project (required) | `''` |
+| `github_token` | GITHUB_TOKEN or a repo scoped PAT | `${{ github.token }}` |
+| `git_config` | The committer name and email address in the format `Display Name <email@address.com>`. Defaults to the GitHub Actions bot user. Tool will set this as the committer for any git operations in your deploy script. Provide an empty string for tool to not configure git. | `github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>` |
+| `get_latest_release_current_branch` | Command to run to get the latest release version for the current branch | `''` |
+| `get_next_release_version` | Command to run to get the next release version | `''` |
+| `simulated_merge_type` | When running in a pull request, what type of merge to simulate to run the tool in test mode. Options: `merge`, `squash`, `rebase`. Can be a single value or comma-separated list (e.g., `"merge,squash,rebase"`) | `''` |
+| `make_pull_request_comment` | If a pull request comment should be made. Value is string values `"true"` or `"false"` | `'true'` |
+| `compile_binary` | If you want to compile & run the tool instead of downloading the latest release from GitHub. This is used to test pre-release versions of the tool. Value is string values `"true"` or `"false"` | `'false'` |
+| `fail_on_deploy_verification` | After deployment commands run, the tool will re-run get latest release command and compare returned version to version just deployed. This option determines if the tool should fail if the versions do not match compared to simply showing a warning. Value is string values `"true"` or `"false"`. Always `"false"` in test mode | `'true'` |
+| `branch_filters` | Comma-separated list of regex patterns to filter which branches to analyze for commits. Empty string means analyze all branches (default behavior). Example: `"main,develop,feature/*,release/*"`. Branches not matching any pattern will have empty commit arrays in the input data | `''` |
+| `commit_limit` | Maximum number of commits to retrieve and parse for each branch. This helps improve performance for repositories with many commits | `''` (defaults to 500) |
+| `pull_request_comment_template_file` | Path to a file (relative to the repository root) containing the template for the pull request comment. If both this and `pull_request_comment_template` are provided, this takes precedence | `''` |
+| `pull_request_comment_template` | Template string for the pull request comment. Used if `pull_request_comment_template_file` is not provided | `''` |
+| `current_working_directory` | The working directory to run all user scripts from. If not provided, defaults to the git repository root directory | `''` | 
+
+# Write your deployment scripts
+
+decaf is the framework that runs your deployment process. You provide the scripts that perform each step of your deployment.
+
+- You will write 3 scripts for each step of the decaf deployment process. Don't worry, decaf provides great input data to your scripts so they are quick and easy to write. We also have a [list of scripts the community has shared](docs/community-scripts.md) that you can use as a starting point.
+- **You can choose any programming language** that you want to write your script (as long as it can read and write JSON files to the file system). 
+
+decaf and your scripts communicate via JSON files on the file system. This is so you can write your scripts in any programming language you want.
+
+For all scripts that you write, each of your scripts will contain the following behavior:
+
+```javascript
+// First, read the input data from decaf. 
+// The path to the JSON file is provided via an environment variable: DECAF_COMM_FILE_PATH
+const jsonFileContents = fileSystem.readFile(process.env.DECAF_COMM_FILE_PATH, 'utf8');
+// Parse the json file into an object that you can use in your script
+const input = JSON.parse(jsonFileContents);
+
+// Next, use the input data to perform the deployment step logic you need to do.
+
+// Finally, communicate back to decaf to writing your script's output data back to the same JSON file.
+const output = { /* ... your output data ... */ };
+// Write the output data as JSON to the same file path
+fileSystem.writeFile(process.env.DECAF_COMM_FILE_PATH, JSON.stringify(output));
+```
+
+You will follow this pattern for all 3 of your deployment scripts. Now, let's begin to write each of the 3 required deployment scripts.
+
+> **Writing your scripts using Node.js, Bun, or Deno?:** Use the [decaf SDK](https://github.com/levibostian/decaf-sdk-deno/) to make writing your step scripts easier! 
+
+> Tip: Use the `current_working_directory` option to run all commands from a subdirectory (e.g., `current_working_directory: "./deployment"`). This keeps deployment scripts and dependencies separate from your application code. decaf also sets the `DECAF_ROOT_WORKING_DIRECTORY` environment variable to the root of your repository (where decaf is executed from), so you can change back to the root directory in your script. 
+
+### Deployment script 1: Get latest release version
+
+When you decide to fully automate your deployment process, it becomes crucial that you store the latest successful deployment of your code somewhere. This becomes your single-source-of-truth for your latest release version. You can store this information anywhere you want, as long as **it is updated as the very last step of your deployment process**. 
+
+Some tech stacks have a requirement that you create a git tag before you can upload to their package registry. In this case, you should *not* use git tags as your single-source-of-truth, because if the deployment fails after creating the git tag, your latest release version will be incorrect. A common option for storing the single-source-of-truth is GitHub Releases. They are easy to use and you can tie them to a git tag or commit. For some projects, using npmjs.com might be enough - just as long as **the latest release version is updated as the very last step of your deployment process**.
+
+After you decide, write your script [or reuse one of the community ones](docs/community-scripts.md). 
+
+decaf provides your script with the following input data:
+
+```json
+{
+  "gitCurrentBranch": "main",
+  "gitRepoOwner": "your-org",
+  "gitRepoName": "your-repo",
+  "testMode": false
+}
+```
+
+Your script must output the following output data: 
+
+```json
+// If your project has never been released before, provide decaf with an empty JSON object:
+{}
+
+// If your project has been released before, provide decaf with the latest release version and git commit SHA:
+{
+  "versionName": "1.2.3",
+  "commitSha": "abc123..."
+}
+```
+
+The final step is to provide decaf with the command used to run your script. Pass the `get_latest_release_current_branch` input option to decaf with the full command, just like you would run it yourself. Example: `decaf --get_latest_release_current_branch "node ./deployment-scripts/get-latest-release.js"`. 
+
+### Deployment script 2: Get next release version
+
+This script determines what the next version of your software should be based on the commits since the last release. You can use any versioning strategy you want (semantic versioning, calendar versioning, etc.).
+
+When we say *based on the commits since the last release*, this is part of the magic behind automated deployments. Yes, decaf and similar tools can "automate" your deployment including updating the version, but a human is still the one who tells the tool what this new version should be by the commits that they make. 
+
+A popular way to do this is to use [conventional commits](https://www.conventionalcommits.org) to format your git commit messages. If you are writing your commit message for a bug fix let's say, you would start the commit message with `fix:`. If you are adding a new feature, you would start the commit message with `feat:`. This script would see these special commit messages and use that information to determine what the next version should be.
+
+You can use whatever strategy you want to determine the next version! Just some ideas that come to mind... 
+- Use emojis in commit messages to indicate version bumps (e.g., 🐛 for patch, ✨ for minor, 💥 for major). 
+- Use GitHub labels on pull requests to indicate version bumps. Your script can fetch pull requests when it finds a merge commit. 
+- Use Jira tickets linked to a commit to determine the next version. Your script can fetch Jira ticket data when it finds a commit with a Jira ticket ID in the commit message.
+
+decaf provides your script with the following input data:
+
+```json
+{
+  "gitCurrentBranch": "main",
+  "gitRepoOwner": "your-org",
+  "gitRepoName": "your-repo",
+  "testMode": false,
+  // the data that get latest release version script outputted
+  "lastRelease": {
+    "versionName": "1.2.3",
+    "commitSha": "abc123..."
+  },
+  // List of git commits since the last release. 
+  // See documentation: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts 
+  // for description of each field in the commit object.
+  "gitCommitsSinceLastRelease": [
+    {
+      "title": "add new feature",
+      "sha": "def456...",
+      "abbreviatedSha": "def456ab",
+      "message": "feat: add new feature\n\nThis feature allows users to...",
+      "messageLines": ["feat: add new feature", "", "This feature allows users to..."],
+      "author": {
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      "committer": {
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      "date": "2024-01-01T00:00:00.000Z",
+      "filesChanged": ["src/feature.ts", "README.md"],
+      "isMergeCommit": false,
+      "isRevertCommit": false,
+      "parents": ["abc123..."],
+      "branch": "main",
+      "tags": [],
+      "refs": ["HEAD -> main", "origin/main"],
+      "stats": {
+        "additions": 50,
+        "deletions": 10,
+        "total": 60
+      },
+      "fileStats": [
+        {
+          "filename": "src/feature.ts",
+          "additions": 45,
+          "deletions": 5
+        },
+        {
+          "filename": "README.md",
+          "additions": 5,
+          "deletions": 5
+        }
+      ]
+    }
+    // ...more commits
+  ]
+}
+```
+
+Your script must output the following output data:
+
+```json
+// If no release should be performed, provide decaf with an empty JSON object.
+// decaf will exit if this is the output.
+{}
+
+// If a release should be performed, provide decaf with the next version:
+{
+  "version": "1.3.0"
+}
+```
+
+The final step is to provide decaf with the command used to run your script. Pass the `get_next_release_version` input option to decaf with the full command, just like you would run it yourself. Example: `decaf --get_next_release_version "node ./deployment-scripts/get-next-release.js"`.
+
+### Deployment script 3: Deploy
+
+This script performs the actual deployment of your software. This is where you update version numbers in files, compile your code, push to package registries, create git tags, create GitHub releases, or whatever else your deployment process requires.
+
+decaf provides your script with the following input data:
+
+```json
+{
+  "gitCurrentBranch": "main",
+  "gitRepoOwner": "your-org",
+  "gitRepoName": "your-repo",
+  // Very important - tells you if you are running in test mode or real deployment mode
+  // Highly recommended to not perform any real deployment actions if testMode is true
+  "testMode": false,
+  "lastRelease": {
+    "versionName": "1.2.3",
+    "commitSha": "abc123..."
+  },
+  // List of git commits since the last release. 
+  // See documentation: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts 
+  // for description of each field in the commit object.  
+  "gitCommitsSinceLastRelease": [
+    {
+      "title": "add new feature",
+      "sha": "def456...",
+      "abbreviatedSha": "def456ab",
+      "message": "feat: add new feature\n\nThis feature allows users to...",
+      "messageLines": ["feat: add new feature", "", "This feature allows users to..."],
+      "author": {
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      "committer": {
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      "date": "2024-01-01T00:00:00.000Z",
+      "filesChanged": ["src/feature.ts", "README.md"],
+      "isMergeCommit": false,
+      "isRevertCommit": false,
+      "parents": ["abc123..."],
+      "branch": "main",
+      "tags": [],
+      "refs": ["HEAD -> main", "origin/main"],
+      "stats": {
+        "additions": 50,
+        "deletions": 10,
+        "total": 60
+      },
+      "fileStats": [
+        {
+          "filename": "src/feature.ts",
+          "additions": 45,
+          "deletions": 5
+        },
+        {
+          "filename": "README.md",
+          "additions": 5,
+          "deletions": 5
+        }
+      ]
+    }
+    // ...more commits
+  ],
+  // the data that get next release version script outputted
+  "nextVersionName": "1.3.0"
+}
+```
+
+**The deployment script is unique compared to the other 2 scripts:**
+- No output is required for this script. 
+- Be sure to read the `testMode` input value. If `testMode` is `true`, your script should *not* perform any real deployment actions (e.g., pushing to package registries, creating git tags, etc.). Instead, run a dry-run mode, if available, or simply log the command that would be run for you to manually verify in the logs. 
+- It's **critical** that your script updates your single-source-of-truth for the latest release version *as the very last step of deployment*. This ensures that if decaf fails at any point, you can simply rerun the CI job or push a fix to your deployment scripts to re-run the deployment. 
+- Write your script in a way that it can be re-run multiple times without causing issues (idempotent). If you use a package registry, chances are they do not allow you to upload the same version twice. Check if the version already exists before trying to upload. [Here is a handy tool to help you do that](https://github.com/levibostian/is-it-deployed). 
+
+The final step is to provide decaf with the command used to run your script. Pass the `deploy` input option to decaf with the full command, just like you would run it yourself. Example: `decaf --deploy "node ./deployment-scripts/deploy.js"`. You can pass multiple commands if needed. decaf will run all commands in order they are provided. 
+
+> Tip: The tool will verify that the latest release version is updated after deployment. If the deployment does not result in a new release, the workflow will fail (unless you set `fail_on_deploy_verification: false`).
+
+### Open a pull request for your deployment scripts 
+
+Now that you have written all three deployment scripts, it's time to test that they all work as expected and everything is configured correctly. As long as your CI is configured to run decaf on pull requests, decaf will run a simulated deployment in every pull request. Use this to test your new deployment scripts!
+
+While optional, you can take simulated deployment testing a step further by writing automated tests for your deployment scripts. Check out the [test your scripts](docs/test-your-scripts.md) documentation to learn more about how to do this.
+
+### Running multiple commands per step
 
 You can provide multiple commands for the `deploy`, `get_latest_release_current_branch`, and `get_next_release_version` steps.
 
@@ -177,148 +395,19 @@ If you want to be a bash nerd, instead of using separate commands, as explained 
 
 But be careful! After each command executes, decaf will check the output of the command to see if it gave output. If you use `&&` to run multiple commands where both commands produce output, only the output of the last command will be seen by decaf! 
 
-# Write your step scripts
+# Push git commits to your deployment branch
 
-You are responsible for writing the scripts that perform each deployment step. This includes determining the next version, updating the version number in metadata files, and pushing code to a server. You can use *any* language or tools you prefer 😍!
+You're on the final step to automating your deployments!
 
-> **💡 Pro tip:** Use the [decaf SDK](https://github.com/levibostian/decaf-sdk-deno/) to make writing your step scripts easier! The SDK provides helpful utilities and handles the input/output contract for you. It supports Deno, Node.js, and Bun.
-
-> **💡 Testing your scripts:** Want to write automated tests for your deployment scripts? Check out the [testing guide](docs/test-your-scripts.md) to learn strategies and tools for testing your scripts.
-
-Below are instructions for each required step. The `steps/` directory in this repository contains example scripts for deploying this codebase, but you should write your own scripts for your project. Use the examples only for reference.
-
-> Tip: Use the `current_working_directory` option to run all commands from a subdirectory (e.g., `current_working_directory: "./deployment"`). This keeps deployment scripts and dependencies separate from your application code. decaf also sets the `DECAF_ROOT_WORKING_DIRECTORY` environment variable to the root of your repository (where decaf is executed from), so you can change back to the root directory in your script. 
-
-### 1. Get latest release
-
-Write a script that determines the current/latest release version of your project.
-
-**Requirements:**
-- Read input from the JSON file at the path provided by the `DECAF_COMM_FILE_PATH` environment variable. Input format:
-  ```json
-  {
-    "gitCurrentBranch": "main",
-    "gitRepoOwner": "your-org",
-    "gitRepoName": "your-repo",
-    "testMode": false
-  }
-  ```
-- Output the latest release version as JSON to the same file path. Output format:
-  ```json
-  {
-    "versionName": "1.2.3",
-    "commitSha": "abc123..."
-  }
-  ```
-
-**Example Node.js script:**
-```js
-// get-latest-release.js
-const fs = require('fs');
-const path = process.env.DECAF_COMM_FILE_PATH;
-const input = JSON.parse(fs.readFileSync(path, 'utf8'));
-
-// TODO: Replace with your logic to get the latest release version and commit SHA
-const latestRelease = {
-  versionName: '1.2.3', // The latest version string
-  commitSha: 'abc123...' // The commit SHA for the release
-};
-
-// Write the output JSON to the same file
-fs.writeFileSync(path, JSON.stringify(latestRelease));
-```
-
-### 2. Get next release version
-
-Write a script that determines what the next release version should be (e.g., bumping major, minor, or patch).
-
-**Requirements:**
-- Read input from the JSON file at the path provided by the `DECAF_COMM_FILE_PATH` environment variable. Input format:
-  ```json
-  {
-    "gitCurrentBranch": "main",
-    "gitRepoOwner": "your-org",
-    "gitRepoName": "your-repo",
-    "testMode": false,
-    "lastRelease": { "versionName": "1.2.3", "commitSha": "abc123..." },
-    "gitCommitsSinceLastRelease": [
-      { "sha": "def456...", "message": "feat: add new feature", "date": "2024-01-01T00:00:00Z" }
-      // ...more commits
-    ]
-  }
-  ```
-- Output the next release version as JSON to the same file path. Output format:
-  ```json
-  {
-    "version": "1.2.4"
-  }
-  ```
-
-**Example Node.js script:**
-```js
-// get-next-release.js
-const fs = require('fs');
-const path = process.env.DECAF_COMM_FILE_PATH;
-const input = JSON.parse(fs.readFileSync(path, 'utf8'));
-
-// TODO: Replace with your logic to determine the next version (e.g., using commit messages)
-const nextVersion = {
-  version: '1.2.4' // The next version string
-};
-
-// Write the output JSON to the same file
-fs.writeFileSync(path, JSON.stringify(nextVersion));
-```
-
-### 3. Deploy
-
-Write a script that performs the deployment.
-
-**Requirements:**
-- Read input from the JSON file at the path provided by the `DECAF_COMM_FILE_PATH` environment variable. Input format:
-  ```json
-  {
-    "gitCurrentBranch": "main",
-    "gitRepoOwner": "your-org",
-    "gitRepoName": "your-repo",
-    "testMode": false,
-    "lastRelease": { "versionName": "1.2.3", "commitSha": "abc123..." },
-    "gitCommitsSinceLastRelease": [ /* ... */ ],
-    "nextVersionName": "1.2.4"
-  }
-  ```
-- Perform your deployment logic (update metadata files, push to server, etc.).
-- There are no specific output requirements for this step. 
-
-**Example Node.js script:**
-```js
-// deploy.js
-const fs = require('fs');
-const path = process.env.DECAF_COMM_FILE_PATH;
-const input = JSON.parse(fs.readFileSync(path, 'utf8'));
-
-// TODO: Replace with your deployment logic (update files, push to server, etc.)
-```
-
-> Tip: The tool will verify that the latest release version is updated after deployment. If the deployment does not result in a new release, the workflow will fail (unless you set `fail_on_deploy_verification: false`).
-
-# Push git commits with the correct PR message
-
-Some git commits that you push to your deployment branch should be released (features, bug fixes), and some git commits should not be released (docs changes, adding new tests, refactors). You tell the tool if a deployment should be done by formatting your git commit message in a specific format called [conventional commits](https://www.conventionalcommits.org). 
-
-If your team is not used to using a special format for git commit messages, you may find [this tool useful](https://github.com/levibostian/action-conventional-pr-linter) to lint pull requests before you click *Squash and merge* and perform a deployment. 
+The final step is to create some git commits and push them to your deployment branch. When decaf runs, it will check if it is running in a pull request or not. If it is not in a pull request, decaf will consider that a real deployment. So whatever branch you setup your CI server to run decaf on will be your deployment branch.
 
 🎊 Congrats! You're all setup for automated deployments! 
 
-*Tip:* We suggest checking out [how to create pre-production releases](#create-prerelease-versions) to see if this is something you're interested in. 
-
 # GitHub Authentication
 
-All CI providers require you to provide a GitHub token via the `github_token` input. This token is used to interact with the GitHub API for various operations.
+decaf relies on GitHub Authentication to perform various operations such as reading repository pull request settings, finding open pull requests, and posting comments to pull requests. Generate a GitHub token and provide it with the `github_token` input to authenticate decaf with GitHub.
 
-## Token Types
-
-You can use either a classic GitHub personal access token (PAT) or a fine-grained PAT. **Fine-grained tokens are recommended** and work perfectly with this project.
+On GitHub Actions, you can use the `permissions` key in your workflow file to customize the permissions of the automatically provided `GITHUB_TOKEN`. Otherwise, you can use either a classic GitHub personal access token (PAT) or a fine-grained PAT. **Fine-grained tokens are recommended** and work perfectly with this project.
 
 ## Required Permissions
 
@@ -375,14 +464,9 @@ NEW_VERSION=$(cat deployment-output.json | jq -r '.new_release_version')
 echo "Deployed version: $NEW_VERSION"
 ```
 
-
 # Configuration 
 
 Customize this tool to work as you wish. 
-
-### Create pre-release versions
-
-See [get next release version](steps/get-next-release/README.md) for more information on how to create pre-release versions.
 
 ### Test mode for multiple different merge types 
 
