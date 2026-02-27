@@ -1,5 +1,5 @@
 import * as log from "./log.ts"
-import * as cathy from "cathy"
+import * as cathy from "@levibostian/cathy"
 
 export interface GitHubRelease {
   tag: {
