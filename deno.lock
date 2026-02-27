@@ -15,6 +15,7 @@
     "jsr:@david/path@0.2": "0.2.0",
     "jsr:@david/service-store@0.3": "0.3.1",
     "jsr:@david/which@~0.4.1": "0.4.1",
+    "jsr:@levibostian/cathy@2": "2.0.0",
     "jsr:@levibostian/decaf-sdk@0.4.1": "0.4.1",
     "jsr:@levibostian/decaf-sdk@0.6.0": "0.6.0",
     "jsr:@levibostian/decaf-sdk@0.7.0": "0.7.0",
@@ -37,7 +38,6 @@
     "jsr:@std/semver@^1.0.4": "1.0.7",
     "jsr:@std/testing@^1.0.10": "1.0.17",
     "npm:ansi-styles@6.2.3": "6.2.3",
-    "npm:cathy@^1.4.0": "1.4.0",
     "npm:env-ci@^11.2.0": "11.2.0",
     "npm:globrex@~0.1.2": "0.1.2",
     "npm:shell-quote@^1.8.2": "1.8.3",
@@ -114,6 +114,9 @@
     },
     "@david/which@0.4.1": {
       "integrity": "896a682b111f92ab866cc70c5b4afab2f5899d2f9bde31ed00203b9c250f225e"
+    },
+    "@levibostian/cathy@2.0.0": {
+      "integrity": "864372ac80d1247a567e2ee2b5f8c93f1d8723edc29472ec10625c278f86d5e6"
     },
     "@levibostian/decaf-sdk@0.4.1": {
       "integrity": "f91c0f9562222c4c9fb6b4b934331f011a3dfd1419c83a3cf7322e1349c73b2e",
@@ -206,9 +209,6 @@
   "npm": {
     "ansi-styles@6.2.3": {
       "integrity": "sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg=="
-    },
-    "cathy@1.4.0": {
-      "integrity": "sha512-7lLPZ9IQKfeZmHtsV8VjxCX7oEAIGdkJHpSZN/AHruwPIQmOrVloyBKyjD3AKNE22a+yNGs6+5Vjcd3JEiDUfQ=="
     },
     "cross-spawn@7.0.6": {
       "integrity": "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==",
@@ -314,13 +314,13 @@
     "dependencies": [
       "jsr:@david/dax@0.44",
       "jsr:@david/service-store@0.3",
+      "jsr:@levibostian/cathy@2",
       "jsr:@std/assert@^1.0.12",
       "jsr:@std/cli@^1.0.20",
       "jsr:@std/path@^1.1.4",
       "jsr:@std/semver@^1.0.4",
       "jsr:@std/testing@^1.0.10",
       "npm:ansi-styles@6.2.3",
-      "npm:cathy@^1.4.0",
       "npm:env-ci@^11.2.0",
       "npm:globrex@~0.1.2",
       "npm:shell-quote@^1.8.2",
