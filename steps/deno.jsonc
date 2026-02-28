@@ -1,6 +1,6 @@
 {
   "imports": {
-    "@david/dax": "jsr:@david/dax@^0.44.0",
+    "@david/dax": "jsr:@david/dax@^0.45.0",
     "@levibostian/decaf-sdk": "jsr:@levibostian/decaf-sdk@0.7.0",
     "@levibostian/mock-a-bin": "jsr:@levibostian/mock-a-bin@1.1.0",
     "@std/testing": "jsr:@std/testing@^1.0.10",
