@@ -70,7 +70,7 @@ runs:
 
     - name: Set up Deno
       if: ${{ inputs.compile_binary == 'true' }}
-      uses: jdx/mise-action@v3
+      uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3
 
     # compile binary and put into a location in PATH. the path matches what's in the ./install script.
     - name: Compile binary
