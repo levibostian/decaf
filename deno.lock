@@ -15,7 +15,7 @@
     "jsr:@david/path@0.2": "0.2.0",
     "jsr:@david/service-store@0.3": "0.3.1",
     "jsr:@david/which@~0.4.1": "0.4.1",
-    "jsr:@levibostian/cathy@2": "2.0.0",
+    "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
     "jsr:@levibostian/decaf-sdk@0.4.1": "0.4.1",
     "jsr:@levibostian/decaf-sdk@0.6.0": "0.6.0",
     "jsr:@levibostian/decaf-sdk@0.7.0": "0.7.0",
@@ -115,8 +115,8 @@
     "@david/which@0.4.1": {
       "integrity": "896a682b111f92ab866cc70c5b4afab2f5899d2f9bde31ed00203b9c250f225e"
     },
-    "@levibostian/cathy@2.0.0": {
-      "integrity": "864372ac80d1247a567e2ee2b5f8c93f1d8723edc29472ec10625c278f86d5e6"
+    "@levibostian/cathy@2.0.1": {
+      "integrity": "e4ad84fe2346faacfa96543178382a389f3f79c982f3fabe36f2fa732a2add9d"
     },
     "@levibostian/decaf-sdk@0.4.1": {
       "integrity": "f91c0f9562222c4c9fb6b4b934331f011a3dfd1419c83a3cf7322e1349c73b2e",
@@ -314,7 +314,7 @@
     "dependencies": [
       "jsr:@david/dax@0.44",
       "jsr:@david/service-store@0.3",
-      "jsr:@levibostian/cathy@2",
+      "jsr:@levibostian/cathy@^2.0.1",
       "jsr:@std/assert@^1.0.12",
       "jsr:@std/cli@^1.0.20",
       "jsr:@std/path@^1.1.4",
