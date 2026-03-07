@@ -5,6 +5,7 @@ on:
     branches: [main] # PRs that target the main branch
     paths: # only run if these files are changed
       - 'deno.jsonc'
+      - 'steps/deno.jsonc'
 
 jobs:
   update-lockfile:
@@ -34,15 +35,19 @@ jobs:
       - name: Update Deno lock file
         run: deno install --frozen=false
       
+      - name: Update Deno lock file in steps/
+        run: deno install --frozen=false
+        working-directory: steps
+      
       - name: Check if lock file changed
         id: check-changes
         run: |
-          if git diff --quiet deno.lock; then
+          if git diff --quiet deno.lock steps/deno.lock; then
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No changes to deno.lock file"
+            echo "No changes to lock files"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "deno.lock file has been updated"
+            echo "Lock file(s) have been updated"
           fi
 
       - name: Commit and push changes
@@ -50,6 +55,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add deno.lock
-          git commit -m "chore: update deno.lock file"
+          git add deno.lock steps/deno.lock
+          git commit -m "chore: update deno.lock files"
           git push
