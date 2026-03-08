@@ -3,11 +3,13 @@ import * as githubApi from "./github-api.ts"
 import { createGitRepoManager, GitRepoManager } from "./git.ts"
 import { Environment, EnvironmentImpl } from "./environment.ts"
 import { exec } from "./exec.ts"
+import { Logger } from "./log.ts"
 
 export const productionDiDefinition = defineStore()
   .add("gitRepoManager", (): GitRepoManager => createGitRepoManager(exec))
   .add("github", githubApi.impl)
   .add("environment", (store): Environment => new EnvironmentImpl(store.get("github")))
+  .add("logger", (): Logger => new Logger())
 
 export const productionDiGraph = productionDiDefinition
 

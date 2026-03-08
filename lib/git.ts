@@ -1,7 +1,8 @@
 import { Exec } from "./exec.ts"
-import * as log from "./log.ts"
 import { GitCommit } from "./types/git.ts"
 import * as shellQuote from "shell-quote"
+import * as di from "./di.ts"
+import { Logger } from "./log.ts"
 
 /**
  * Git interface that defines all git operations.
@@ -31,10 +32,12 @@ export interface Git {
 export class GitImpl implements Git {
   private readonly exec: Exec
   private readonly directory: string
+  private readonly log: Logger
 
   constructor(exec: Exec, directory: string) {
     this.exec = exec
     this.directory = directory
+    this.log = di.getGraph().get("logger")
   }
 
   async fetch(): Promise<void> {
@@ -53,7 +56,7 @@ export class GitImpl implements Git {
 
       // If we get a value, this is a blobless clone. We need to unfilter it.
       if (partialCloneConfig.trim()) {
-        log.debug(`Detected blobless clone with filter: ${partialCloneConfig.trim()}. Converting to full clone...`)
+        this.log.debug(`Detected blobless clone with filter: ${partialCloneConfig.trim()}. Converting to full clone...`)
         wasBloblessClone = true
         // Remove the partial clone configuration to get all objects
         await this.exec.run({
@@ -90,7 +93,7 @@ export class GitImpl implements Git {
     // If this was a blobless clone, we need to explicitly fetch all missing blobs
     // Even after removing the filter with --unset call, Git won't automatically fetch blobs that were previously filtered out
     if (wasBloblessClone) {
-      log.debug(`Fetching all missing blobs from blobless clone...`)
+      this.log.debug(`Fetching all missing blobs from blobless clone...`)
       try {
         // Fetch all missing objects (blobs) from all reachable commits
         await this.exec.run({
@@ -100,7 +103,7 @@ export class GitImpl implements Git {
         })
       } catch (_refetchError) {
         // --refetch might not be available in older Git versions, fall back to fetching all refs
-        log.debug(`--refetch not supported, trying alternative approach...`)
+        this.log.debug(`--refetch not supported, trying alternative approach...`)
         await this.exec.run({
           command: `git fetch origin '+refs/heads/*:refs/heads/*' --force`,
           input: undefined,
@@ -175,7 +178,7 @@ export class GitImpl implements Git {
     const numberOfCommitsAheadOfBranchMergingInto = parseInt(stdout.trim())
 
     if (numberOfCommitsAheadOfBranchMergingInto === 0) {
-      log.message(`Branches ${args.branchToSquash} and ${args.branchMergingInto} are already up to date. No commits to squash.`)
+      this.log.msg(`Branches ${args.branchToSquash} and ${args.branchMergingInto} are already up to date. No commits to squash.`)
       return
     }
 
@@ -312,7 +315,7 @@ export class GitImpl implements Git {
     // Split by commit separator to separate commits. We can't use another method like newlines because the git message body might contain newlines.
     const rawCommits = stdout.trim().split("[[⬛]]").filter((commitBlock) => commitBlock.trim() !== "")
     if (rawCommits.length === 0) {
-      log.message(`No commits found on branch ${args.branch}.`)
+      this.log.msg(`No commits found on branch ${args.branch}.`)
       return []
     }
 
@@ -491,9 +494,11 @@ export interface GitRepoManager {
 
 export class GitRepoManagerImpl implements GitRepoManager {
   private readonly exec: Exec
+  private readonly log: Logger
 
   constructor(exec: Exec) {
     this.exec = exec
+    this.log = di.getGraph().get("logger")
   }
 
   getCurrentRepo(): Git {
@@ -516,13 +521,13 @@ export class GitRepoManagerImpl implements GitRepoManager {
     // This is critical for CI environments that use blobless or shallow clones.
     // Cloning from a local blobless clone would create another blobless clone,
     // but cloning from the remote ensures we get all the objects we need.
-    log.debug(`Cloning from remote ${remoteUrl.trim()} to create isolated clone...`)
+    this.log.debug(`Cloning from remote ${remoteUrl.trim()} to create isolated clone...`)
     await this.exec.run({
       command: `git clone ${remoteUrl.trim()} ${cloneDirectory}`,
       input: undefined,
     })
 
-    log.debug(`Created isolated git clone at ${cloneDirectory}`)
+    this.log.debug(`Created isolated git clone at ${cloneDirectory}`)
 
     // Return a Git instance locked to this clone's directory
     return {
@@ -539,7 +544,7 @@ export class GitRepoManagerImpl implements GitRepoManager {
       input: undefined,
     })
 
-    log.debug(`Removed isolated git clone at ${directory}`)
+    this.log.debug(`Removed isolated git clone at ${directory}`)
   }
 }
 

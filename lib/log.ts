@@ -1,115 +1,106 @@
-import colors from "ansi-styles"
 import envCi from "env-ci"
+import createLogger, { LoggerInstance as ShStyleLogger } from "@levibostian/sh-style"
+import { Writable } from "node:stream"
+import process from "node:process"
 
-// log.ts
-// This module provides a simple API for logging messages at different levels to GitHub Actions.
+/**
+ * 1 class for all logging. Created just so I had 1 data type I could use in the whole codebase for all logging.
+ *
+ * Do not forget to call `await logger.init()` after creating an instance of this class.
+ */
+export class Logger implements ShStyleLogger, Pick<Console, "debug">, Pick<Console, "log"> {
+  private readonly isOnGitHubActions: boolean
+  private shStyle: ShStyleLogger = {} as ShStyleLogger
+  private out: Writable
+  private err: Writable
 
-// GitHub Actions supports setting log level by prefixing the message with specific tokens.
-// Reference: https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-debug-message
+  lines: string[] = []
 
-// All of the different log levels that can be used in this project.
-interface LogLevels {
-  debug: string
-  warning: string
-  error: string
-  notice: string
-  message: string
-}
+  constructor(out: Writable = process.stdout, err: Writable = process.stderr) {
+    this.out = out
+    this.err = err
 
-// Log levels for GitHub Actions. Each level has a specific prefix that GitHub Actions recognizes and formats accordingly.
-const githubActionLevels: LogLevels = {
-  debug: `::debug::${colors.white.open}`, // Debug messages, not shown by default in GitHub Actions logs.
-  warning: `::warning::${colors.white.open}`, // Lines are highlighted with yellow in the GitHub Actions logs.
-  error: `::error::${colors.white.open}`, // Lines are highlighted with red in the GitHub Actions logs.
-  notice: `${colors.blue.open}`, // Notice messages, a way to highlight important information, displayed in blue.
-  message: `${colors.white.open}`,
-}
+    this.isOnGitHubActions = envCi().isCi && envCi().service === "github"
+  }
 
-// Log levels for non-GitHub Actions CI environments. GitHub Actions has specific formatting for log levels, but other CI environments may not support the same syntax.
-const otherCILevels: LogLevels = {
-  debug: `${colors.white.open}`, // Debug messages, not shown by default in other CI logs.
-  warning: `${colors.yellow.open}`, // Lines are highlighted with yellow in the logs.
-  error: `${colors.red.open}`, // Lines are highlighted with red in the logs.
-  notice: `${colors.blue.open}`, // Notice messages, displayed in blue.
-  message: `${colors.white.open}`,
-}
-
-export interface Logger {
-  debug: (message: string) => void
-  warning: (message: string) => void
-  error: (message: string) => void
-  notice: (message: string) => void
-  message: (message: string) => void
-}
-
-// The way we log is different depending on whether we are running on GitHub Actions or another CI service.
-// We use the env-ci package to detect the CI environment. I dont want the logger to use the DI graph to make
-// using it more complex, so just using env-ci directly here.
-const isOnGitHubActions = envCi().isCi && envCi().service === "github"
-
-// Generic log function that is used by all other logging functions.
-function log(level: keyof LogLevels, message: string) {
-  const isDebugMessage = level === "debug"
-
-  // Show if:
-  // - The message is not a debug message
-  // - user enabled debug logs via CLI argument
-  // - we are running in github actions. since github actions will hide debug messages unless you enable debug mode in the web UI.
-  const shouldPrintMessageToConsole = !isDebugMessage || Deno.env.get("INPUT_DEBUG") === "true" || isOnGitHubActions
-
-  if (shouldPrintMessageToConsole) {
-    // github actions works better to print line by line otherwise some debug logs may show up in non-debug mode.
-    message.split("\n").forEach((line) => {
-      const consoleLogLine = isOnGitHubActions ? `${githubActionLevels[level]}${line}` : `${otherCILevels[level]}${line}`
-      console.log(consoleLogLine)
+  // One-time requirement to call. Required by sh-style to download its binary if needed.
+  async init() {
+    // setting the logger which will....
+    // 1. pass the function call to sh-style library to render the log message in a nice format in the terminal.
+    // 2. sh-style passes it back to us so we can capture the log messages in our `lines` property for testing purposes.
+    this.shStyle = await createLogger({
+      logger: this,
     })
   }
-}
 
-/**
- * Logs a debug message, which is not shown by default but can be enabled in the GitHub Actions workflow settings.
- * Debug messages are useful for detailed troubleshooting information.
- */
-export function debug(message: string) {
-  log("debug", message)
-}
+  // special function that bypasses sh-style and simply prints to console. Limit the use of it!
+  raw(text: string): void {
+    this.lines.push(text)
+    console.log(text)
+  }
 
-/**
- * Logs a warning message, displayed in yellow in the GitHub Actions logs.
- * Warning messages are useful for non-critical issues that should be highlighted to users.
- */
-export function warning(message: string) {
-  log("warning", message)
-}
+  // sh-style logger methods
+  msg(text: string): void {
+    this.shStyle.msg(text)
+  }
+  title(text: string): void {
+    this.shStyle.title(text)
+  }
+  phase(text: string): void {
+    this.shStyle.phase(text)
+  }
+  step(text: string): void {
+    this.shStyle.step(text)
+  }
+  note(text: string): void {
+    this.shStyle.note(text)
+  }
+  why(text: string): void {
+    this.shStyle.why(text)
+  }
+  plan(text: string): void {
+    this.shStyle.plan(text)
+  }
+  ok(text: string): void {
+    this.shStyle.ok(text)
+  }
+  done(text: string): void {
+    this.shStyle.done(text)
+  }
+  cmd(text: string): void {
+    this.shStyle.cmd(text)
+  }
+  warn(text: string, details?: string[]): void {
+    this.shStyle.warn(text, details)
+  }
+  error(lines: string[]): void {
+    this.shStyle.error(lines)
+  }
+  kv(label: string, entries: [string, string][]): void {
+    this.shStyle.kv(label, entries)
+  }
+  list(label: string, items: string[]): void {
+    this.shStyle.list(label, items)
+  }
 
-/**
- * Logs an error message, displayed in red in the GitHub Actions logs.
- * Error messages are critical and indicate something went wrong during the execution of the workflow.
- */
-export function error(message: string) {
-  log("error", message)
-}
+  // Console methods
+  // deno-lint-ignore no-explicit-any
+  debug(...data: any[]): void {
+    // Show if:
+    // - user enabled debug logs via CLI argument
+    // - we are running in github actions. since github actions will hide debug messages unless you enable debug mode in the web UI.
+    const shouldPrintMessageToConsole = Deno.env.get("INPUT_DEBUG") === "true" || this.isOnGitHubActions
 
-/**
- * Logs a notice message, displayed in blue in the GitHub Actions logs.
- * Notice messages are useful for highlighting important information that is not necessarily an error or warning.
- */
-export function notice(message: string) {
-  log("notice", message)
-}
-
-/**
- * Logs a standard message without any specific log level prefix.
- * These messages are displayed in the standard log color and are useful for general information.
- */
-export function message(message: string) {
-  log("message", message)
-}
-
-export const logger: Logger = {
-  debug,
-  warning,
-  error,
-  notice,
-  message,
+    if (shouldPrintMessageToConsole) {
+      // github actions works better to print line by line otherwise some debug logs may show up in non-debug mode.
+      data.forEach((line) => {
+        console.log(this.isOnGitHubActions ? `::debug::${line}` : line)
+      })
+    }
+  }
+  // deno-lint-ignore no-explicit-any
+  log(...data: any[]): void {
+    this.lines.push(...data.map(String))
+    console.log(...data)
+  }
 }

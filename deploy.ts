@@ -32,20 +32,29 @@ export const run = async ({
 > => {
   if (environment.getEventThatTriggeredThisRun() !== "push" && environment.getEventThatTriggeredThisRun() !== "pull_request") {
     log.error(
-      `Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${environment.getEventThatTriggeredThisRun()}. Bye bye...`,
+      [`Sorry, you can only trigger this tool from a push or a pull_request. The event that triggered this run was: ${environment.getEventThatTriggeredThisRun()}. Bye bye...`],
     )
     return null
   }
 
-  log.notice(`👋 Hello! I am a tool called decaf. I help you deploy your projects.`)
-  log.message(
-    `To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.`,
-  )
-  log.message(
-    `If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/`,
-  )
-  log.message(`Ok, let's get started with the deployment!`)
-  log.message(`--------------------------------`)
+  log.raw(String.raw`
+                  __                             ___
+                 /\ \                          /'___\
+                 \_\ \     __    ___     __   /\ \__/
+                 /'_' \  /'__'\ /'___\ /'__'\ \ \ ,__\
+                /\ \L\ \/\  __//\ \__//\ \L\.\_\ \ \_/
+                \ \___,_\ \____\ \____\ \__/.\_\\ \_\\
+                 \/__,_ /\/____/\/____/\/__/\/_/ \/_/
+
+========================================================================
+      Calm & reliable automated deployments. No more coffee breaks.
+========================================================================
+  `)
+
+  log.msg(`Hello! I am a tool called decaf. I help you deploy your projects.
+To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.
+
+To learn more about the tool: https://github.com/levibostian/decaf/`)
 
   let currentBranch = environment.getBuild().currentBranch
   log.debug(`name of current git branch: ${currentBranch}`)
@@ -53,14 +62,19 @@ export const run = async ({
 
   const pullRequestInfo = environment.isRunningInPullRequest()
   const runInTestMode = pullRequestInfo !== undefined
-  if (runInTestMode) {
-    log.notice(
-      `🧪 I see that I got triggered to run from a pull request event. In pull requests, I run in test mode which means that I will run the deployment process but I will not actually deploy anything.`,
+  if (runInTestMode && pullRequestInfo) {
+    log.phase(`Prepare environment for pull request event`)
+
+    log.msg(
+      `I see that I got triggered from a pull request event. This means that I will still run the full deployment process but I will not actually make a release. This allows you to safely test the deployment process without affecting the actual release.`,
     )
 
-    log.notice(
-      `🧪 In test mode, I also simulate merging the current pull request and all parent pull requests (Note, I don't actually merge any pull requests). Simulating now...`,
+    log.step(`Simulate merging pull requests...`)
+
+    log.msg(
+      `In order to accurately test the deployment process, I will simulate what would happen if this pull request and all of it's parent pull requests get merged. To simulate the merge, I will simply perform a series of git merges in the temporary environment where I am running. Don't worry, this will not affect your actual pull request or git history!`,
     )
+
     const prepareEnvironmentForTestModeResults = await prepareEnvironmentForTestMode.prepareEnvironmentForTestMode({
       owner,
       repo,
@@ -70,8 +84,13 @@ export const run = async ({
     const pullRequestBranchBeforeSimulatedMerges = currentBranch
     currentBranch = prepareEnvironmentForTestModeResults?.currentGitBranch || currentBranch
 
-    log.notice(
-      `🧪 Simulated merges complete. You will notice that for the remainder of the deployment process, the current branch will be ${currentBranch} instead of the pull request branch ${pullRequestBranchBeforeSimulatedMerges}.`,
+    log.list(
+      `Pull requests merged during simulation:`,
+      prepareEnvironmentForTestModeResults?.pullRequestsMerged.map((pr) => `${pr.pullRequestTitle} - #${pr.pullRequestNumber}`) || [],
+    )
+
+    log.done(
+      `Simulated merges complete. For the remainder of the deployment process, the current branch will be ${currentBranch} instead of the pull request branch ${pullRequestBranchBeforeSimulatedMerges}.`,
     )
   }
 
@@ -82,13 +101,9 @@ export const run = async ({
     environment.getCommitLimit(),
   )
 
-  log.notice(
-    `👀 I see that the git branch ${currentBranch} is checked out. We will begin the deployment process from the latest commit of this branch.`,
-  )
+  log.phase(`Find latest release & git commits made since then`)
 
-  log.notice(
-    `🔍 First, I need to get the latest release that was created on the git branch ${currentBranch}. I'll look for it now...`,
-  )
+  log.step(`Finding the latest release on the current git branch, ${currentBranch}...`)
 
   const lastRelease = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
     gitCurrentBranch: currentBranch,
@@ -102,20 +117,12 @@ export const run = async ({
   log.debug(`Latest release on branch ${currentBranch} is: ${JSON.stringify(lastRelease)}`)
 
   if (!lastRelease) {
-    log.message(
-      `I have been told that the git branch, ${currentBranch}, has never been released before. This will be the first release. Exciting!`,
-    )
+    log.done(`I have been told that the git branch, ${currentBranch}, has never been released before. This will be the first release. Exciting!`)
   } else {
-    log.message(
-      `I have been told that the latest release on the git branch ${currentBranch} is: ${lastRelease.versionName}`,
-    )
+    log.done(`I have been told that the latest release on the git branch ${currentBranch} is: ${lastRelease.versionName}`)
   }
 
-  log.notice(
-    `📜 Next, I need to know all of the changes (git commits) that have been done on git branch ${currentBranch} since the latest release: ${lastRelease?.versionName}, commit: ${
-      lastRelease?.commitSha.slice(0, 10)
-    }. I'll look for them now...`,
-  )
+  log.step(`Finding all git commits created since the latest release...`)
 
   const listOfCommits = await getCommitsSinceLatestReleaseStep
     .getAllCommitsSinceGivenCommit({
@@ -126,8 +133,8 @@ export const run = async ({
     })
 
   if (listOfCommits.length === 0) {
-    log.warning(
-      `Looks like zero commits have been created since the latest release. This means there is no new code created and therefore, the deployment process stops here. Bye-bye 👋!`,
+    log.done(
+      `Looks like zero commits have been created since the latest release. This means there is no new code created and therefore, the deployment process stops here. Bye-bye!`,
     )
     return { nextReleaseVersion: null, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
   }
@@ -136,15 +143,17 @@ export const run = async ({
     `Oldest commit found: ${JSON.stringify(listOfCommits[listOfCommits.length - 1])}`,
   )
 
-  log.message(
+  log.done(
     `I found ${listOfCommits.length} git commits created since ${
       lastRelease ? `the latest release of ${lastRelease.versionName}` : `the git branch ${currentBranch} was created`
     }.`,
   )
 
-  log.notice(
-    `📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...`,
-  )
+  log.list(`Here are the commits I found since the latest release`, listOfCommits.map((commit) => `${commit.title} (${commit.abbreviatedSha})`))
+
+  log.phase(`Analyze git commits`)
+
+  log.step(`Analyzing the git commits one-by-one to determine the next release version...`)
 
   const determineNextReleaseVersionEnvironment: GetNextReleaseVersionStepInput = {
     gitCurrentBranch: currentBranch,
@@ -160,26 +169,30 @@ export const run = async ({
   const nextReleaseVersion = (await stepRunner.determineNextReleaseVersionStep(determineNextReleaseVersionEnvironment))?.version
 
   if (!nextReleaseVersion) {
-    log.warning(
-      `After analyzing all of the git commits, none of the commits need to be deployed. Therefore, the deployment process stops here with no new release to be made. Bye-bye 👋!`,
+    log.done(
+      `After analyzing all of the git commits, none of the commits need to be deployed. Therefore, the deployment process stops here with no new release to be made. Bye-bye!`,
     )
     return { nextReleaseVersion: null, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
   }
-  log.message(
-    `After analyzing all of the git commits, I have determined the next release version will be: ${nextReleaseVersion}`,
-  )
+  log.done(`After analyzing all of the git commits, I have determined the next release version will be: ${nextReleaseVersion}`)
 
-  log.notice(
-    `🚢 It's time to ship ${nextReleaseVersion}! I will now run all of the deployment commands provided in your project's configuration file...`,
-  )
+  log.phase(`Deploying new release ${nextReleaseVersion}`)
+
+  log.step(`Running all of your deployment commands...`)
+
+  log.msg(`It's time to ship ${nextReleaseVersion}! I will now run all of the deployment commands provided in your project's configuration...`)
 
   const deployEnvironment: DeployStepInput = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
 
   await stepRunner.runDeployStep(deployEnvironment)
 
+  log.done(`Finished running deployment commands. The deployment should now be complete!`)
+
+  log.step(`Verifying deployment...`)
+
   // Re-run get-latest-release step to verify the new release
-  log.notice(
-    `🔄 Verifying that the new release was created by re-running the get-latest-release step...`,
+  log.msg(
+    `Getting the latest release version again to verify that the new release, ${nextReleaseVersion}, was successfully created. If the latest version does not match, the verification fails, it could indicate a problem with the deployment process.`,
   )
   // Re-run convenience commands to ensure any git changes done in deployment commands are included. This will
   // run a git fetch again and parse commits all over again.
@@ -204,22 +217,22 @@ export const run = async ({
   log.debug(`Latest release after deploy: ${JSON.stringify(latestReleaseAfterDeploy)}`)
 
   if (latestReleaseAfterDeploy?.versionName === nextReleaseVersion) {
-    log.notice(
-      `✅ Verification successful! The latest release is now ${latestReleaseAfterDeploy.versionName}, which matches the version that was just deployed.`,
+    log.done(
+      `Verification successful! The latest release is now ${latestReleaseAfterDeploy.versionName}, which matches the version that was just deployed.`,
     )
   } else {
     if (runInTestMode) {
-      log.warning(
-        `⚠️ Verification failed, but that could be expected in test mode. The latest release after deployment is ${
+      log.warn(
+        `Verification failed, but that could be expected in test mode. The latest release after deployment is ${
           latestReleaseAfterDeploy?.versionName ?? "<none>"
         }, but expected ${nextReleaseVersion}. This could indicate a problem with the deployment process.`,
       )
     } else {
-      log.error(
-        `❌ Verification failed! The latest release after deployment is ${
+      log.error([
+        `Verification failed! The latest release after deployment is ${
           latestReleaseAfterDeploy?.versionName ?? "<none>"
         }, but expected ${nextReleaseVersion}. This could indicate a problem with the deployment process.`,
-      )
+      ])
 
       if (environment.getUserConfigurationOptions().failOnDeployVerification) {
         throw new Error(
@@ -229,9 +242,20 @@ export const run = async ({
     }
   }
 
-  log.notice(
-    `🎉 Congratulations! The deployment process has completed. Bye-bye 👋!`,
+  log.phase(`All done!`)
+
+  log.msg(
+    `Congratulations! The deployment process has completed. Bye-bye!`,
   )
+
+  log.kv(`Summary of deployment`, [
+    ["New release version", nextReleaseVersion],
+    ["Latest release before deployment", lastRelease ? lastRelease.versionName : "This is the first release!"],
+    ["Branch deployed", currentBranch],
+    ["Number of commits deployed", listOfCommits.length.toString()],
+    ["Latest git commit deployed", `${listOfCommits[0].title} (${listOfCommits[0].abbreviatedSha})`],
+    ["Oldest git commit deployed", `${listOfCommits[listOfCommits.length - 1].title} (${listOfCommits[listOfCommits.length - 1].abbreviatedSha})`],
+  ])
 
   await environment.setOutput({ key: "new_release_version", value: nextReleaseVersion })
 

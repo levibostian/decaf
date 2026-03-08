@@ -2,12 +2,12 @@
   "imports": {
     "@david/service-store": "jsr:@david/service-store@^0.3.0",
     "@david/dax": "jsr:@david/dax@^0.44.0",
+    "@levibostian/sh-style": "jsr:@levibostian/sh-style@0.7.0",
     "@std/cli": "jsr:@std/cli@^1.0.20",
     "@std/path": "jsr:@std/path@^1.1.4",
     "@std/semver": "jsr:@std/semver@^1.0.4",
     "@std/testing": "jsr:@std/testing@^1.0.10",
     "@std/assert": "jsr:@std/assert@^1.0.12",
-    "ansi-styles": "npm:ansi-styles@6.2.3",
     "cathy": "npm:cathy@^1.4.0",
     "env-ci": "npm:env-ci@^11.2.0",
     "shell-quote": "npm:shell-quote@^1.8.2",
@@ -22,7 +22,7 @@
     "run-coverage": "deno coverage reports/coverage/ --include=$(pwd) && deno coverage reports/coverage/ --include=$(pwd) --lcov --output=reports/coverage.lcov",    
     // main test task that runs *all* tests and coverage commands. 
     "test": "deno task test-deploy-scripts && deno task run-tests && deno task run-coverage", 
-    "test-update": "deno task test-only -- --update",
+    "test-update": "deno task test -- --update",
     "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read --allow-write=/tmp,/var/folders,/home/runner/work/_temp --target $DENO_TARGET index.ts",
     "format": "deno fmt",
     "lint": "deno fmt && deno lint --fix"

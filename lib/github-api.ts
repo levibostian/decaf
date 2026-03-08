@@ -1,5 +1,5 @@
-import * as log from "./log.ts"
 import * as cathy from "cathy"
+import * as di from "./di.ts"
 
 export interface GitHubRelease {
   tag: {
@@ -156,6 +156,7 @@ const githubApiRequest = async <T>(
     "Content-Type": "application/json",
   }
 
+  const log = di.getGraph().get("logger")
   log.debug(
     `GitHub API request: ${method}:${url}, headers: ${JSON.stringify(headers)}, body: ${JSON.stringify(body)}`,
   )
@@ -250,6 +251,7 @@ const githubGraphqlRequest = async <T>(query: string, variables: object) => {
     variables,
   })
 
+  const log = di.getGraph().get("logger")
   log.debug(
     `GitHub graphql request: headers: ${JSON.stringify(headers)}, body: ${body}`,
   )
@@ -322,6 +324,7 @@ async function githubGraphqlRequestPaging<RESPONSE>(
 
     const pageInfo = findPageInfo(response.body)
 
+    const log = di.getGraph().get("logger")
     log.debug(`pageInfo: ${JSON.stringify(pageInfo)}`)
 
     if (!pageInfo.hasNextPage) {

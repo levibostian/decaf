@@ -44,7 +44,7 @@ export class ConvenienceStepImpl implements ConvenienceStep {
     const userProvidedGitCommitterConfig = this.environment.getGitConfigInput()
     if (userProvidedGitCommitterConfig) {
       this.log.debug(`User provided git committer config: ${JSON.stringify(userProvidedGitCommitterConfig)}`)
-      this.log.notice(
+      this.log.note(
         `I will set the git committer config to the user provided values: name: ${userProvidedGitCommitterConfig.name}, email: ${userProvidedGitCommitterConfig.email}`,
       )
       await this.git.setUser({ name: userProvidedGitCommitterConfig.name, email: userProvidedGitCommitterConfig.email })

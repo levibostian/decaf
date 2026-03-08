@@ -9,7 +9,13 @@ export interface PrepareTestModeEnvStep {
     owner: string
     repo: string
     simulatedMergeType: "merge" | "rebase" | "squash"
-  }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitCommit[] } | undefined>
+  }): Promise<
+    {
+      currentGitBranch: string
+      commitsCreatedDuringSimulatedMerges: GitCommit[]
+      pullRequestsMerged: { pullRequestTitle: string; pullRequestNumber: number }[]
+    } | undefined
+  >
 }
 
 export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
@@ -24,7 +30,13 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     owner: string
     repo: string
     simulatedMergeType: "merge" | "rebase" | "squash"
-  }): Promise<{ currentGitBranch: string; commitsCreatedDuringSimulatedMerges: GitCommit[] } | undefined> => {
+  }): Promise<
+    {
+      currentGitBranch: string
+      commitsCreatedDuringSimulatedMerges: GitCommit[]
+      pullRequestsMerged: { pullRequestTitle: string; pullRequestNumber: number }[]
+    } | undefined
+  > => {
     const testModeContext = this.environment.isRunningInPullRequest()
     const runInTestMode = testModeContext !== undefined
 
@@ -32,6 +44,7 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
 
     const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingPrNumber: testModeContext.prNumber })
     const commitsCreatedDuringSimulatedMerges: GitCommit[] = []
+    const pullRequestsMerged: { pullRequestTitle: string; pullRequestNumber: number }[] = []
     let currentBranch: string = "" // will be set to the last target branch after all simulated merges are done.
 
     for await (const pr of pullRequestStack) {
@@ -47,10 +60,11 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
         pullRequestDescription: pr.description,
       })
 
+      pullRequestsMerged.push({ pullRequestTitle: pr.title, pullRequestNumber: pr.prNumber })
       commitsCreatedDuringSimulatedMerges.unshift(...commitsCreated)
       currentBranch = pr.targetBranchName // after merging, the branch we are on will be different.
     }
 
-    return { currentGitBranch: currentBranch, commitsCreatedDuringSimulatedMerges }
+    return { currentGitBranch: currentBranch, commitsCreatedDuringSimulatedMerges, pullRequestsMerged }
   }
 }

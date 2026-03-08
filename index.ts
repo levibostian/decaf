@@ -1,7 +1,6 @@
 import { run } from "./deploy.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
 import { exec } from "./lib/exec.ts"
-import { logger } from "./lib/log.ts"
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
 import { StepRunnerImpl } from "./lib/step-runner.ts"
@@ -15,6 +14,9 @@ import { postPullRequestComment, pullRequestCommentTemplate, PullRequestCommentT
 // at the top level, the e2e tests would not be able to reset the DI graph between tests.
 // Was using dynamic imports in the e2e tests, but code coverage didn't recognize any of this code then.
 export async function main() {
+  const logger = di.getGraph().get("logger")
+  await logger.init() // required for sh-style to download its binary. Do not forget to call this after creating the logger instance.
+
   // After args are processed, they are available to the environment module.
   processCommandLineArgs(Deno.args)
 
@@ -148,7 +150,7 @@ export async function main() {
         try {
           await gitRepo.removeIsolatedClone(isolatedCloneDirectory)
         } catch (cleanupError) {
-          logger.warning(`Failed to remove isolated git clone at ${isolatedCloneDirectory}: ${cleanupError}`)
+          logger.warn(`Failed to remove isolated git clone at ${isolatedCloneDirectory}: ${cleanupError}`)
         }
       }
     }

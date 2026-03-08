@@ -1,5 +1,5 @@
-import * as log from "./log.ts"
 import { AnyStepInput } from "./types/environment.ts"
+import * as di from "./di.ts"
 
 export interface RunResult {
   exitCode: number
@@ -40,8 +40,10 @@ const run = async (
     currentWorkingDirectory?: string
   },
 ): Promise<RunResult> => {
+  const log = di.getGraph().get("logger")
+
   if (displayLogs) {
-    log.message(` $> ${command}`)
+    log.msg(` $> ${command}`)
   } else {
     log.debug(` $> ${command}`)
   }
@@ -98,7 +100,7 @@ const run = async (
         const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
         if (displayLogs) {
-          log.message(decodedChunk)
+          log.msg(decodedChunk)
         } else {
           log.debug(decodedChunk)
         }
@@ -113,7 +115,7 @@ const run = async (
         const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
         if (displayLogs) {
-          log.message(decodedChunk)
+          log.msg(decodedChunk)
         } else {
           log.debug(decodedChunk)
         }
