@@ -1,6 +1,5 @@
 import { run } from "./deploy.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
-import { exec } from "./lib/exec.ts"
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
 import { StepRunnerImpl } from "./lib/step-runner.ts"
@@ -25,6 +24,7 @@ export async function main() {
   const githubApi = diGraph.get("github")
   const environment = diGraph.get("environment")
   const gitRepo = diGraph.get("gitRepoManager")
+  const exec = diGraph.get("exec")
 
   const pullRequestInfo = environment.isRunningInPullRequest()
   const buildInfo = environment.getBuild()

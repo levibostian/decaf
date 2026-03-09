@@ -2,19 +2,22 @@ import { assertEquals } from "@std/assert"
 import { ConvenienceStepImpl } from "./convenience.ts"
 import { mock, when } from "../mock/mock.ts"
 import { Environment } from "../environment.ts"
-import { logger } from "../log.ts"
 import { Git } from "../git.ts"
 import { GitCommit } from "../types/git.ts"
 import { GitCommitFake } from "../types/git.test.ts"
+import { Logger } from "../log.ts"
 
 Deno.test("ConvenienceStepImpl", async (t) => {
   let mockEnvironment: Environment
   let mockGit: Git
   let convenience: ConvenienceStepImpl
+  let logger: Logger
 
-  function setupMocks() {
+  async function setupMocks() {
     mockEnvironment = mock<Environment>()
     mockGit = mock<Git>()
+    logger = new Logger()
+    await logger.init() // Initialize the logger to set up sh-style
 
     // Mock environment methods
     when(mockEnvironment, "getCommitLimit", () => 500)
@@ -25,7 +28,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   const createMockCommit = (): GitCommit => new GitCommitFake({})
 
   await t.step("should set git config when user provides git committer config", async () => {
-    setupMocks()
+    await setupMocks()
 
     const gitConfig = { name: "Test User", email: "test@example.com" }
     when(mockEnvironment, "getGitConfigInput", () => gitConfig)
@@ -43,7 +46,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   })
 
   await t.step("should not set git config when user does not provide git committer config", async () => {
-    setupMocks()
+    await setupMocks()
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(new Map([["main", { ref: "origin/main" }]])))
@@ -58,7 +61,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   })
 
   await t.step("should get commits for all local branches when no filters provided", async () => {
-    setupMocks()
+    await setupMocks()
 
     const branches = ["main", "feature", "develop"]
     const branchesMap = new Map([
@@ -89,7 +92,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   })
 
   await t.step("should filter branches based on provided filters", async () => {
-    setupMocks()
+    await setupMocks()
 
     const branchesMap = new Map([
       ["main", { ref: "origin/main" }],
@@ -119,7 +122,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   })
 
   await t.step("should always include current branch even when it doesn't match filters", async () => {
-    setupMocks()
+    await setupMocks()
 
     const branchesMap = new Map([
       ["main", { ref: "origin/main" }],
@@ -146,7 +149,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   })
 
   await t.step("should handle empty branch list", async () => {
-    setupMocks()
+    await setupMocks()
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(new Map()))
@@ -159,7 +162,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   })
 
   await t.step("should handle glob patterns in branch filters", async () => {
-    setupMocks()
+    await setupMocks()
 
     const branchesMap = new Map([
       ["main", { ref: "origin/main" }],
@@ -190,7 +193,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   })
 
   await t.step("should pass commit limit to getCommits when specified", async () => {
-    setupMocks()
+    await setupMocks()
 
     const branches = ["main", "develop"]
     const branchesMap = new Map([
@@ -220,7 +223,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
   })
 
   await t.step("should pass undefined commit limit when not specified", async () => {
-    setupMocks()
+    await setupMocks()
 
     const branches = ["main"]
     const branchesMap = new Map([["main", { ref: "origin/main" }]])

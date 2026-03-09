@@ -2,14 +2,15 @@ import { defineStore } from "@david/service-store"
 import * as githubApi from "./github-api.ts"
 import { createGitRepoManager, GitRepoManager } from "./git.ts"
 import { Environment, EnvironmentImpl } from "./environment.ts"
-import { exec } from "./exec.ts"
+import { Exec, ExecImpl } from "./exec.ts"
 import { Logger } from "./log.ts"
 
 export const productionDiDefinition = defineStore()
-  .add("gitRepoManager", (): GitRepoManager => createGitRepoManager(exec))
-  .add("github", githubApi.impl)
-  .add("environment", (store): Environment => new EnvironmentImpl(store.get("github")))
   .add("logger", (): Logger => new Logger())
+  .add("exec", (store): Exec => new ExecImpl(store.get("logger")))
+  .add("gitRepoManager", (store): GitRepoManager => createGitRepoManager(store.get("exec"), store.get("logger")))
+  .add("github", () => githubApi.impl())
+  .add("environment", (store): Environment => new EnvironmentImpl(store.get("github"), store.get("logger"), store.get("exec")))
 
 export const productionDiGraph = productionDiDefinition
 

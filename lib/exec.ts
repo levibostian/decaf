@@ -1,5 +1,5 @@
 import { AnyStepInput } from "./types/environment.ts"
-import * as di from "./di.ts"
+import { Logger } from "./log.ts"
 
 export interface RunResult {
   exitCode: number
@@ -30,141 +30,145 @@ We use a popular package to parse the string into the correct args list. See aut
 
 To make this function testable, we not only have the stdout and stderr be piped to the console, but we return it from this function so tests can verify the output of the command.
 */
-const run = async (
-  { command, input, displayLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
-    command: string
-    input: AnyStepInput | undefined
-    displayLogs?: boolean
-    envVars?: { [key: string]: string }
-    throwOnNonZeroExitCode?: boolean
-    currentWorkingDirectory?: string
-  },
-): Promise<RunResult> => {
-  const log = di.getGraph().get("logger")
+export class ExecImpl implements Exec {
+  private readonly log: Logger
 
-  if (displayLogs) {
-    log.msg(` $> ${command}`)
-  } else {
-    log.debug(` $> ${command}`)
+  constructor(log: Logger) {
+    this.log = log
   }
 
-  const environmentVariablesToPassToCommand: { [key: string]: string } = envVars || {}
+  async run(
+    { command, input, displayLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
+      command: string
+      input: AnyStepInput | undefined
+      displayLogs?: boolean
+      envVars?: { [key: string]: string }
+      throwOnNonZeroExitCode?: boolean
+      currentWorkingDirectory?: string
+    },
+  ): Promise<RunResult> {
+    const log = this.log
 
-  // For some features to work, we need to communicate with the command. We need to send data to it and read data that it produces.
-  // We use JSON as the data format to communicate with the command since pretty much every language has built-in support for it.
-  // Since we are creating subprocesses to run the command, we are limited in how we can communicate with the command.
-  // One common way would be to ask the subprocess to stdout a JSON string that we simply read, but this tool tries to promote stdout
-  // as a way to communicate with the user, not the tool. So instead, we write the JSON to a file and pass the file path to the command.
-  let tempFilePathToCommunicateWithCommand: string | undefined
-  let inputDataFileContents: string | undefined
-  if (input) {
-    tempFilePathToCommunicateWithCommand = await Deno.makeTempFile({
-      prefix: "decaf-",
-      suffix: ".json",
-    })
-    inputDataFileContents = JSON.stringify(input)
-    await Deno.writeTextFile(
-      tempFilePathToCommunicateWithCommand,
-      inputDataFileContents,
-    )
+    if (displayLogs) {
+      log.msg(` $> ${command}`)
+    } else {
+      log.debug(` $> ${command}`)
+    }
 
-    // Set environment variable to pass the file path to the user script.
+    const environmentVariablesToPassToCommand: { [key: string]: string } = envVars || {}
+
+    // For some features to work, we need to communicate with the command. We need to send data to it and read data that it produces.
+    // We use JSON as the data format to communicate with the command since pretty much every language has built-in support for it.
+    // Since we are creating subprocesses to run the command, we are limited in how we can communicate with the command.
+    // One common way would be to ask the subprocess to stdout a JSON string that we simply read, but this tool tries to promote stdout
+    // as a way to communicate with the user, not the tool. So instead, we write the JSON to a file and pass the file path to the command.
+    let tempFilePathToCommunicateWithCommand: string | undefined
+    let inputDataFileContents: string | undefined
+    if (input) {
+      tempFilePathToCommunicateWithCommand = await Deno.makeTempFile({
+        prefix: "decaf-",
+        suffix: ".json",
+      })
+      inputDataFileContents = JSON.stringify(input)
+      await Deno.writeTextFile(
+        tempFilePathToCommunicateWithCommand,
+        inputDataFileContents,
+      )
+
+      // Set environment variable to pass the file path to the user script.
+      //
+      // In v1.0, we plan to change the name of this environment variable to DECAF_COMM_FILE_PATH and remove the old one DATA_FILE_PATH.
+      // For now, we set both for backward compatibility.
+      environmentVariablesToPassToCommand["DECAF_COMM_FILE_PATH"] = tempFilePathToCommunicateWithCommand
+      environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
+    }
+
+    // We want to capture the stdout of the command but we also want to stream it to the console. By using streams, this allows us to
+    // output the stdout/stderr to the console in real-time instead of waiting for the command to finish before we see the output.
     //
-    // In v1.0, we plan to change the name of this environment variable to DECAF_COMM_FILE_PATH and remove the old one DATA_FILE_PATH.
-    // For now, we set both for backward compatibility.
-    environmentVariablesToPassToCommand["DECAF_COMM_FILE_PATH"] = tempFilePathToCommunicateWithCommand
-    environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
-  }
+    // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
+    // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
+    const process = new Deno.Command("sh", {
+      args: ["-c", command],
+      stdout: "piped",
+      stderr: "piped",
+      env: environmentVariablesToPassToCommand,
+      cwd: currentWorkingDirectory,
+    })
 
-  // We want to capture the stdout of the command but we also want to stream it to the console. By using streams, this allows us to
-  // output the stdout/stderr to the console in real-time instead of waiting for the command to finish before we see the output.
-  //
-  // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
-  // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
-  const process = new Deno.Command("sh", {
-    args: ["-c", command],
-    stdout: "piped",
-    stderr: "piped",
-    env: environmentVariablesToPassToCommand,
-    cwd: currentWorkingDirectory,
-  })
+    const child = process.spawn()
 
-  const child = process.spawn()
+    let capturedStdout = ""
+    let capturedStderr = ""
 
-  let capturedStdout = ""
-  let capturedStderr = ""
+    child.stdout.pipeTo(
+      new WritableStream({
+        write(chunk) {
+          const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
-  child.stdout.pipeTo(
-    new WritableStream({
-      write(chunk) {
-        const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+          if (displayLogs) {
+            log.msg(decodedChunk)
+          } else {
+            log.debug(decodedChunk)
+          }
 
-        if (displayLogs) {
-          log.msg(decodedChunk)
-        } else {
-          log.debug(decodedChunk)
-        }
-
-        capturedStdout += decodedChunk
-      },
-    }),
-  )
-  child.stderr.pipeTo(
-    new WritableStream({
-      write(chunk) {
-        const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
-
-        if (displayLogs) {
-          log.msg(decodedChunk)
-        } else {
-          log.debug(decodedChunk)
-        }
-
-        capturedStderr += decodedChunk
-      },
-    }),
-  )
-
-  const code = (await child.status).code
-
-  let commandOutput: Record<string, unknown> | undefined = undefined
-
-  if (tempFilePathToCommunicateWithCommand) {
-    const outputDataFileContents = await Deno.readTextFile(
-      tempFilePathToCommunicateWithCommand,
+          capturedStdout += decodedChunk
+        },
+      }),
     )
-    const commandOutputUntyped = JSON.parse(outputDataFileContents)
-    // As long as the command wrote something to the file, we will use it.
-    if (
-      outputDataFileContents !== inputDataFileContents &&
-      typeof commandOutputUntyped === "object" &&
-      commandOutputUntyped !== null &&
-      !Array.isArray(commandOutputUntyped)
-    ) { // there is a chance that the command did not write to the file or they have a bug.
-      commandOutput = commandOutputUntyped
+    child.stderr.pipeTo(
+      new WritableStream({
+        write(chunk) {
+          const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+
+          if (displayLogs) {
+            log.msg(decodedChunk)
+          } else {
+            log.debug(decodedChunk)
+          }
+
+          capturedStderr += decodedChunk
+        },
+      }),
+    )
+
+    const code = (await child.status).code
+
+    let commandOutput: Record<string, unknown> | undefined = undefined
+
+    if (tempFilePathToCommunicateWithCommand) {
+      const outputDataFileContents = await Deno.readTextFile(
+        tempFilePathToCommunicateWithCommand,
+      )
+      const commandOutputUntyped = JSON.parse(outputDataFileContents)
+      // As long as the command wrote something to the file, we will use it.
+      if (
+        outputDataFileContents !== inputDataFileContents &&
+        typeof commandOutputUntyped === "object" &&
+        commandOutputUntyped !== null &&
+        !Array.isArray(commandOutputUntyped)
+      ) { // there is a chance that the command did not write to the file or they have a bug.
+        commandOutput = commandOutputUntyped
+      }
+    }
+
+    log.debug(
+      `exit code, ${code}, command output: ${JSON.stringify(commandOutput)}`,
+    )
+
+    let shouldThrowError = true
+    if (throwOnNonZeroExitCode !== undefined && throwOnNonZeroExitCode == false) {
+      shouldThrowError = false
+    }
+
+    if (code !== 0 && shouldThrowError) {
+      throw new Error(`Command: ${command}, failed with exit code: ${code}`)
+    }
+
+    return {
+      exitCode: code,
+      stdout: capturedStdout,
+      output: commandOutput,
     }
   }
-
-  log.debug(
-    `exit code, ${code}, command output: ${JSON.stringify(commandOutput)}`,
-  )
-
-  let shouldThrowError = true
-  if (throwOnNonZeroExitCode !== undefined && throwOnNonZeroExitCode == false) {
-    shouldThrowError = false
-  }
-
-  if (code !== 0 && shouldThrowError) {
-    throw new Error(`Command: ${command}, failed with exit code: ${code}`)
-  }
-
-  return {
-    exitCode: code,
-    stdout: capturedStdout,
-    output: commandOutput,
-  }
-}
-
-export const exec: Exec = {
-  run,
 }

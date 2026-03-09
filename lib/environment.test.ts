@@ -3,6 +3,12 @@ import { EnvironmentImpl } from "./environment.ts"
 import { mock, when } from "./mock/mock.ts"
 import { GitHubApi } from "./github-api.ts"
 import { processCommandLineArgs } from "../cli.ts"
+import { ExecImpl } from "./exec.ts"
+import { Logger } from "./log.ts"
+
+const logger = new Logger()
+await logger.init()
+const execInstance = new ExecImpl(logger)
 
 let environment: EnvironmentImpl
 let githubApiMock: GitHubApi = mock()
@@ -17,7 +23,7 @@ Deno.test.beforeEach(() => {
   Deno.env.set("GITHUB_REF", "refs/heads/main")
 
   githubApiMock = mock()
-  environment = new EnvironmentImpl(githubApiMock)
+  environment = new EnvironmentImpl(githubApiMock, logger, execInstance)
 })
 
 Deno.test("getBranchFilters - should return empty array when branch_filters input is not set", () => {

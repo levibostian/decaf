@@ -234,9 +234,9 @@ Pull requests merged during simulation::
   - Add sweet feature - #123
   - Update main branch - #124
 
-DONE: Simulated merges complete. You will notice that for the remainder
-      of the deployment process, the current branch will be main instead
-      of the pull request branch sweet-feature.
+DONE: Simulated merges complete. For the remainder of the deployment
+      process, the current branch will be main instead of the pull
+      request branch sweet-feature.
 
 ------------------------------------------------------------------------
 ## Find latest release & git commits made since then

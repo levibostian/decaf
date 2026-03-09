@@ -1,10 +1,9 @@
-import { exec } from "./exec.ts"
+import { Exec } from "./exec.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
 import envCi from "env-ci"
 import { GitHubApi } from "./github-api.ts"
 import { isAbsolute, resolve } from "@std/path"
 import { Logger } from "./log.ts"
-import * as di from "./di.ts"
 
 export interface Environment {
   getRepository(): { owner: string; repo: string }
@@ -29,14 +28,16 @@ export class EnvironmentImpl implements Environment {
   private simulatedMergeTypeCache: ("merge" | "rebase" | "squash")[] | null = null
   private readonly githubApi: GitHubApi
   private readonly log: Logger
+  private readonly exec: Exec
 
-  constructor(githubApi: GitHubApi) {
+  constructor(githubApi: GitHubApi, logger: Logger, exec: Exec) {
     // Example of the values in `this.env`:
     // {"isCi":true,"name":"GitHub Actions","service":"github","commit":"7d4aec10df2b2dcbe99643662beca90a24a8a81f","build":"15876053587","isPr":true,"branch":"alpha","prBranch":"refs/pull/68/merge","slug":"levibostian/decaf","root":"/home/runner/work/decaf/decaf","pr":68}
     this.env = envCi()
     this.outputFileCache = {}
     this.githubApi = githubApi
-    this.log = di.getGraph().get("logger")
+    this.log = logger
+    this.exec = exec
   }
 
   // Note: For pull requests, the return value is pretty useless. Example: "refs/pull/68/merge"
@@ -154,7 +155,7 @@ export class EnvironmentImpl implements Environment {
     await this.setOutputFile(key, value)
 
     if (this.env.service == "github") {
-      await exec.run({
+      await this.exec.run({
         command: `echo "${key}=${value}" >> "$GITHUB_OUTPUT"`,
         input: undefined,
       })

@@ -1,7 +1,6 @@
 import { Exec } from "./exec.ts"
 import { GitCommit } from "./types/git.ts"
 import * as shellQuote from "shell-quote"
-import * as di from "./di.ts"
 import { Logger } from "./log.ts"
 
 /**
@@ -34,10 +33,10 @@ export class GitImpl implements Git {
   private readonly directory: string
   private readonly log: Logger
 
-  constructor(exec: Exec, directory: string) {
+  constructor(exec: Exec, directory: string, logger: Logger) {
     this.exec = exec
     this.directory = directory
-    this.log = di.getGraph().get("logger")
+    this.log = logger
   }
 
   async fetch(): Promise<void> {
@@ -496,13 +495,13 @@ export class GitRepoManagerImpl implements GitRepoManager {
   private readonly exec: Exec
   private readonly log: Logger
 
-  constructor(exec: Exec) {
+  constructor(exec: Exec, logger: Logger) {
     this.exec = exec
-    this.log = di.getGraph().get("logger")
+    this.log = logger
   }
 
   getCurrentRepo(): Git {
-    return new GitImpl(this.exec, Deno.cwd())
+    return new GitImpl(this.exec, Deno.cwd(), this.log)
   }
 
   // note: after the clone, you should checkout the desired branch in the cloned repo.
@@ -531,7 +530,7 @@ export class GitRepoManagerImpl implements GitRepoManager {
 
     // Return a Git instance locked to this clone's directory
     return {
-      git: new GitImpl(this.exec, cloneDirectory),
+      git: new GitImpl(this.exec, cloneDirectory, this.log),
       directory: cloneDirectory,
     }
   }
@@ -549,11 +548,11 @@ export class GitRepoManagerImpl implements GitRepoManager {
 }
 
 // Factory function for creating a Git instance for the current working directory
-export const createGit = (exec: Exec, directory: string): Git => {
-  return new GitImpl(exec, directory)
+export const createGit = (exec: Exec, directory: string, logger: Logger): Git => {
+  return new GitImpl(exec, directory, logger)
 }
 
 // Factory function for creating a GitRepoManager instance
-export const createGitRepoManager = (exec: Exec): GitRepoManager => {
-  return new GitRepoManagerImpl(exec)
+export const createGitRepoManager = (exec: Exec, logger: Logger): GitRepoManager => {
+  return new GitRepoManagerImpl(exec, logger)
 }

@@ -1,12 +1,15 @@
-import { exec } from "./exec.ts"
+import { ExecImpl } from "./exec.ts"
 import { Environment } from "./environment.ts"
 import { mock, when } from "./mock/mock.ts"
 import { StepRunnerImpl } from "./step-runner.ts"
 import { assertEquals } from "@std/assert"
 import { GetLatestReleaseStepOutput, GetNextReleaseVersionStepOutput } from "./steps/types/output.ts"
-import { logger } from "./log.ts"
+import { Logger } from "./log.ts"
 import { GitCommitFake } from "./types/git.test.ts"
 import { DeployStepInput, GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "./types/environment.ts"
+
+const logger = new Logger()
+await logger.init()
 
 /**
  * Tests that are common to all steps in StepRunner.
@@ -19,6 +22,7 @@ Deno.test("given output is in stdout, expect return latest step", async () => {
 
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => [`echo '${JSON.stringify(expect)}'`])
+  const exec = new ExecImpl(logger)
   const stepRunner = new StepRunnerImpl({
     environment,
     exec,
@@ -44,10 +48,10 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
 
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => [`echo '${JSON.stringify(expect)}'`])
-  const exec = { run: () => Promise.resolve({ output: undefined, stdout: JSON.stringify(expect), exitCode: 0 }) }
+  const mockExec = { run: () => Promise.resolve({ output: undefined, stdout: JSON.stringify(expect), exitCode: 0 }) }
   const stepRunner = new StepRunnerImpl({
     environment,
-    exec: exec as unknown as typeof exec,
+    exec: mockExec as unknown as ExecImpl,
     logger,
     gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
@@ -67,6 +71,7 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
 Deno.test("given no command for step, expect return null", async () => {
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => undefined)
+  const exec = new ExecImpl(logger)
   const stepRunner = new StepRunnerImpl({
     environment,
     exec,
@@ -89,6 +94,7 @@ Deno.test("given no command for step, expect return null", async () => {
 Deno.test("given output is not valid, expect null is returned", async () => {
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => [`echo 'not json'`])
+  const exec = new ExecImpl(logger)
   const stepRunner = new StepRunnerImpl({
     environment,
     exec,
@@ -122,6 +128,7 @@ Deno.test("supports template engine in command string", async () => {
       `echo '{"versionName": "{{gitCurrentBranch}}", "gitRepo": "{{gitRepoOwner}}/{{gitRepoName}}", "commitSha": "{{gitCommitsCurrentBranch[0].sha}}" }'`,
     ],
   )
+  const exec = new ExecImpl(logger)
   const stepRunner = new StepRunnerImpl({
     environment,
     exec,
@@ -170,6 +177,7 @@ Deno.test("runGetLatestOnCurrentBranchReleaseStep - given return latest release 
     assertEquals(args.stepName, "get_latest_release_current_branch")
     return [`echo '${JSON.stringify(expect)}'`]
   })
+  const exec = new ExecImpl(logger)
   const stepRunner = new StepRunnerImpl({
     environment,
     exec,
@@ -198,6 +206,7 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
     assertEquals(args.stepName, "get_next_release_version")
     return [`echo '${JSON.stringify(expect)}'`]
   })
+  const exec = new ExecImpl(logger)
   const stepRunner = new StepRunnerImpl({
     environment,
     exec,
@@ -226,6 +235,7 @@ Deno.test("runDeployStep - given deploy command, expect to run successfully with
     assertEquals(args.stepName, "deploy")
     return [`echo 'deployment complete'`]
   })
+  const exec = new ExecImpl(logger)
   const stepRunner = new StepRunnerImpl({
     environment,
     exec,
@@ -268,7 +278,7 @@ Deno.test("deploy step runs all commands in order", async () => {
 
   const stepRunner = new StepRunnerImpl({
     environment,
-    exec: mockExec as unknown as typeof exec,
+    exec: mockExec as unknown as ExecImpl,
     logger,
     gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
@@ -319,7 +329,7 @@ Deno.test("non-deploy step returns output from first command with valid output",
 
   const stepRunner = new StepRunnerImpl({
     environment,
-    exec: mockExec as unknown as typeof exec,
+    exec: mockExec as unknown as ExecImpl,
     logger,
     gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
@@ -361,7 +371,7 @@ Deno.test("non-deploy step tries next command if first returns invalid output", 
 
   const stepRunner = new StepRunnerImpl({
     environment,
-    exec: mockExec as unknown as typeof exec,
+    exec: mockExec as unknown as ExecImpl,
     logger,
     gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
@@ -388,6 +398,7 @@ Deno.test("non-deploy step returns null if all commands have invalid output", as
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => ["echo 'invalid1'", "echo 'invalid2'", "echo 'invalid3'"])
 
+  const exec = new ExecImpl(logger)
   const stepRunner = new StepRunnerImpl({
     environment,
     exec,
@@ -444,7 +455,7 @@ Deno.test("all step runner methods run commands from user script working directo
 
   const stepRunner = new StepRunnerImpl({
     environment,
-    exec: mockExec as unknown as typeof exec,
+    exec: mockExec as unknown as ExecImpl,
     logger,
     gitRootDirectory: testGitRootDirectory,
     userScriptCurrentWorkingDirectory: testUserScriptWorkingDirectory,

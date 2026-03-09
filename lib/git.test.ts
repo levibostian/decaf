@@ -1,14 +1,19 @@
 import { assertEquals, assertRejects } from "@std/assert"
 import { afterEach, describe, it } from "@std/testing/bdd"
 import { assertSpyCall, restore, stub } from "@std/testing/mock"
-import { exec } from "./exec.ts"
+import { ExecImpl } from "./exec.ts"
 import * as gitModule from "./git.ts"
 import { GitCommit } from "./types/git.ts"
+import { Logger } from "./log.ts"
 
+let exec: ExecImpl
 let git: gitModule.Git
-Deno.test.beforeEach(() => {
+Deno.test.beforeEach(async () => {
   restore()
-  git = new gitModule.GitImpl(exec, Deno.cwd())
+  const logger = new Logger()
+  await logger.init()
+  exec = new ExecImpl(logger)
+  git = new gitModule.GitImpl(exec, Deno.cwd(), logger)
 })
 
 describe("checkoutBranch", () => {
