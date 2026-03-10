@@ -24,7 +24,7 @@
     // main test task that runs *all* tests and coverage commands. 
     "test": "deno task test-deploy-scripts && deno task run-tests && deno task run-coverage", 
     "test-update": "deno task test -- --update",
-    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com --allow-run --allow-read --allow-write --target $DENO_TARGET index.ts",
+    "compile": "deno compile --output $OUTPUT_FILE_NAME --allow-env --allow-net=api.github.com,github.com --allow-run --allow-read --allow-write --target $DENO_TARGET index.ts",
     "compile-all": "OUTPUT_FILE_NAME=dist/bin-x86_64-Linux DENO_TARGET=x86_64-unknown-linux-gnu deno task compile && OUTPUT_FILE_NAME=dist/bin-aarch64-Linux DENO_TARGET=aarch64-unknown-linux-gnu deno task compile && OUTPUT_FILE_NAME=dist/bin-x86_64-Darwin DENO_TARGET=x86_64-apple-darwin deno task compile && OUTPUT_FILE_NAME=dist/bin-aarch64-Darwin DENO_TARGET=aarch64-apple-darwin deno task compile",
     "format": "deno fmt",
     "lint": "deno fmt && deno lint --fix"
