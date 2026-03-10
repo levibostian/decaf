@@ -11,12 +11,12 @@
     "jsr:@cross/runtime@^1.2.1": "1.2.1",
     "jsr:@cross/utils@0.16": "0.16.0",
     "jsr:@david/console-static-text@0.3": "0.3.0",
-    "jsr:@david/dax@0.44": "0.44.2",
+    "jsr:@david/dax@0.45": "0.45.0",
     "jsr:@david/path@0.2": "0.2.0",
     "jsr:@david/service-store@0.3": "0.3.1",
     "jsr:@david/which@~0.4.1": "0.4.1",
-    "jsr:@levibostian/mock-a-bin@1.1.0": "1.1.0",
-    "jsr:@levibostian/sh-style@0.7.0": "0.7.0",
+    "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
+    "jsr:@levibostian/sh-style@0.7": "0.7.0",
     "jsr:@std/assert@^1.0.12": "1.0.18",
     "jsr:@std/assert@^1.0.17": "1.0.18",
     "jsr:@std/async@^1.1.0": "1.1.0",
@@ -25,7 +25,6 @@
     "jsr:@std/data-structures@^1.0.10": "1.0.10",
     "jsr:@std/fmt@1": "1.0.9",
     "jsr:@std/fs@1": "1.0.23",
-    "jsr:@std/fs@^1.0.20": "1.0.23",
     "jsr:@std/fs@^1.0.22": "1.0.23",
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/io@0.225": "0.225.3",
@@ -81,14 +80,14 @@
     "@david/console-static-text@0.3.0": {
       "integrity": "2dfb46ecee525755f7989f94ece30bba85bd8ffe3e8666abc1bf926e1ee0698d"
     },
-    "@david/dax@0.44.2": {
-      "integrity": "26f5985f66a4340d55fb05ca90a0063bb5f0d670a326e14cb33a974aafcbb8d9",
+    "@david/dax@0.45.0": {
+      "integrity": "ac7565dc5c3e5be953a18b505e5dd0d8a30ed53656b65fd34a53bd8d2d5d6b1e",
       "dependencies": [
         "jsr:@david/console-static-text",
         "jsr:@david/path",
         "jsr:@david/which",
         "jsr:@std/fmt",
-        "jsr:@std/fs@^1.0.20",
+        "jsr:@std/fs@1",
         "jsr:@std/io",
         "jsr:@std/path@1"
       ]
@@ -106,8 +105,8 @@
     "@david/which@0.4.1": {
       "integrity": "896a682b111f92ab866cc70c5b4afab2f5899d2f9bde31ed00203b9c250f225e"
     },
-    "@levibostian/mock-a-bin@1.1.0": {
-      "integrity": "6f0207183f68585378c629e7774cfe0e2a3451be1fce31debab7be14a42fe961"
+    "@levibostian/cathy@2.0.1": {
+      "integrity": "e4ad84fe2346faacfa96543178382a389f3f79c982f3fabe36f2fa732a2add9d"
     },
     "@levibostian/sh-style@0.7.0": {
       "integrity": "512cc3fbc90af5d03f9339f9c232c893be807945591f45bd7b93d54d585bcf1d",
@@ -284,9 +283,10 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@david/dax@0.44",
+      "jsr:@david/dax@0.45",
       "jsr:@david/service-store@0.3",
-      "jsr:@levibostian/sh-style@0.7.0",
+      "jsr:@levibostian/cathy@^2.0.1",
+      "jsr:@levibostian/sh-style@0.7",
       "jsr:@std/assert@^1.0.12",
       "jsr:@std/cli@^1.0.20",
       "jsr:@std/path@^1.1.4",
