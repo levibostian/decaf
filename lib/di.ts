@@ -6,7 +6,11 @@ import { Exec, ExecImpl } from "./exec.ts"
 import { Logger } from "./log.ts"
 
 export const productionDiDefinition = defineStore()
-  .add("logger", (): Logger => new Logger())
+  .add("logger", (): Logger => {
+    const logger = new Logger()
+    logger.init()
+    return logger
+  })
   .add("exec", (store): Exec => new ExecImpl(store.get("logger")))
   .add("gitRepoManager", (store): GitRepoManager => createGitRepoManager(store.get("exec"), store.get("logger")))
   .add("github", () => githubApi.impl())

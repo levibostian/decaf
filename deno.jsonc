@@ -3,7 +3,7 @@
     "@david/service-store": "jsr:@david/service-store@^0.3.0",
     "@david/dax": "jsr:@david/dax@^0.45.0",
     "@levibostian/cathy": "jsr:@levibostian/cathy@^2.0.1",
-    "@levibostian/sh-style": "jsr:@levibostian/sh-style@^0.7.0",
+    "@levibostian/sh-style": "jsr:@levibostian/sh-style@^0.8.0",
     "@std/cli": "jsr:@std/cli@^1.0.20",
     "@std/path": "jsr:@std/path@^1.1.4",
     "@std/semver": "jsr:@std/semver@^1.0.4",

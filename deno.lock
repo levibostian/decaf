@@ -2,21 +2,15 @@
   "version": "5",
   "specifiers": {
     "jsr:@cross/deepmerge@1": "1.0.1",
-    "jsr:@cross/dir@^1.1.0": "1.1.1",
-    "jsr:@cross/env@1": "1.0.3",
     "jsr:@cross/env@^1.0.3": "1.0.3",
-    "jsr:@cross/fs@~0.1.11": "0.1.14",
-    "jsr:@cross/fs@~0.1.14": "0.1.14",
     "jsr:@cross/runtime@1": "1.2.1",
-    "jsr:@cross/runtime@^1.2.1": "1.2.1",
-    "jsr:@cross/utils@0.16": "0.16.0",
     "jsr:@david/console-static-text@0.3": "0.3.0",
     "jsr:@david/dax@0.45": "0.45.0",
     "jsr:@david/path@0.2": "0.2.0",
     "jsr:@david/service-store@0.3": "0.3.1",
     "jsr:@david/which@~0.4.1": "0.4.1",
     "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
-    "jsr:@levibostian/sh-style@0.7": "0.7.0",
+    "jsr:@levibostian/sh-style@0.8": "0.8.0",
     "jsr:@std/assert@^1.0.12": "1.0.18",
     "jsr:@std/assert@^1.0.17": "1.0.18",
     "jsr:@std/async@^1.1.0": "1.1.0",
@@ -29,7 +23,6 @@
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/io@0.225": "0.225.3",
     "jsr:@std/path@1": "1.1.4",
-    "jsr:@std/path@^1.0.8": "1.1.4",
     "jsr:@std/path@^1.1.4": "1.1.4",
     "jsr:@std/semver@^1.0.4": "1.0.7",
     "jsr:@std/testing@^1.0.10": "1.0.17",
@@ -43,39 +36,15 @@
     "@cross/deepmerge@1.0.1": {
       "integrity": "7a224229f1a463087d62cef8729d26263ed4f5e3c2f2bfec64fc0a16a9dbc754"
     },
-    "@cross/dir@1.1.1": {
-      "integrity": "b90bd555fb1c145c38b3925c319a92ace4c7de200512dbc9347b70ce7b8a4324",
-      "dependencies": [
-        "jsr:@cross/env@1",
-        "jsr:@cross/runtime@1",
-        "jsr:@cross/utils"
-      ]
-    },
     "@cross/env@1.0.3": {
       "integrity": "218d2dd68bec55cf047d1670a8bddc304b9c011a8ad22e647afa916bb796c8b4",
       "dependencies": [
         "jsr:@cross/deepmerge",
-        "jsr:@cross/runtime@1"
-      ]
-    },
-    "@cross/fs@0.1.14": {
-      "integrity": "d59c53ef26e02d1d0369b0bcf1d01dbac89ef2fbc938c00ae9d8e7ed281ae96b",
-      "dependencies": [
-        "jsr:@cross/dir",
-        "jsr:@cross/env@1",
-        "jsr:@cross/runtime@1",
-        "jsr:@std/path@^1.0.8"
+        "jsr:@cross/runtime"
       ]
     },
     "@cross/runtime@1.2.1": {
       "integrity": "f462fcf2fd678f9073291b4e55209b90f58c8d508764a84205d178abdcf22fc9"
-    },
-    "@cross/utils@0.16.0": {
-      "integrity": "c6333cafd9be41a04c449655120989b8f3601322f7344db30f9d00eef7bc942f",
-      "dependencies": [
-        "jsr:@cross/fs@~0.1.11",
-        "jsr:@cross/runtime@1"
-      ]
     },
     "@david/console-static-text@0.3.0": {
       "integrity": "2dfb46ecee525755f7989f94ece30bba85bd8ffe3e8666abc1bf926e1ee0698d"
@@ -108,12 +77,10 @@
     "@levibostian/cathy@2.0.1": {
       "integrity": "e4ad84fe2346faacfa96543178382a389f3f79c982f3fabe36f2fa732a2add9d"
     },
-    "@levibostian/sh-style@0.7.0": {
-      "integrity": "512cc3fbc90af5d03f9339f9c232c893be807945591f45bd7b93d54d585bcf1d",
+    "@levibostian/sh-style@0.8.0": {
+      "integrity": "a3855019a79ff4a308ce0e621fa10249d342b062f964118a062ee22991f8b66d",
       "dependencies": [
-        "jsr:@cross/env@^1.0.3",
-        "jsr:@cross/fs@~0.1.14",
-        "jsr:@cross/runtime@^1.2.1"
+        "jsr:@cross/env"
       ]
     },
     "@std/assert@1.0.18": {
@@ -286,7 +253,7 @@
       "jsr:@david/dax@0.45",
       "jsr:@david/service-store@0.3",
       "jsr:@levibostian/cathy@^2.0.1",
-      "jsr:@levibostian/sh-style@0.7",
+      "jsr:@levibostian/sh-style@0.8",
       "jsr:@std/assert@^1.0.12",
       "jsr:@std/cli@^1.0.20",
       "jsr:@std/path@^1.1.4",

@@ -23,12 +23,11 @@ export class Logger implements ShStyleLogger, Pick<Console, "debug">, Pick<Conso
     this.isOnGitHubActions = envCi().isCi && envCi().service === "github"
   }
 
-  // One-time requirement to call. Required by sh-style to download its binary if needed.
-  async init() {
+  init() {
     // setting the logger which will....
     // 1. pass the function call to sh-style library to render the log message in a nice format in the terminal.
     // 2. sh-style passes it back to us so we can capture the log messages in our `lines` property for testing purposes.
-    this.shStyle = await createLogger({
+    this.shStyle = createLogger({
       logger: this,
     })
   }
