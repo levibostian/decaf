@@ -8,8 +8,7 @@ import { Logger } from "./log.ts"
 import { GitCommitFake } from "./types/git.test.ts"
 import { DeployStepInput, GetLatestReleaseStepInput, GetNextReleaseVersionStepInput } from "./types/environment.ts"
 
-const logger = new Logger()
-await logger.init()
+const logger = mock<Logger>()
 
 /**
  * Tests that are common to all steps in StepRunner.

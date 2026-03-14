@@ -6,8 +6,7 @@ import { processCommandLineArgs } from "../cli.ts"
 import { ExecImpl } from "./exec.ts"
 import { Logger } from "./log.ts"
 
-const logger = new Logger()
-await logger.init()
+const logger = mock<Logger>()
 const execInstance = new ExecImpl(logger)
 
 let environment: EnvironmentImpl

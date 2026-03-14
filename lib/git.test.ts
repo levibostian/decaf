@@ -5,13 +5,13 @@ import { ExecImpl } from "./exec.ts"
 import * as gitModule from "./git.ts"
 import { GitCommit } from "./types/git.ts"
 import { Logger } from "./log.ts"
+import { mock } from "./mock/mock.ts"
 
 let exec: ExecImpl
 let git: gitModule.Git
 Deno.test.beforeEach(async () => {
   restore()
-  const logger = new Logger()
-  await logger.init()
+  const logger = mock<Logger>()
   exec = new ExecImpl(logger)
   git = new gitModule.GitImpl(exec, Deno.cwd(), logger)
 })

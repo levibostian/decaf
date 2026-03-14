@@ -3,9 +3,9 @@ import { assertEquals } from "@std/assert"
 import { DeployStepInput } from "./types/environment.ts"
 import { GitCommitFake } from "./types/git.test.ts"
 import { Logger } from "./log.ts"
+import { mock } from "./mock/mock.ts"
 
-const logger = new Logger()
-await logger.init()
+const logger = mock<Logger>()
 const exec = new ExecImpl(logger)
 
 const givenPluginInput: DeployStepInput = {

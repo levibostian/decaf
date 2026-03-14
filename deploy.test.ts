@@ -455,7 +455,7 @@ const setupTestEnvironmentAndRun = async ({
   simulatedMergeType?: "merge" | "rebase" | "squash"
 }) => {
   const logger = new Logger()
-  await logger.init()
+  logger.init() // must call init so we record the lines logged.
 
   // Set some defaults.
   const pullRequestTargetBranch = pullRequestTargetBranchName || "main" // assume we are running a pull_request event that merges into main

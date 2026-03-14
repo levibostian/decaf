@@ -14,7 +14,6 @@ import { postPullRequestComment, pullRequestCommentTemplate, PullRequestCommentT
 // Was using dynamic imports in the e2e tests, but code coverage didn't recognize any of this code then.
 export async function main() {
   const logger = di.getGraph().get("logger")
-  await logger.init() // required for sh-style to download its binary. Do not forget to call this after creating the logger instance.
 
   // After args are processed, they are available to the environment module.
   processCommandLineArgs(Deno.args)

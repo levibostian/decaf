@@ -13,8 +13,7 @@ import { Logger } from "./log.ts"
 let exec: ExecImpl
 let git: gitModule.Git
 Deno.test.beforeEach(async () => {
-  const logger = new Logger()
-  await logger.init()
+  const logger = mock<Logger>()
   exec = new ExecImpl(logger)
   git = new gitModule.GitImpl(exec, Deno.cwd(), logger)
 })
