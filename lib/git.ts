@@ -34,7 +34,7 @@ export interface Git {
   merge(args: { branchToMergeIn: string; commitTitle: string; commitMessage: string; fastForward?: "--no-ff" | "--ff-only" }): Promise<void>
   pull(): Promise<void>
   setUser(args: { name: string; email: string }): Promise<void>
-  squash(args: { branchToSquash: string; branchMergingInto: string; commitTitle: string; commitMessage: string }): Promise<void>
+  squash(args: { branchToSquash: string; commitTitle: string; commitMessage: string }): Promise<void>
   rebase(args: { branchToRebaseOnto: string }): Promise<void>
   getLatestCommitsSince(args: { commit: GitCommit }): Promise<GitCommit[]>
   getLatestCommitOnBranch(args: { branch: { ref: string } }): Promise<GitCommit | undefined>
@@ -188,33 +188,31 @@ export class GitImpl implements Git {
     })
   }
 
-  // Squash all commits of a branch into 1 commit
+  // Squash all commits of a branch into 1 commit using git merge --squash.
+  // Must be called while on the target branch (the branch you want the squashed commit to land on).
+  // This matches how GitHub performs "Squash and merge": it applies the full diff of branchToSquash
+  // onto the current branch as staged changes, then creates a single commit.
   async squash(args: {
     branchToSquash: string
-    branchMergingInto: string
     commitTitle: string
     commitMessage: string
   }): Promise<void> {
-    // We need to find out how many commits 1 branch is ahead of the other to find out how many unique commits there are.
-    const { stdout } = await this.exec.run({
-      command: `git rev-list --count ${args.branchMergingInto}..${args.branchToSquash}`,
+    // git merge --squash stages all changes from branchToSquash as a single set of changes.
+    // It does NOT create a commit — we do that in the next step so we control the message.
+    // Unlike rebase, this does not replay commits one-by-one, which avoids conflicts that
+    // would occur with rebase but not with GitHub's own squash merge.
+    const mergeResult = await this.exec.run({
+      command: `git merge --squash ${args.branchToSquash}`,
       input: undefined,
       currentWorkingDirectory: this.directory,
+      throwOnNonZeroExitCode: false,
     })
-
-    const numberOfCommitsAheadOfBranchMergingInto = parseInt(stdout.trim())
-
-    if (numberOfCommitsAheadOfBranchMergingInto === 0) {
-      this.log.msg(`Branches ${args.branchToSquash} and ${args.branchMergingInto} are already up to date. No commits to squash.`)
-      return
+    if (mergeResult.exitCode !== 0) {
+      if (isMergeConflict(mergeResult.stdout, mergeResult.stderr)) {
+        throw new MergeConflictError(`git merge --squash of '${args.branchToSquash}' failed due to merge conflicts.`)
+      }
+      throw new Error(`Command: git merge --squash ${args.branchToSquash}, failed with exit code: ${mergeResult.exitCode}`)
     }
-
-    // Now that we know how many commits are ahead, we can squash all of those commits into 1 commit.
-    await this.exec.run({
-      command: `git reset --soft HEAD~${numberOfCommitsAheadOfBranchMergingInto}`,
-      input: undefined,
-      currentWorkingDirectory: this.directory,
-    })
 
     // Use shell-quote to properly escape the commit message to prevent shell injection and parsing errors
     const escapedCommitTitle = shellQuote.quote([args.commitTitle])

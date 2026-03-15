@@ -659,12 +659,8 @@ Deno.test("squash - should properly escape commit messages with special characte
 
   // Mock git commands that squash function will call
   stub(exec, "run", async (args) => {
-    // Mock git rev-list command (returns number of commits)
-    if (args.command.includes("git rev-list")) {
-      return { exitCode: 0, stdout: "2", stderr: "", output: undefined }
-    }
-    // Mock git reset command
-    if (args.command.includes("git reset")) {
+    // Mock git merge --squash command
+    if (args.command.includes("git merge --squash")) {
       return { exitCode: 0, stdout: "", stderr: "", output: undefined }
     }
     // Mock git commit command
@@ -688,7 +684,6 @@ This PR contains "quoted text" and 'single quotes' and $variables.`
 
   await git.squash({
     branchToSquash: "feature-branch",
-    branchMergingInto: "main",
     commitTitle: "chore(deps): update action to v2",
     commitMessage: complexCommitMessage,
   })
