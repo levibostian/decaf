@@ -94,7 +94,7 @@ export async function main() {
           gitRootDirectory: git.getDirectory(),
           userScriptCurrentWorkingDirectory: environment.getUserScriptCurrentWorkingDirectory(git.getDirectory()),
         }),
-        prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git), git),
+        prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, logger), git),
         getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git),
         log: logger,
         git,

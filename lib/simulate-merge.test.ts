@@ -45,7 +45,7 @@ describe("snapshot test all of the merge options", () => {
 
       return { exitCode: 0, stdout: "success", stderr: "", output: undefined }
     })
-    simulateMerge = new SimulateMergeImpl(git)
+    simulateMerge = new SimulateMergeImpl(git, mock<Logger>())
   })
 
   afterEach(() => {
@@ -114,7 +114,7 @@ describe("unit tests for commits returned by simulation methods", () => {
     })
 
     git = mock()
-    simulateMerge = new SimulateMergeImpl(git)
+    simulateMerge = new SimulateMergeImpl(git, mock<Logger>())
   }
 
   // Helper to create a mock commit
