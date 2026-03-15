@@ -1,5 +1,4 @@
-import { assertEquals, assertRejects } from "@std/assert"
-import { afterEach, describe, it } from "@std/testing/bdd"
+import { assertEquals, assertInstanceOf, assertRejects } from "@std/assert"
 import { assertSpyCall, restore, stub } from "@std/testing/mock"
 import { exec } from "./exec.ts"
 import * as gitModule from "./git.ts"
@@ -11,76 +10,64 @@ Deno.test.beforeEach(() => {
   git = new gitModule.GitImpl(exec, Deno.cwd())
 })
 
-describe("checkoutBranch", () => {
-  afterEach(() => {
-    restore()
+Deno.test("checkoutBranch - should execute the expected command", async () => {
+  const execMock = stub(exec, "run", async (_args) => {
+    return { exitCode: 0, stdout: "success", stderr: "", output: undefined }
   })
 
-  it("should execute the expected command", async () => {
-    const execMock = stub(exec, "run", async (_args) => {
-      return { exitCode: 0, stdout: "success", output: undefined }
-    })
+  await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
 
-    await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
-
-    assertSpyCall(execMock, 0, {
-      args: [{ command: `git checkout main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
-    })
-
-    // Now, test with createBranchIfNotExist
-    await git.checkoutBranch({ branch: "main", createBranchIfNotExist: true })
-
-    assertSpyCall(execMock, 1, {
-      args: [{ command: `git checkout -b main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
-    })
+  assertSpyCall(execMock, 0, {
+    args: [{ command: `git checkout main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
   })
 
-  it("should throw an error, given the command fails", async () => {
-    stub(exec, "run", async (_args) => {
-      throw new Error("error")
-    })
+  // Now, test with createBranchIfNotExist
+  await git.checkoutBranch({ branch: "main", createBranchIfNotExist: true })
 
-    assertRejects(async () => {
-      await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
-    }, Error)
+  assertSpyCall(execMock, 1, {
+    args: [{ command: `git checkout -b main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
   })
 })
 
-describe("createLocalBranchFromRemote", () => {
-  afterEach(() => {
-    restore()
+Deno.test("checkoutBranch - should throw an error, given the command fails", async () => {
+  stub(exec, "run", async (_args) => {
+    throw new Error("error")
   })
 
-  it("should execute the expected commands, given a branch", async () => {
-    const execMock = stub(exec, "run", async (args) => {
-      if (args.command.includes("--show-current")) {
-        return { exitCode: 0, stdout: "branch-im-on", output: undefined }
-      }
+  assertRejects(async () => {
+    await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
+  }, Error)
+})
 
-      return { exitCode: 0, stdout: "", output: undefined }
-    })
+Deno.test("createLocalBranchFromRemote - should execute the expected commands, given a branch", async () => {
+  const execMock = stub(exec, "run", async (args) => {
+    if (args.command.includes("--show-current")) {
+      return { exitCode: 0, stdout: "branch-im-on", stderr: "", output: undefined }
+    }
 
-    await git.createLocalBranchFromRemote({ branch: "branch-to-pull" })
-
-    assertEquals(execMock.calls.map((call) => call.args[0].command), [
-      "git branch --show-current",
-      "git branch --list branch-to-pull",
-      "git branch --track branch-to-pull origin/branch-to-pull",
-      "git checkout branch-to-pull",
-      "git pull --no-rebase origin branch-to-pull",
-      "git checkout branch-im-on",
-    ])
+    return { exitCode: 0, stdout: "", stderr: "", output: undefined }
   })
 
-  it("should throw an error, given a command fails", async () => {
-    stub(exec, "run", async (_args) => {
-      throw new Error("")
-    })
+  await git.createLocalBranchFromRemote({ branch: "branch-to-pull" })
 
-    assertRejects(async () => {
-      await git.createLocalBranchFromRemote({ branch: "main" })
-    }, Error)
+  assertEquals(execMock.calls.map((call) => call.args[0].command), [
+    "git branch --show-current",
+    "git branch --list branch-to-pull",
+    "git branch --track branch-to-pull origin/branch-to-pull",
+    "git checkout branch-to-pull",
+    "git pull --no-rebase origin branch-to-pull",
+    "git checkout branch-im-on",
+  ])
+})
+
+Deno.test("createLocalBranchFromRemote - should throw an error, given a command fails", async () => {
+  stub(exec, "run", async (_args) => {
+    throw new Error("")
   })
+
+  assertRejects(async () => {
+    await git.createLocalBranchFromRemote({ branch: "main" })
+  }, Error)
 })
 
 const setupExecMock = (stdout: string) => {
