@@ -4,6 +4,7 @@ import { AnyStepInput } from "./types/environment.ts"
 export interface RunResult {
   exitCode: number
   stdout: string
+  stderr: string
   output: Record<string, unknown> | undefined
 }
 
@@ -159,6 +160,7 @@ const run = async (
   return {
     exitCode: code,
     stdout: capturedStdout,
+    stderr: capturedStderr,
     output: commandOutput,
   }
 }

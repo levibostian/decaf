@@ -5,14 +5,14 @@
     ":automergeDigest",
     "github>Omochice/renovate-config:deno"
 ],
+  "automerge": true,
   "timezone": "America/Chicago",
   "schedule": ["every weekend"],
   "packageRules": [
     {
       "groupName": "GitHub Actions",
       "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
+      "matchUpdateTypes": ["minor", "patch"]
     }
   ]
 }

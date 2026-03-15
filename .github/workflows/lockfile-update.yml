@@ -5,6 +5,7 @@ on:
     branches: [main] # PRs that target the main branch
     paths: # only run if these files are changed
       - 'deno.jsonc'
+      - 'steps/deno.jsonc'
 
 jobs:
   update-lockfile:
@@ -16,7 +17,7 @@ jobs:
     steps:
       # Workaround to trigger github actions on pull request that we push commits to. 
       # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs 
-      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+      - uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         id: generate-token
         with:
           app-id: ${{ secrets.CREATE_GH_TOKEN_APP_ID }}
@@ -29,20 +30,24 @@ jobs:
           token: ${{ steps.generate-token.outputs.token }}
       
       - name: Setup Deno
-        uses: jdx/mise-action@v3
+        uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4
       
       - name: Update Deno lock file
         run: deno install --frozen=false
       
+      - name: Update Deno lock file in steps/
+        run: deno install --frozen=false
+        working-directory: steps
+      
       - name: Check if lock file changed
         id: check-changes
         run: |
-          if git diff --quiet deno.lock; then
+          if git diff --quiet deno.lock steps/deno.lock; then
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No changes to deno.lock file"
+            echo "No changes to lock files"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "deno.lock file has been updated"
+            echo "Lock file(s) have been updated"
           fi
 
       - name: Commit and push changes
@@ -50,6 +55,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add deno.lock
-          git commit -m "chore: update deno.lock file"
+          git add deno.lock steps/deno.lock
+          git commit -m "chore: update deno.lock files"
           git push

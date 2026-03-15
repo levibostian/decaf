@@ -11,7 +11,7 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
     - name: Set up Deno
-      uses: jdx/mise-action@v3
+      uses: jdx/mise-action@c1ecc8f748cd28cdeabf76dab3cccde4ce692fe4 # v4
 
     - name: Install dependencies
       run: deno install --frozen
@@ -20,7 +20,7 @@ jobs:
       run: deno task test
 
     - name: Upload test results
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
       with:
         name: junit-results
         path: reports/junit.xml

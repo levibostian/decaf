@@ -3,6 +3,27 @@ import * as log from "./log.ts"
 import { GitCommit } from "./types/git.ts"
 import * as shellQuote from "shell-quote"
 
+export class MergeConflictError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "MergeConflictError"
+  }
+}
+
+/** Returns true when the combined stdout+stderr output from a failed git command indicates merge conflicts.
+ *
+ * Matches only the specific line formats that git itself emits:
+ *   - "CONFLICT (type):" — the per-file conflict marker (always uppercase, always followed by " (")
+ *   - "Automatic merge failed;" — the final summary line from `git merge`
+ *
+ * Deliberately does NOT match free-form text such as commit messages that happen to contain
+ * the word "conflict" in mixed or lower case.
+ */
+function isMergeConflict(stdout: string, stderr: string): boolean {
+  const combined = `${stdout}\n${stderr}`
+  return /^CONFLICT \(/m.test(combined) || combined.includes("Automatic merge failed;")
+}
+
 /**
  * Git interface that defines all git operations.
  * Both the real Git class and test stubs should implement this interface.
@@ -127,11 +148,18 @@ export class GitImpl implements Git {
     // Use shell-quote to properly escape the commit message to prevent shell injection and parsing errors
     const escapedCommitTitle = shellQuote.quote([args.commitTitle])
     const escapedCommitMessage = shellQuote.quote([args.commitMessage])
-    await this.exec.run({
+    const result = await this.exec.run({
       command: `git merge ${args.branchToMergeIn} -m ${escapedCommitTitle} -m ${escapedCommitMessage} ${args.fastForward || ""}`,
       input: undefined,
       currentWorkingDirectory: this.directory,
+      throwOnNonZeroExitCode: false,
     })
+    if (result.exitCode !== 0) {
+      if (isMergeConflict(result.stdout, result.stderr)) {
+        throw new MergeConflictError(`git merge of '${args.branchToMergeIn}' failed due to merge conflicts.`)
+      }
+      throw new Error(`Command: git merge ${args.branchToMergeIn}, failed with exit code: ${result.exitCode}`)
+    }
   }
 
   async pull(): Promise<void> {
@@ -197,11 +225,18 @@ export class GitImpl implements Git {
   }
 
   async rebase(args: { branchToRebaseOnto: string }): Promise<void> {
-    await this.exec.run({
+    const result = await this.exec.run({
       command: `git rebase ${args.branchToRebaseOnto}`,
       input: undefined,
       currentWorkingDirectory: this.directory,
+      throwOnNonZeroExitCode: false,
     })
+    if (result.exitCode !== 0) {
+      if (isMergeConflict(result.stdout, result.stderr)) {
+        throw new MergeConflictError(`git rebase onto '${args.branchToRebaseOnto}' failed due to merge conflicts.`)
+      }
+      throw new Error(`Command: git rebase ${args.branchToRebaseOnto}, failed with exit code: ${result.exitCode}`)
+    }
   }
 
   async getLatestCommitsSince(args: { commit: GitCommit }): Promise<GitCommit[]> {
