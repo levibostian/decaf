@@ -102,19 +102,14 @@ export class SimulateMergeImpl implements SimulateMerge {
 
     await this.prepareForMerge({ baseBranch, targetBranch })
 
-    await this.git.checkoutBranch({ branch: baseBranch, createBranchIfNotExist: false })
-
-    // perform a rebase to make sure that the squash we perform will only have commits for this branch.
-    // if baseBranch, for example, contains a merge commit, if we do not rebase, that merge commit's changes will be included in the squash.
-    // this may revert changes that the target branch has made.
-    await this.git.rebase({ branchToRebaseOnto: targetBranch })
-
-    // Squash all commits in PR into 1 commit.
-    await this.git.squash({ branchToSquash: baseBranch, branchMergingInto: targetBranch, commitTitle, commitMessage })
-
-    // we want to merge the squashed commit into the target branch.
+    // GitHub's "Squash and merge" works by:
+    //   1. Checking out the target (base) branch
+    //   2. Running `git merge --squash <feature-branch>` which stages all changes as one set
+    //   3. Creating a single commit with the PR title/message
+    // This avoids replaying commits one-by-one (as rebase does), so conflicts that would
+    // appear during a rebase do not affect a squash merge.
     await this.git.checkoutBranch({ branch: targetBranch, createBranchIfNotExist: false })
-    await this.git.merge({ branchToMergeIn: baseBranch, commitTitle, commitMessage, fastForward: "--ff-only" })
+    await this.git.squash({ branchToSquash: baseBranch, commitTitle, commitMessage })
 
     // if commit reference is undefined, it means that the target branch was empty. So, get all commits
     // which will include all the commits that were just created by the squash.

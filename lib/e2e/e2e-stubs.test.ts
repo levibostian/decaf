@@ -213,12 +213,13 @@ export class GitStub implements Git {
 
   squash = async (args: {
     branchToSquash: string
-    branchMergingInto: string
     commitTitle: string
     commitMessage: string
   }): Promise<void> => {
     const branchToSquashCommits = this.localBranchCommits.get(args.branchToSquash) || []
-    const targetBranchCommits = this.localBranchCommits.get(args.branchMergingInto) || []
+    // In the new squash flow we are already on the target branch when squash() is called
+    const targetBranch = this.currentBranch
+    const targetBranchCommits = this.localBranchCommits.get(targetBranch) || []
 
     if (branchToSquashCommits.length === 0) {
       throw new Error(`Branch '${args.branchToSquash}' has no commits or does not exist`)
@@ -238,12 +239,12 @@ export class GitStub implements Git {
       isMergeCommit: false,
       isRevertCommit: false,
       parents: [targetBranchCommits[targetBranchCommits.length - 1]?.sha || ""],
-      branch: args.branchMergingInto,
-      refs: [args.branchMergingInto],
+      branch: targetBranch,
+      refs: [targetBranch],
     }
 
     // Add the squashed commit to the target branch
-    this.localBranchCommits.set(args.branchMergingInto, [...targetBranchCommits, squashedCommit])
+    this.localBranchCommits.set(targetBranch, [...targetBranchCommits, squashedCommit])
 
     // Remove the squashed branch
     this.localBranchCommits.delete(args.branchToSquash)
