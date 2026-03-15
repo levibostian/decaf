@@ -14,6 +14,7 @@ export interface Exec {
       command: string
       input: AnyStepInput | undefined
       displayLogs?: boolean
+      suppressOutputLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
       currentWorkingDirectory?: string
@@ -39,10 +40,11 @@ export class ExecImpl implements Exec {
   }
 
   async run(
-    { command, input, displayLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
+    { command, input, displayLogs, suppressOutputLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
       command: string
       input: AnyStepInput | undefined
       displayLogs?: boolean
+      suppressOutputLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
       currentWorkingDirectory?: string
@@ -107,10 +109,12 @@ export class ExecImpl implements Exec {
         write(chunk) {
           const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
-          if (displayLogs) {
-            log.msg(decodedChunk)
-          } else {
-            log.debug(decodedChunk)
+          if (!suppressOutputLogs) {
+            if (displayLogs) {
+              log.msg(decodedChunk)
+            } else {
+              log.debug(decodedChunk)
+            }
           }
 
           capturedStdout += decodedChunk
@@ -122,10 +126,12 @@ export class ExecImpl implements Exec {
         write(chunk) {
           const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
-          if (displayLogs) {
-            log.msg(decodedChunk)
-          } else {
-            log.debug(decodedChunk)
+          if (!suppressOutputLogs) {
+            if (displayLogs) {
+              log.msg(decodedChunk)
+            } else {
+              log.debug(decodedChunk)
+            }
           }
 
           capturedStderr += decodedChunk

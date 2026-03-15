@@ -341,6 +341,11 @@ export class GitImpl implements Git {
         `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${args.branch.ref}`,
       input: undefined,
       displayLogs: false,
+      // git log output is just wayyyyy too noisey. it has made debugging difficult to do.
+      // sure, there can be an error in the git log command. if there is, I think we can make
+      // something like a script that you install that runs for the 'get latest release' step
+      // that logs all parsed commits and that will help debug git commits that were incorrectly parsed.
+      suppressOutputLogs: true,
       currentWorkingDirectory: this.directory,
     })
 
