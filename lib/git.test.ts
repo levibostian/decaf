@@ -1,5 +1,4 @@
-import { assertEquals, assertRejects } from "@std/assert"
-import { afterEach, describe, it } from "@std/testing/bdd"
+import { assertEquals, assertInstanceOf, assertRejects } from "@std/assert"
 import { assertSpyCall, restore, stub } from "@std/testing/mock"
 import { exec } from "./exec.ts"
 import * as gitModule from "./git.ts"
@@ -11,82 +10,70 @@ Deno.test.beforeEach(() => {
   git = new gitModule.GitImpl(exec, Deno.cwd())
 })
 
-describe("checkoutBranch", () => {
-  afterEach(() => {
-    restore()
+Deno.test("checkoutBranch - should execute the expected command", async () => {
+  const execMock = stub(exec, "run", async (_args) => {
+    return { exitCode: 0, stdout: "success", stderr: "", output: undefined }
   })
 
-  it("should execute the expected command", async () => {
-    const execMock = stub(exec, "run", async (_args) => {
-      return { exitCode: 0, stdout: "success", output: undefined }
-    })
+  await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
 
-    await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
-
-    assertSpyCall(execMock, 0, {
-      args: [{ command: `git checkout main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
-    })
-
-    // Now, test with createBranchIfNotExist
-    await git.checkoutBranch({ branch: "main", createBranchIfNotExist: true })
-
-    assertSpyCall(execMock, 1, {
-      args: [{ command: `git checkout -b main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
-    })
+  assertSpyCall(execMock, 0, {
+    args: [{ command: `git checkout main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
   })
 
-  it("should throw an error, given the command fails", async () => {
-    stub(exec, "run", async (_args) => {
-      throw new Error("error")
-    })
+  // Now, test with createBranchIfNotExist
+  await git.checkoutBranch({ branch: "main", createBranchIfNotExist: true })
 
-    assertRejects(async () => {
-      await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
-    }, Error)
+  assertSpyCall(execMock, 1, {
+    args: [{ command: `git checkout -b main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
   })
 })
 
-describe("createLocalBranchFromRemote", () => {
-  afterEach(() => {
-    restore()
+Deno.test("checkoutBranch - should throw an error, given the command fails", async () => {
+  stub(exec, "run", async (_args) => {
+    throw new Error("error")
   })
 
-  it("should execute the expected commands, given a branch", async () => {
-    const execMock = stub(exec, "run", async (args) => {
-      if (args.command.includes("--show-current")) {
-        return { exitCode: 0, stdout: "branch-im-on", output: undefined }
-      }
+  assertRejects(async () => {
+    await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
+  }, Error)
+})
 
-      return { exitCode: 0, stdout: "", output: undefined }
-    })
+Deno.test("createLocalBranchFromRemote - should execute the expected commands, given a branch", async () => {
+  const execMock = stub(exec, "run", async (args) => {
+    if (args.command.includes("--show-current")) {
+      return { exitCode: 0, stdout: "branch-im-on", stderr: "", output: undefined }
+    }
 
-    await git.createLocalBranchFromRemote({ branch: "branch-to-pull" })
-
-    assertEquals(execMock.calls.map((call) => call.args[0].command), [
-      "git branch --show-current",
-      "git branch --list branch-to-pull",
-      "git branch --track branch-to-pull origin/branch-to-pull",
-      "git checkout branch-to-pull",
-      "git pull --no-rebase origin branch-to-pull",
-      "git checkout branch-im-on",
-    ])
+    return { exitCode: 0, stdout: "", stderr: "", output: undefined }
   })
 
-  it("should throw an error, given a command fails", async () => {
-    stub(exec, "run", async (_args) => {
-      throw new Error("")
-    })
+  await git.createLocalBranchFromRemote({ branch: "branch-to-pull" })
 
-    assertRejects(async () => {
-      await git.createLocalBranchFromRemote({ branch: "main" })
-    }, Error)
+  assertEquals(execMock.calls.map((call) => call.args[0].command), [
+    "git branch --show-current",
+    "git branch --list branch-to-pull",
+    "git branch --track branch-to-pull origin/branch-to-pull",
+    "git checkout branch-to-pull",
+    "git pull --no-rebase origin branch-to-pull",
+    "git checkout branch-im-on",
+  ])
+})
+
+Deno.test("createLocalBranchFromRemote - should throw an error, given a command fails", async () => {
+  stub(exec, "run", async (_args) => {
+    throw new Error("")
   })
+
+  assertRejects(async () => {
+    await git.createLocalBranchFromRemote({ branch: "main" })
+  }, Error)
 })
 
 const setupExecMock = (stdout: string) => {
   restore() // Reset any existing mocks before creating a new one
   stub(exec, "run", async (_args) => {
-    return { exitCode: 0, stdout, output: undefined }
+    return { exitCode: 0, stdout, stderr: "", output: undefined }
   })
 }
 
@@ -669,19 +656,19 @@ Deno.test("squash - should properly escape commit messages with special characte
   stub(exec, "run", async (args) => {
     // Mock git rev-list command (returns number of commits)
     if (args.command.includes("git rev-list")) {
-      return { exitCode: 0, stdout: "2", output: undefined }
+      return { exitCode: 0, stdout: "2", stderr: "", output: undefined }
     }
     // Mock git reset command
     if (args.command.includes("git reset")) {
-      return { exitCode: 0, stdout: "", output: undefined }
+      return { exitCode: 0, stdout: "", stderr: "", output: undefined }
     }
     // Mock git commit command
     if (args.command.includes("git commit")) {
       gitCommitCommandsExecuted.push(args.command)
 
-      return { exitCode: 0, stdout: "", output: undefined }
+      return { exitCode: 0, stdout: "", stderr: "", output: undefined }
     }
-    return { exitCode: 0, stdout: "", output: undefined }
+    return { exitCode: 0, stdout: "", stderr: "", output: undefined }
   })
 
   // Test commit message with quotes, newlines, and special characters like the one from the error log
@@ -706,4 +693,101 @@ This PR contains "quoted text" and 'single quotes' and $variables.`
     gitCommitCommandsExecuted[0],
     `git commit -m 'chore(deps): update action to v2' -m "> [\\!NOTE]\n> Mend has cancelled [the proposed renaming](https://example.com) of the Renovate GitHub app.\n> \n> This notice will be removed on 2025-10-07.\n\n<hr>\n\nThis PR contains \\"quoted text\\" and 'single quotes' and \\$variables."`,
   )
+})
+
+Deno.test("merge - throws MergeConflictError when stdout contains CONFLICT", async () => {
+  stub(exec, "run", async () => {
+    return { exitCode: 1, stdout: "CONFLICT (content): Merge conflict in file.txt\nAutomatic merge failed", stderr: "", output: undefined }
+  })
+
+  const error = await assertRejects(
+    () => (git as gitModule.GitImpl).merge({ branchToMergeIn: "feature", commitTitle: "title", commitMessage: "msg" }),
+  )
+
+  assertInstanceOf(error, gitModule.MergeConflictError)
+})
+
+Deno.test("merge - throws MergeConflictError when stderr contains conflict text", async () => {
+  stub(exec, "run", async () => {
+    return { exitCode: 1, stdout: "", stderr: "error: could not apply abc123... commit\nCONFLICT (content): Merge conflict", output: undefined }
+  })
+
+  const error = await assertRejects(
+    () => (git as gitModule.GitImpl).merge({ branchToMergeIn: "feature", commitTitle: "title", commitMessage: "msg" }),
+  )
+
+  assertInstanceOf(error, gitModule.MergeConflictError)
+})
+
+Deno.test("merge - throws a generic Error (not MergeConflictError) when the failure is not a conflict", async () => {
+  stub(exec, "run", async () => {
+    return { exitCode: 128, stdout: "", stderr: "fatal: repository not found", output: undefined }
+  })
+
+  const error = await assertRejects(
+    () => (git as gitModule.GitImpl).merge({ branchToMergeIn: "feature", commitTitle: "title", commitMessage: "msg" }),
+  )
+
+  assertEquals(error instanceof gitModule.MergeConflictError, false)
+})
+
+Deno.test("merge - does NOT treat output containing 'conflict' in mixed case as a merge conflict", async () => {
+  stub(exec, "run", async () => {
+    // Output mentioning conflict in mixed/lower case — should NOT trigger MergeConflictError
+    return { exitCode: 1, stdout: "this reverts a conflict resolution from last week", stderr: "some other git error", output: undefined }
+  })
+
+  const error = await assertRejects(
+    () => (git as gitModule.GitImpl).merge({ branchToMergeIn: "feature", commitTitle: "title", commitMessage: "msg" }),
+  )
+
+  assertEquals(error instanceof gitModule.MergeConflictError, false)
+})
+
+Deno.test("rebase - throws MergeConflictError when stdout contains CONFLICT", async () => {
+  stub(exec, "run", async () => {
+    return { exitCode: 1, stdout: "CONFLICT (content): Merge conflict in file.txt", stderr: "", output: undefined }
+  })
+
+  const error = await assertRejects(
+    () => (git as gitModule.GitImpl).rebase({ branchToRebaseOnto: "main" }),
+  )
+
+  assertInstanceOf(error, gitModule.MergeConflictError)
+})
+
+Deno.test("rebase - throws MergeConflictError when stderr contains conflict text", async () => {
+  stub(exec, "run", async () => {
+    return { exitCode: 1, stdout: "", stderr: "CONFLICT (content): Merge conflict in file.txt", output: undefined }
+  })
+
+  const error = await assertRejects(
+    () => (git as gitModule.GitImpl).rebase({ branchToRebaseOnto: "main" }),
+  )
+
+  assertInstanceOf(error, gitModule.MergeConflictError)
+})
+
+Deno.test("rebase - throws a generic Error (not MergeConflictError) when the failure is not a conflict", async () => {
+  stub(exec, "run", async () => {
+    return { exitCode: 128, stdout: "", stderr: "fatal: invalid upstream 'nonexistent'", output: undefined }
+  })
+
+  const error = await assertRejects(
+    () => (git as gitModule.GitImpl).rebase({ branchToRebaseOnto: "main" }),
+  )
+
+  assertEquals(error instanceof gitModule.MergeConflictError, false)
+})
+
+Deno.test("rebase - does NOT treat output containing 'conflict' in mixed case as a merge conflict", async () => {
+  stub(exec, "run", async () => {
+    return { exitCode: 1, stdout: "this reverts a conflict resolution from last week", stderr: "some other git error", output: undefined }
+  })
+
+  const error = await assertRejects(
+    () => (git as gitModule.GitImpl).rebase({ branchToRebaseOnto: "main" }),
+  )
+
+  assertEquals(error instanceof gitModule.MergeConflictError, false)
 })

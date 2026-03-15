@@ -1,5 +1,5 @@
 import { Exec } from "../exec.ts"
-import { Git, GitRepoManager } from "../git.ts"
+import { Git, GitRepoManager, MergeConflictError } from "../git.ts"
 import { GitCommit } from "../types/git.ts"
 import { Environment } from "../environment.ts"
 import { AnyStepName } from "../steps/types/any-step.ts"
@@ -31,6 +31,8 @@ export class GitStub implements Git {
   remoteRepo: GitRemoteRepositoryMock
   /** Whether the repository is in a shallow state */
   isShallow: boolean
+  /** When set, merge() and rebase() will throw this error to simulate a merge conflict */
+  simulateMergeConflictError: MergeConflictError | undefined
 
   constructor(
     { currentBranch, remoteRepo, commits }: { currentBranch: string; remoteRepo: GitRemoteRepositoryMock; commits: Map<string, GitCommit[]> },
@@ -43,6 +45,7 @@ export class GitStub implements Git {
     this.commitsFetched = new Map()
     this.isShallow = true // Start as shallow repository
     this.remoteRepo = remoteRepo
+    this.simulateMergeConflictError = undefined
 
     // Initialize commitsFetched to only contain the local commits initially
     // After fetch() is called, this will be populated with complete remote history
@@ -125,6 +128,10 @@ export class GitStub implements Git {
     commitMessage: string
     fastForward?: "--no-ff" | "--ff-only"
   }): Promise<void> => {
+    if (this.simulateMergeConflictError) {
+      throw this.simulateMergeConflictError
+    }
+
     const currentBranchCommits = this.localBranchCommits.get(this.currentBranch) || []
     const branchToMergeCommits = this.localBranchCommits.get(args.branchToMergeIn) || []
 
@@ -246,6 +253,10 @@ export class GitStub implements Git {
   }
 
   rebase = async (args: { branchToRebaseOnto: string }): Promise<void> => {
+    if (this.simulateMergeConflictError) {
+      throw this.simulateMergeConflictError
+    }
+
     const currentBranchCommits = this.localBranchCommits.get(this.currentBranch) || []
     const targetBranchCommits = this.localBranchCommits.get(args.branchToRebaseOnto) || []
 
