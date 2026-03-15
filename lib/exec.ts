@@ -4,6 +4,7 @@ import { Logger } from "./log.ts"
 export interface RunResult {
   exitCode: number
   stdout: string
+  stderr: string
   output: Record<string, unknown> | undefined
 }
 
@@ -168,6 +169,7 @@ export class ExecImpl implements Exec {
     return {
       exitCode: code,
       stdout: capturedStdout,
+      stderr: capturedStderr,
       output: commandOutput,
     }
   }

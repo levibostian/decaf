@@ -1,5 +1,6 @@
 import { run } from "./deploy.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
+import { MergeConflictError } from "./lib/git.ts"
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
 import { StepRunnerImpl } from "./lib/step-runner.ts"
@@ -140,8 +141,14 @@ export async function main() {
         })
       }
 
-      // rethrow the error to ensure the action fails
-      throw error
+      if (error instanceof MergeConflictError) {
+        // Merge conflicts are expected — log a clear message and continue to the next merge type.
+        // The process will exit with 0 after all types are processed; GitHub will block the PR from merging anyway.
+        logger.warn(error.message)
+      } else {
+        // Unexpected error — rethrow to ensure the action fails visibly
+        throw error
+      }
     } finally {
       // Always clean up the isolated git clone, even if an error occurred
       // Only clean up if we created an isolated clone (test mode only)

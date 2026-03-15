@@ -47,7 +47,7 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
 
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => [`echo '${JSON.stringify(expect)}'`])
-  const mockExec = { run: () => Promise.resolve({ output: undefined, stdout: JSON.stringify(expect), exitCode: 0 }) }
+  const mockExec = { run: () => Promise.resolve({ output: undefined, stdout: JSON.stringify(expect), stderr: "", exitCode: 0 }) }
   const stepRunner = new StepRunnerImpl({
     environment,
     exec: mockExec as unknown as ExecImpl,
@@ -271,7 +271,7 @@ Deno.test("deploy step runs all commands in order", async () => {
   const mockExec = {
     run: (args: { command: string }) => {
       executedCommands.push(args.command)
-      return Promise.resolve({ output: undefined, stdout: "", exitCode: 0 })
+      return Promise.resolve({ output: undefined, stdout: "", stderr: "", exitCode: 0 })
     },
   }
 
@@ -320,9 +320,9 @@ Deno.test("non-deploy step returns output from first command with valid output",
       executedCommands.push(args.command)
       // Return the appropriate stdout based on which command is being run
       if (args.command.includes(JSON.stringify(firstOutput))) {
-        return Promise.resolve({ output: undefined, stdout: JSON.stringify(firstOutput), exitCode: 0 })
+        return Promise.resolve({ output: undefined, stdout: JSON.stringify(firstOutput), stderr: "", exitCode: 0 })
       }
-      return Promise.resolve({ output: undefined, stdout: JSON.stringify(secondOutput), exitCode: 0 })
+      return Promise.resolve({ output: undefined, stdout: JSON.stringify(secondOutput), stderr: "", exitCode: 0 })
     },
   }
 
@@ -362,7 +362,7 @@ Deno.test("non-deploy step tries next command if first returns invalid output", 
     run: (args: { command: string }) => {
       executedCommands.push(args.command)
       if (args.command === "echo 'invalid'") {
-        return Promise.resolve({ output: undefined, stdout: "invalid", exitCode: 0 })
+        return Promise.resolve({ output: undefined, stdout: "invalid", stderr: "", exitCode: 0 })
       }
       return Promise.resolve({ output: validOutput, stdout: "", exitCode: 0 })
     },
@@ -443,12 +443,12 @@ Deno.test("all step runner methods run commands from user script working directo
       capturedCalls.push({ command: args.command, workingDirectory: args.currentWorkingDirectory, envVars: args.envVars })
 
       if (args.command.includes(JSON.stringify(getLatestReleaseOutput))) {
-        return Promise.resolve({ output: undefined, stdout: JSON.stringify(getLatestReleaseOutput), exitCode: 0 })
+        return Promise.resolve({ output: undefined, stdout: JSON.stringify(getLatestReleaseOutput), stderr: "", exitCode: 0 })
       }
       if (args.command.includes(JSON.stringify(getNextVersionOutput))) {
-        return Promise.resolve({ output: undefined, stdout: JSON.stringify(getNextVersionOutput), exitCode: 0 })
+        return Promise.resolve({ output: undefined, stdout: JSON.stringify(getNextVersionOutput), stderr: "", exitCode: 0 })
       }
-      return Promise.resolve({ output: undefined, stdout: "", exitCode: 0 })
+      return Promise.resolve({ output: undefined, stdout: "", stderr: "", exitCode: 0 })
     },
   }
 
