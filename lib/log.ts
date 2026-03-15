@@ -91,9 +91,16 @@ export class Logger implements ShStyleLogger, Pick<Console, "debug">, Pick<Conso
     const shouldPrintMessageToConsole = Deno.env.get("INPUT_DEBUG") === "true" || this.isOnGitHubActions
 
     if (shouldPrintMessageToConsole) {
-      // github actions works better to print line by line otherwise some debug logs may show up in non-debug mode.
-      data.forEach((line) => {
-        console.log(this.isOnGitHubActions ? `::debug::${line}` : line)
+      // GitHub Actions parses ::debug:: on a per-line basis. If a multi-line string is passed to
+      // console.log as a single call, only the very first line gets the ::debug:: prefix — every
+      // subsequent line prints as plain visible output in the CI log, bypassing the hidden-by-default
+      // debug behavior.
+      //
+      // Fix: split every argument on newlines before printing so each line gets its own ::debug:: prefix.
+      data.forEach((item) => {
+        String(item).split("\n").forEach((line) => {
+          console.log(this.isOnGitHubActions ? `::debug::${line}` : line)
+        })
       })
     }
   }
