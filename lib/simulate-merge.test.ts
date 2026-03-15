@@ -23,7 +23,7 @@ describe("snapshot test all of the merge options", () => {
     execMock = stub(exec, "run", async (args) => {
       // rev-list expects to return a number of commits
       if (args.command.includes("git rev-list")) {
-        return { exitCode: 0, stdout: "3", output: undefined }
+        return { exitCode: 0, stdout: "3", stderr: "", output: undefined }
       }
 
       // log expects to return a list of commits
@@ -35,11 +35,12 @@ describe("snapshot test all of the merge options", () => {
             `[[⬛]]f15d5ac43a47b8333019461170fcaf0bd5a139d4[⬛]test: update snapshots to remove un-used ones[⬛]test: update snapshots to remove un-used ones
 [⬛]Foo Bar[⬛]foo@bar.com[⬛]Foo Bar[⬛]foo@bar.com[⬛]2025-07-09 07:02:35 -0500[⬛]2c7e53b35e1b4b278700294b7781d770f16124c8[⬛]
 0       42      __snapshots__/deploy.test.ts.snap`,
+          stderr: "",
           output: undefined,
         }
       }
 
-      return { exitCode: 0, stdout: "success", output: undefined }
+      return { exitCode: 0, stdout: "success", stderr: "", output: undefined }
     })
     simulateMerge = new SimulateMergeImpl(git)
   })

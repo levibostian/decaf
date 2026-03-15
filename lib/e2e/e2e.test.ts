@@ -15,6 +15,7 @@ import { GitHubApi, GitHubPullRequest } from "../github-api.ts"
 import { assertObjectMatch } from "@std/assert"
 import { assertSnapshot } from "@std/testing/snapshot"
 import * as di from "../di.ts"
+import { MergeConflictError } from "../git.ts"
 
 type PrCommentCall = {
   message: string
@@ -698,6 +699,55 @@ Deno.test("NON-TEST MODE: when deployment verification fails with failOnDeployVe
   assertEquals(didThrow, true, "Should throw error when verification fails in non-test mode with failOnDeployVerification=true")
 })
 
+Deno.test("when a simulated merge fails with a conflict, expect no crash, error result in PR comment, and remaining merge types still run", async () => {
+  const mainBranchCommits = [new GitCommitFake({ message: "commit on main", sha: "main-1" })]
+  const featureCommits = [new GitCommitFake({ message: "commit on feature", sha: "feature-1" })]
+
+  const givenLocalCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+    ["feature", featureCommits],
+  ])
+
+  const givenRemoteCommits = new Map<string, GitCommit[]>([
+    ["main", mainBranchCommits],
+    ["feature", featureCommits],
+  ])
+
+  const { gitStub } = setupGitRepo({
+    checkedOutBranch: "main",
+    localCommits: givenLocalCommits,
+    remoteCommits: givenRemoteCommits,
+    remotePullRequests: [
+      {
+        prNumber: 123,
+        targetBranchName: "main",
+        sourceBranchName: "feature",
+        title: "PR for feature",
+        description: "Description for feature",
+      },
+    ],
+  })
+
+  // Make the git stub throw a conflict error on merge/rebase
+  gitStub.simulateMergeConflictError = new MergeConflictError("git rebase onto 'main' failed due to merge conflicts.")
+
+  e2eStepScript.setGetLatestReleaseStepOutput(null)
+
+  // Should NOT throw — merge conflict is handled gracefully
+  let didThrow = false
+  try {
+    await run({
+      testMode: true,
+      simulatedMergeTypes: ["rebase", "merge"],
+      makePullRequestComment: true,
+    })
+  } catch (_error) {
+    didThrow = true
+  }
+
+  assertEquals(didThrow, false, "Should NOT throw when a simulated merge fails with a conflict")
+})
+
 // helper functions
 
 let diGraph: typeof di.productionDiGraph
@@ -724,7 +774,7 @@ const setupGitRepo = (
     remoteCommits: Map<string, GitCommit[]>
     remotePullRequests: GitHubPullRequest[]
   },
-): { remoteRepository: GitRemoteRepositoryMock; gitRepo: GitRepoManagerStub; prCommentCalls: PrCommentCall[] } => {
+): { remoteRepository: GitRemoteRepositoryMock; gitRepo: GitRepoManagerStub; gitStub: GitStub; prCommentCalls: PrCommentCall[] } => {
   currentBranchWhenTestStarts = checkedOutBranch
 
   const remoteRepository: GitRemoteRepositoryMock = {
@@ -747,7 +797,7 @@ const setupGitRepo = (
   })
   diGraph = diGraph.override("github", () => githubApiMock)
 
-  return { remoteRepository, gitRepo, prCommentCalls }
+  return { remoteRepository, gitRepo, gitStub, prCommentCalls }
 }
 
 let currentBranchWhenTestStarts: string
