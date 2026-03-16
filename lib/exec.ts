@@ -14,6 +14,7 @@ export interface Exec {
       command: string
       input: AnyStepInput | undefined
       displayLogs?: boolean
+      suppressOutputLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
       currentWorkingDirectory?: string
@@ -32,10 +33,11 @@ We use a popular package to parse the string into the correct args list. See aut
 To make this function testable, we not only have the stdout and stderr be piped to the console, but we return it from this function so tests can verify the output of the command.
 */
 const run = async (
-  { command, input, displayLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
+  { command, input, displayLogs, suppressOutputLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
     command: string
     input: AnyStepInput | undefined
     displayLogs?: boolean
+    suppressOutputLogs?: boolean
     envVars?: { [key: string]: string }
     throwOnNonZeroExitCode?: boolean
     currentWorkingDirectory?: string
@@ -98,10 +100,12 @@ const run = async (
       write(chunk) {
         const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
-        if (displayLogs) {
-          log.message(decodedChunk)
-        } else {
-          log.debug(decodedChunk)
+        if (!suppressOutputLogs) {
+          if (displayLogs) {
+            log.message(decodedChunk)
+          } else {
+            log.debug(decodedChunk)
+          }
         }
 
         capturedStdout += decodedChunk
@@ -113,10 +117,12 @@ const run = async (
       write(chunk) {
         const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
-        if (displayLogs) {
-          log.message(decodedChunk)
-        } else {
-          log.debug(decodedChunk)
+        if (!suppressOutputLogs) {
+          if (displayLogs) {
+            log.message(decodedChunk)
+          } else {
+            log.debug(decodedChunk)
+          }
         }
 
         capturedStderr += decodedChunk
