@@ -10,7 +10,7 @@
     "jsr:@david/service-store@0.3": "0.3.1",
     "jsr:@david/which@~0.4.1": "0.4.1",
     "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
-    "jsr:@levibostian/sh-style@0.8": "0.8.0",
+    "jsr:@levibostian/sh-style@~0.8.1": "0.8.1",
     "jsr:@std/assert@^1.0.12": "1.0.18",
     "jsr:@std/assert@^1.0.17": "1.0.18",
     "jsr:@std/async@^1.1.0": "1.1.0",
@@ -77,8 +77,8 @@
     "@levibostian/cathy@2.0.1": {
       "integrity": "e4ad84fe2346faacfa96543178382a389f3f79c982f3fabe36f2fa732a2add9d"
     },
-    "@levibostian/sh-style@0.8.0": {
-      "integrity": "a3855019a79ff4a308ce0e621fa10249d342b062f964118a062ee22991f8b66d",
+    "@levibostian/sh-style@0.8.1": {
+      "integrity": "915f06e56e3595c7865dcdadf9c86946da6d8e10aa3426d4b60a489c2acb06ad",
       "dependencies": [
         "jsr:@cross/env"
       ]
@@ -253,7 +253,7 @@
       "jsr:@david/dax@0.45",
       "jsr:@david/service-store@0.3",
       "jsr:@levibostian/cathy@^2.0.1",
-      "jsr:@levibostian/sh-style@0.8",
+      "jsr:@levibostian/sh-style@~0.8.1",
       "jsr:@std/assert@^1.0.12",
       "jsr:@std/cli@^1.0.20",
       "jsr:@std/path@^1.1.4",
