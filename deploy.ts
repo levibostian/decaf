@@ -45,11 +45,9 @@ export const run = async ({
                 /\ \L\ \/\  __//\ \__//\ \L\.\_\ \ \_/
                 \ \___,_\ \____\ \____\ \__/.\_\\ \_\\
                  \/__,_ /\/____/\/____/\/__/\/_/ \/_/
-
-========================================================================
-      Calm & reliable automated deployments. No more coffee breaks.
-========================================================================
   `)
+
+  log.title(`Calm & reliable automated deployments. No more coffee breaks.`)
 
   log.msg(`Hello! I am a tool called decaf. I help you deploy your projects.
 To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.

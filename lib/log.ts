@@ -104,9 +104,8 @@ export class Logger implements ShStyleLogger, Pick<Console, "debug">, Pick<Conso
       })
     }
   }
-  // deno-lint-ignore no-explicit-any
-  log(...data: any[]): void {
-    this.lines.push(...data.map(String))
-    console.log(...data)
+  log(msg: string): void {
+    this.lines.push(msg)
+    process.stdout.write(msg)
   }
 }
