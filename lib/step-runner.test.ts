@@ -343,22 +343,31 @@ Deno.test("non-deploy step runs all commands and does not exit early", async () 
 })
 
 Deno.test("scripts cumulatively merge all outputs so each script builds on all previous ones", async () => {
-  // Script 1 outputs a complete valid object — it gets accumulated.
-  // Scripts 2 output incomplete objects (missing versionName) — it is ignored.
-  // Only complete, valid outputs are passed forward via previousScriptsOutput.
+  // Script 1 outputs a complete valid object — it gets accumulated into cumulativeOutput.
+  // Script 2 outputs an incomplete object (missing versionName) — it is ignored.
+  // Script 3 outputs a complete valid object — it gets merged with script 1's output.
+  // All three scripts receive the original input unchanged via exec.run.
+  // Prior script output is available only via {{ previousScriptsOutput.* }} in the command template string.
   const script1Output = { versionName: "1.0.0", commitSha: "from-script-1", extraFieldA: "from-script-1" }
-  const script2Output = { commitSha: "from-script-2", extraFieldB: "from-script-2" } // incomplete — no versionName
+  const script2Output = { commitSha: "from-script-2", extraFieldB: "from-script-2" } // incomplete — no versionName, not accumulated
   const script3Output = { versionName: "1.0.0", commitSha: "final" }
 
   const environment: Environment = mock()
-  when(environment, "getCommandsForStep", () => ["script1", "script2", "script3"])
+  // Script 2 and 3 use flat template vars to forward prior output as CLI args
+  when(environment, "getCommandsForStep", () => [
+    "script1",
+    "script2 --version {{ versionName }}",
+    "script3 --sha {{ commitSha }}",
+  ])
 
+  const capturedCommands: string[] = []
   const capturedInputs: GetLatestReleaseStepInput[] = []
   const mockExec = {
     run: (args: { command: string; input: GetLatestReleaseStepInput }) => {
+      capturedCommands.push(args.command)
       capturedInputs.push(args.input)
       if (args.command === "script1") return Promise.resolve({ output: script1Output, stdout: "", stderr: "", exitCode: 0 })
-      if (args.command === "script2") return Promise.resolve({ output: script2Output, stdout: "", stderr: "", exitCode: 0 })
+      if (args.command.startsWith("script2")) return Promise.resolve({ output: script2Output, stdout: "", stderr: "", exitCode: 0 })
       return Promise.resolve({ output: script3Output, stdout: "", stderr: "", exitCode: 0 })
     },
   }
@@ -382,13 +391,18 @@ Deno.test("scripts cumulatively merge all outputs so each script builds on all p
 
   const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput)
 
-  assertEquals(capturedInputs, [
-    { ...testInput, previousScriptsOutput: undefined }, // first script: only get the test input, nothing from previous scripts
-    { ...testInput, previousScriptsOutput: script1Output }, // second script sees script 1's valid output
-    { ...testInput, previousScriptsOutput: script1Output }, // third script: script 2 was incomplete, still just script 1
-  ])
+  // Command templates are rendered with prior output injected — script 2 gets script 1's versionName
+  assertEquals(capturedCommands[0], "script1")
+  assertEquals(capturedCommands[1], "script2 --version 1.0.0")
+  // script 2 was incomplete so script 1's output is still what gets forwarded to script 3
+  assertEquals(capturedCommands[2], "script3 --sha from-script-1")
 
-  // Final result is the cumulative merge of all valid outputs — only script 1 qualified
+  // exec.run always receives the original input unchanged — no previousScriptsOutput on it
+  assertEquals(capturedInputs[0], testInput)
+  assertEquals(capturedInputs[1], testInput)
+  assertEquals(capturedInputs[2], testInput)
+
+  // Final result is the cumulative merge of all valid outputs (script 1 + script 3)
   assertEquals(actual as GetLatestReleaseStepOutput & { extraFieldA: string }, {
     versionName: "1.0.0",
     commitSha: "final",
@@ -396,22 +410,25 @@ Deno.test("scripts cumulatively merge all outputs so each script builds on all p
   })
 })
 
-Deno.test("multiple scripts not able to override input data provided by decaf", async () => {
-  // Script 1 outputs a complete valid object — it gets accumulated.
-  // Scripts 2 output incomplete objects (missing versionName) — it is ignored.
-  // Only complete, valid outputs are passed forward via previousScriptsOutput.
-  const script1Output = { versionName: "1.0.0", commitSha: "from-script-1", gitRepoOwner: "malicious-attempt-to-override-decaf-input" }
-  const script2Output = {}
+Deno.test("scripts cannot override original decaf input fields via output", async () => {
+  // Even if a script outputs a field with the same name as an original input field (e.g. gitRepoOwner),
+  // exec.run always receives the original input — the output is only available in the command template.
+  const script1Output = { versionName: "1.0.0", commitSha: "sha1", gitRepoOwner: "malicious" }
 
   const environment: Environment = mock()
-  when(environment, "getCommandsForStep", () => ["script1", "script2"])
+  when(environment, "getCommandsForStep", () => [
+    "script1",
+    "script2 --owner {{ gitRepoOwner }}",
+  ])
 
+  const capturedCommands: string[] = []
   const capturedInputs: GetLatestReleaseStepInput[] = []
   const mockExec = {
     run: (args: { command: string; input: GetLatestReleaseStepInput }) => {
+      capturedCommands.push(args.command)
       capturedInputs.push(args.input)
       if (args.command === "script1") return Promise.resolve({ output: script1Output, stdout: "", stderr: "", exitCode: 0 })
-      return Promise.resolve({ output: script2Output, stdout: "", stderr: "", exitCode: 0 })
+      return Promise.resolve({ output: undefined, stdout: "", stderr: "", exitCode: 0 })
     },
   }
 
@@ -425,7 +442,7 @@ Deno.test("multiple scripts not able to override input data provided by decaf", 
 
   const testInput: GetLatestReleaseStepInput = {
     gitCurrentBranch: "main",
-    gitRepoOwner: "test",
+    gitRepoOwner: "original-owner",
     gitRepoName: "test",
     testMode: false,
     gitCommitsCurrentBranch: [],
@@ -434,10 +451,13 @@ Deno.test("multiple scripts not able to override input data provided by decaf", 
 
   await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput)
 
-  assertEquals(capturedInputs, [
-    { ...testInput, previousScriptsOutput: undefined }, // first script: only get the test input, nothing from previous scripts
-    { ...testInput, previousScriptsOutput: script1Output }, // most important thing here is that testInput is intact.
-  ])
+  // The template resolves gitRepoOwner from input (not from cumulativeOutput) because input fields take precedence
+  assertEquals(capturedCommands[1], "script2 --owner original-owner")
+  // But exec.run always receives the original input — gitRepoOwner is never overridden
+  assertEquals(capturedInputs[0], testInput)
+  assertEquals(capturedInputs[1], testInput)
+  assertEquals(capturedInputs[0].gitRepoOwner, "original-owner")
+  assertEquals(capturedInputs[1].gitRepoOwner, "original-owner")
 })
 
 Deno.test("non-deploy step returns null if all commands have invalid output", async () => {

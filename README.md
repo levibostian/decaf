@@ -348,27 +348,24 @@ You can provide multiple commands for the `deploy`, `get_latest_release_current_
 
 **Execution behavior**
 
-All commands for a step always run sequentially in order — no step exits early. Scripts build on each other through a cumulative merge: the first script receives the original decaf input data, and each subsequent script receives that original input merged with every output written by all previous scripts combined. If two scripts write the same field, the later script's value wins.
+All commands for a step always run sequentially in order — no step exits early. After each script runs, its output is made available as template variables for the next command string. That means you can forward specific values from one script to the next by injecting them directly as CLI arguments in the command string using `{{ variableName }}` syntax.
+
+If two scripts produce the same output field, the later script's value wins. Original decaf input fields (like `gitCurrentBranch`) always take precedence over any script output with the same name.
 
 For example, with two scripts for `get_latest_release_current_branch`:
 
 ```
-# Script 1 receives:
-#   gitCurrentBranch: "main"
-#   gitRepoOwner:     "acme"
-#   gitRepoName:      "my-app"
-#   previousScriptsOutput: undefined   ← nothing has run yet
+# Script 1 command:
+#   python scripts/fetch-github-release.py
 #
 # Script 1 writes:
 #   { versionName: "1.4.2", commitSha: "abc123" }
 
-# Script 2 receives:
-#   gitCurrentBranch: "main"           ← original input, unchanged
-#   gitRepoOwner:     "acme"           ← original input, unchanged
-#   gitRepoName:      "my-app"         ← original input, unchanged
-#   previousScriptsOutput:
-#     versionName: "1.4.2"             ← from script 1
-#     commitSha:   "abc123"            ← from script 1
+# Script 2 command (uses output from script 1 as CLI args):
+#   python scripts/enrich-release-data.py --version {{ versionName }} --sha {{ commitSha }}
+#
+# Rendered as:
+#   python scripts/enrich-release-data.py --version 1.4.2 --sha abc123
 #
 # Script 2 writes:
 #   { versionName: "1.4.2", commitSha: "abc123" }   ← confirmed/enriched output
@@ -379,7 +376,7 @@ After all commands have run, decaf uses the final cumulative output to determine
 - **`get_latest_release_current_branch` and `get_next_release_version`** steps: the cumulative merge of all script outputs is checked for validity after all scripts run. If the merged result is valid, it is used as the step result. If no script produced valid output, the step returns no result.
 - **`deploy`** step: all commands run regardless. No output is required.
 
-This composability is useful for splitting logic across focused scripts. For example, one script can fetch a release from GitHub and write its version to the output, and a second script can read that version from its input, enrich it with additional metadata, and write the final result.
+This composability is useful for splitting logic across focused scripts. For example, one script can fetch a release from GitHub and write its version to the output, and a second script can receive that version as a CLI argument, enrich it, and write the final result.
 
 Ok, now here are examples of how to run multiple commands per step:
 
@@ -388,15 +385,15 @@ Ok, now here are examples of how to run multiple commands per step:
 - uses: levibostian/decaf@<version>
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
-    # Deploy: all commands run, each receives the previous script's output as input
+    # Deploy: all commands run
     deploy: |
       npm run build
       npm run test
       python scripts/deploy.py
-    # Get latest release: all commands run, each builds on the previous script's output
+    # Get latest release: all commands run; later commands can reference earlier output as template vars
     get_latest_release_current_branch: |
       python scripts/fetch-github-release.py
-      python scripts/enrich-release-data.py
+      python scripts/enrich-release-data.py --version {{ versionName }} --sha {{ commitSha }}
 ```
 
 **CLI example:**
@@ -419,7 +416,7 @@ If you want to be a bash nerd, instead of using separate commands, as explained 
   --deploy "npm run build && npm run test && python scripts/deploy.py" 
 ```
 
-Be aware that when you chain commands inside a single string with `&&`, decaf treats the entire string as one script. Only the output written by the last command in the chain will be available. Using separate commands (as shown above) is preferred because it gives each script access to the output of every previous script.
+Be aware that when you chain commands inside a single string with `&&`, decaf treats the entire string as one script. Only the output written by the last command in the chain will be available as template variables for subsequent scripts. Using separate commands (as shown above) is preferred because it makes data flow between scripts explicit and visible in the config.
 
 # Push git commits to your deployment branch
 

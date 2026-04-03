@@ -59,23 +59,25 @@ export class StepRunnerImpl implements StepRunner {
 
     if (!commands) return null
 
-    // cumulativeOutput accumulates the merged output of all scripts run so far.
-    // It is passed to each script as `previousScriptsOutput` — a read-only window into what prior scripts produced.
-    // The original `input` fields are never overridden: scripts can only add to previousScriptsOutput, not mutate the base input.
+    // cumulativeOutput accumulates the valid output of all scripts run so far.
+    // It is merged into the template data when rendering each subsequent command string,
+    // so users can reference prior output directly: e.g. `foo --version {{ versionName }}`.
+    // cumulativeOutput fields are spread alongside the original input — if a field name collides,
+    // the original input wins so scripts cannot shadow decaf's own input values.
+    // The original input is passed unchanged to exec.run — scripts receive only what decaf always sends.
     let cumulativeOutput: Record<string, unknown> = {}
 
     for (const command of commands) {
-      // Each script receives the original input plus the accumulated output of all prior scripts.
-      const scriptInput = { ...input, previousScriptsOutput: Object.keys(cumulativeOutput).length > 0 ? cumulativeOutput : undefined } as AnyStepInput
-
-      const commandToRun = await renderStringTemplate(command, scriptInput as unknown as Record<string, unknown>)
+      // cumulativeOutput is spread first so original input fields always take precedence on conflicts.
+      const templateData = { ...cumulativeOutput, ...input } as unknown as Record<string, unknown>
+      const commandToRun = await renderStringTemplate(command, templateData)
 
       // input contains all git commits. too much data to log.
       // this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
       this.logger.debug(`Running step, ${step}. Command: ${commandToRun}`)
       const runResult = await this.exec.run({
         command: commandToRun,
-        input: scriptInput,
+        input: input,
         displayLogs: true,
         currentWorkingDirectory: this.userScriptCurrentWorkingDirectory,
         envVars: {
