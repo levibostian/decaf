@@ -348,12 +348,38 @@ You can provide multiple commands for the `deploy`, `get_latest_release_current_
 
 **Execution behavior**
 
-If you do run multiple commands, the execution behavior differs per step: 
+All commands for a step always run sequentially in order — no step exits early. Scripts build on each other through a cumulative merge: the first script receives the original decaf input data, and each subsequent script receives that original input merged with every output written by all previous scripts combined. If two scripts write the same field, the later script's value wins.
 
-- **`get_latest_release_current_branch` and `get_next_release_version`** steps: Commands execute sequentially until one command returns valid output, then stops
-  - **Order matters!** List commands from most preferred to least preferred
-  - Useful for fallback strategies (e.g., try GitHub API first, fall back to git tags)
-- **`deploy`** step: All commands execute sequentially, regardless of success or failure of previous commands, and does not exit early. 
+For example, with two scripts for `get_latest_release_current_branch`:
+
+```
+# Script 1 receives:
+#   gitCurrentBranch: "main"
+#   gitRepoOwner:     "acme"
+#   gitRepoName:      "my-app"
+#   previousScriptsOutput: undefined   ← nothing has run yet
+#
+# Script 1 writes:
+#   { versionName: "1.4.2", commitSha: "abc123" }
+
+# Script 2 receives:
+#   gitCurrentBranch: "main"           ← original input, unchanged
+#   gitRepoOwner:     "acme"           ← original input, unchanged
+#   gitRepoName:      "my-app"         ← original input, unchanged
+#   previousScriptsOutput:
+#     versionName: "1.4.2"             ← from script 1
+#     commitSha:   "abc123"            ← from script 1
+#
+# Script 2 writes:
+#   { versionName: "1.4.2", commitSha: "abc123" }   ← confirmed/enriched output
+```
+
+After all commands have run, decaf uses the final cumulative output to determine the result of the step:
+
+- **`get_latest_release_current_branch` and `get_next_release_version`** steps: the cumulative merge of all script outputs is checked for validity after all scripts run. If the merged result is valid, it is used as the step result. If no script produced valid output, the step returns no result.
+- **`deploy`** step: all commands run regardless. No output is required.
+
+This composability is useful for splitting logic across focused scripts. For example, one script can fetch a release from GitHub and write its version to the output, and a second script can read that version from its input, enrich it with additional metadata, and write the final result.
 
 Ok, now here are examples of how to run multiple commands per step:
 
@@ -362,15 +388,15 @@ Ok, now here are examples of how to run multiple commands per step:
 - uses: levibostian/decaf@<version>
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
-    # Deploy: all commands run
+    # Deploy: all commands run, each receives the previous script's output as input
     deploy: |
       npm run build
       npm run test
       python scripts/deploy.py
-    # Get latest release: stops at first valid output
+    # Get latest release: all commands run, each builds on the previous script's output
     get_latest_release_current_branch: |
-      python scripts/check-github-releases.py
-      python scripts/fallback-git-tags.py
+      python scripts/fetch-github-release.py
+      python scripts/enrich-release-data.py
 ```
 
 **CLI example:**
@@ -393,7 +419,7 @@ If you want to be a bash nerd, instead of using separate commands, as explained 
   --deploy "npm run build && npm run test && python scripts/deploy.py" 
 ```
 
-But be careful! After each command executes, decaf will check the output of the command to see if it gave output. If you use `&&` to run multiple commands where both commands produce output, only the output of the last command will be seen by decaf! 
+Be aware that when you chain commands inside a single string with `&&`, decaf treats the entire string as one script. Only the output written by the last command in the chain will be available. Using separate commands (as shown above) is preferred because it gives each script access to the output of every previous script.
 
 # Push git commits to your deployment branch
 

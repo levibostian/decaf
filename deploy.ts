@@ -173,7 +173,11 @@ export const run = async ({
     `🚢 It's time to ship ${nextReleaseVersion}! I will now run all of the deployment commands provided in your project's configuration file...`,
   )
 
-  const deployEnvironment: DeployStepInput = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
+  const deployEnvironment: DeployStepInput = {
+    ...determineNextReleaseVersionEnvironment,
+    nextVersionName: nextReleaseVersion,
+    previousScriptsOutput: undefined,
+  }
 
   await stepRunner.runDeployStep(deployEnvironment)
 

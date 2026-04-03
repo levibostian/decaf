@@ -1,4 +1,4 @@
-import { GetLatestReleaseStepOutput } from "../steps/types/output.ts"
+import { GetLatestReleaseStepOutput, GetNextReleaseVersionStepOutput } from "../steps/types/output.ts"
 import { GitCommit } from "./git.ts"
 
 /*
@@ -14,15 +14,23 @@ export interface GetLatestReleaseStepInput {
   testMode: boolean
   gitCommitsCurrentBranch: GitCommit[]
   gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
+  // If a script ran before the current script, you receive the output from previous scripts here.
+  previousScriptsOutput?: GetLatestReleaseStepOutput
 }
 
-export interface GetNextReleaseVersionStepInput extends GetLatestReleaseStepInput {
+// extends input data type from previous step, but omit the previousScriptsOutput property since that's data that is only used for that step.
+export interface GetNextReleaseVersionStepInput extends Omit<GetLatestReleaseStepInput, "previousScriptsOutput"> {
   lastRelease: GetLatestReleaseStepOutput | null
   gitCommitsSinceLastRelease: GitCommit[]
+  // If a script ran before the current script, you receive the output from previous scripts here.
+  previousScriptsOutput?: GetNextReleaseVersionStepOutput
 }
 
-export interface DeployStepInput extends GetNextReleaseVersionStepInput {
+// extends input data type from previous step, but omit the previousScriptsOutput property since that's data that is only used for that step.
+export interface DeployStepInput extends Omit<GetNextReleaseVersionStepInput, "previousScriptsOutput"> {
   nextVersionName: string
+  // If a script ran before the current script, you receive the output from previous scripts here.
+  previousScriptsOutput?: Record<string, unknown>
 }
 
 export type AnyStepInput = GetLatestReleaseStepInput | GetNextReleaseVersionStepInput | DeployStepInput

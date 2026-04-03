@@ -59,16 +59,23 @@ export class StepRunnerImpl implements StepRunner {
 
     if (!commands) return null
 
-    // Run each command in the array
+    // cumulativeOutput accumulates the merged output of all scripts run so far.
+    // It is passed to each script as `previousScriptsOutput` — a read-only window into what prior scripts produced.
+    // The original `input` fields are never overridden: scripts can only add to previousScriptsOutput, not mutate the base input.
+    let cumulativeOutput: Record<string, unknown> = {}
+
     for (const command of commands) {
-      const commandToRun = await renderStringTemplate(command, input as unknown as Record<string, unknown>)
+      // Each script receives the original input plus the accumulated output of all prior scripts.
+      const scriptInput = { ...input, previousScriptsOutput: Object.keys(cumulativeOutput).length > 0 ? cumulativeOutput : undefined } as AnyStepInput
+
+      const commandToRun = await renderStringTemplate(command, scriptInput as unknown as Record<string, unknown>)
 
       // input contains all git commits. too much data to log.
       // this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
       this.logger.debug(`Running step, ${step}. Command: ${commandToRun}`)
       const runResult = await this.exec.run({
         command: commandToRun,
-        input: input,
+        input: scriptInput,
         displayLogs: true,
         currentWorkingDirectory: this.userScriptCurrentWorkingDirectory,
         envVars: {
@@ -77,26 +84,24 @@ export class StepRunnerImpl implements StepRunner {
       })
       this.logger.debug(`Step ${step} completed. step output: ${runResult.output}`)
 
-      // For deploy step, run all commands without checking output
-      if (step === "deploy") {
-        continue
+      // Only accumulate output that passes the validity check — incomplete outputs are ignored.
+      // Prefer the comm-file output (runResult.output), fall back to stdout parsed as JSON.
+      const rawOutput = runResult.output ?? (jsonParse(runResult.stdout) as Record<string, unknown> | null | undefined)
+      if (outputCheck(rawOutput)) {
+        cumulativeOutput = { ...cumulativeOutput, ...(rawOutput as Record<string, unknown>) }
       }
-
-      // For non-deploy steps, check if we got valid output
-      if (outputCheck(runResult.output)) {
-        return runResult.output as Output
-      }
-
-      const stdoutAsParsedJSON = jsonParse(runResult.stdout)
-      if (outputCheck(stdoutAsParsedJSON)) {
-        return stdoutAsParsedJSON as Output
-      }
-
-      // Output was not valid, continue to next command
     }
 
-    // For deploy: all commands ran successfully
-    // For other steps: no command produced valid output
+    // For deploy: all commands ran successfully, no output to return
+    if (step === "deploy") {
+      return null
+    }
+
+    // Check if the final cumulative output (merged from all scripts) is valid
+    if (outputCheck(cumulativeOutput)) {
+      return cumulativeOutput as Output
+    }
+
     return null
   }
 }
