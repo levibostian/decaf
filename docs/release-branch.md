@@ -128,4 +128,7 @@ The deployment step is simpler. During the deployment process, check out the rel
 
 [Here is an example script](https://github.com/levibostian/action-hide-sensitive-inputs/blob/5519f11abc21c18a1115ef64b8032ba424843a82/scripts/deploy.ts) for the deployment step that uses a release branch. 
 
+Here are some decaf scripts that may be helpful for this step:
+- [`decaf-script-git`: Set of git operations such as merge, commit, and push](https://github.com/levibostian/decaf-script-git) to help you update your release branch.
+
 
