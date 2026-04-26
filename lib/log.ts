@@ -28,6 +28,7 @@ export class Logger implements ShStyleLogger, Pick<Console, "debug">, Pick<Conso
     // 1. pass the function call to sh-style library to render the log message in a nice format in the terminal.
     // 2. sh-style passes it back to us so we can capture the log messages in our `lines` property for testing purposes.
     this.shStyle = createLogger({
+      width: 120,
       logger: this,
     })
   }
