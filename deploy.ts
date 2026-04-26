@@ -37,6 +37,8 @@ export const run = async ({
     return null
   }
 
+  // --- Intro section
+
   log.raw(String.raw`
                   __                             ___
                  /\ \                          /'___\
@@ -53,6 +55,8 @@ export const run = async ({
 To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.
 
 To learn more about the tool: https://github.com/levibostian/decaf/`)
+
+  // --- Simulate pull request merges, if running in pull request
 
   let currentBranch = environment.getBuild().currentBranch
   log.debug(`name of current git branch: ${currentBranch}`)
@@ -94,16 +98,53 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
 
   await environment.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
 
-  const { gitCommitsAllLocalBranches, gitCommitsCurrentBranch } = await convenienceStep.runConvenienceCommands(
+  // --- Setup & environment
+
+  log.phase(`Setup & environment`)
+
+  log.step(`Printing environment info...`)
+
+  const { failOnDeployVerification, makePullRequestComment } = environment.getUserConfigurationOptions()
+  log.kv(`Environment info`, [
+    ["GitHub repository", `${owner}/${repo}`],
+    ["Current git branch", currentBranch],
+    ["Running in test mode?", runInTestMode.toString()],
+    ["Fail on deploy verification", failOnDeployVerification.toString()],
+    ["Make pull request comment", makePullRequestComment.toString()],
+  ])
+
+  log.step(`Setting up git user config...`)
+
+  const { gitConfigName, gitConfigEmail } = await convenienceStep.setGitUserConfig()
+
+  log.kv(
+    `For convenience, I set the git committer name and email, just in case you wanted to make any commits in your deployment commands`,
+    [
+      ["name", gitConfigName],
+      ["email", gitConfigEmail],
+    ],
+  )
+
+  log.step(`Parsing git commits...`)
+
+  const { gitCommitsAllLocalBranches, gitCommitsCurrentBranch } = await convenienceStep.parseGitCommits(
     environment.getBranchFilters(),
     environment.getCommitLimit(),
   )
+
+  log.done(
+    `Finished parsing git commits. I found ${gitCommitsCurrentBranch.length} commits on the current branch, ${currentBranch}, and ${
+      Object.values(gitCommitsAllLocalBranches).reduce((sum, commits) => sum + commits.length, 0)
+    } commits across all local branches that match the branch filters.`,
+  )
+
+  // --- Find latest release and commits since then
 
   log.phase(`Find latest release & git commits made since then`)
 
   log.step(`Finding the latest release on the current git branch, ${currentBranch}...`)
 
-  const lastRelease = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
+  const latestReleaseResult = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
     gitCurrentBranch: currentBranch,
     gitRepoOwner: owner,
     gitRepoName: repo,
@@ -111,6 +152,8 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
     gitCommitsCurrentBranch,
     gitCommitsAllLocalBranches,
   })
+  if (latestReleaseResult?.command) log.cmd(latestReleaseResult.command)
+  const lastRelease = latestReleaseResult?.output ?? null
 
   log.debug(`Latest release on branch ${currentBranch} is: ${JSON.stringify(lastRelease)}`)
 
@@ -149,6 +192,8 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
 
   log.list(`Here are the commits I found since the latest release`, listOfCommits.map((commit) => `${commit.title} (${commit.abbreviatedSha})`))
 
+  // --- Determine next release version
+
   log.phase(`Analyze git commits`)
 
   log.step(`Analyzing the git commits one-by-one to determine the next release version...`)
@@ -164,7 +209,9 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
     gitCommitsCurrentBranch,
   }
 
-  const nextReleaseVersion = (await stepRunner.determineNextReleaseVersionStep(determineNextReleaseVersionEnvironment))?.version
+  const determineNextReleaseResult = await stepRunner.determineNextReleaseVersionStep(determineNextReleaseVersionEnvironment)
+  if (determineNextReleaseResult?.command) log.cmd(determineNextReleaseResult.command)
+  const nextReleaseVersion = determineNextReleaseResult?.output?.version
 
   if (!nextReleaseVersion) {
     log.done(
@@ -174,6 +221,8 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
   }
   log.done(`After analyzing all of the git commits, I have determined the next release version will be: ${nextReleaseVersion}`)
 
+  // --- Run deployment commands
+
   log.phase(`Deploying new release ${nextReleaseVersion}`)
 
   log.step(`Running all of your deployment commands...`)
@@ -182,7 +231,10 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
 
   const deployEnvironment: DeployStepInput = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
 
-  await stepRunner.runDeployStep(deployEnvironment)
+  const deployResult = await stepRunner.runDeployStep(deployEnvironment)
+  for (const command of deployResult?.commands ?? []) {
+    log.cmd(command)
+  }
 
   log.done(`Finished running deployment commands. The deployment should now be complete!`)
 
@@ -199,12 +251,12 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
   const {
     gitCommitsAllLocalBranches: gitCommitsAllLocalBranchesAfterDeploy,
     gitCommitsCurrentBranch: gitCommitsCurrentBranchAfterDeploy,
-  } = await convenienceStep.runConvenienceCommands(
+  } = await convenienceStep.parseGitCommits(
     environment.getBranchFilters(),
     environment.getCommitLimit(),
   )
 
-  const latestReleaseAfterDeploy = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
+  const latestReleaseAfterDeployResult = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
     gitCurrentBranch: currentBranch,
     gitRepoOwner: owner,
     gitRepoName: repo,
@@ -212,6 +264,8 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
     gitCommitsCurrentBranch: gitCommitsCurrentBranchAfterDeploy,
     gitCommitsAllLocalBranches: gitCommitsAllLocalBranchesAfterDeploy,
   })
+  if (latestReleaseAfterDeployResult?.command) log.cmd(latestReleaseAfterDeployResult.command)
+  const latestReleaseAfterDeploy = latestReleaseAfterDeployResult?.output ?? null
   log.debug(`Latest release after deploy: ${JSON.stringify(latestReleaseAfterDeploy)}`)
 
   if (latestReleaseAfterDeploy?.versionName === nextReleaseVersion) {
@@ -239,6 +293,8 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
       }
     }
   }
+
+  // --- Outro section/summary
 
   log.phase(`All done!`)
 

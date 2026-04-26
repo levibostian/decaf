@@ -39,7 +39,7 @@ Deno.test("given output is in stdout, expect return latest step", async () => {
     gitCommitsAllLocalBranches: {},
   }
   const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput)
-  assertEquals(actual, expect)
+  assertEquals(actual?.output, expect)
 })
 
 Deno.test("given output is in stdout as JSON, expect output is returned", async () => {
@@ -64,7 +64,7 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
     gitCommitsAllLocalBranches: {},
     gitCommitsCurrentBranch: [],
   })
-  assertEquals(actual, expect)
+  assertEquals(actual?.output, expect)
 })
 
 Deno.test("given no command for step, expect return null", async () => {
@@ -159,7 +159,7 @@ Deno.test("supports template engine in command string", async () => {
       }),
     ],
   })
-  assertEquals(actual, expect)
+  assertEquals(actual?.output, expect)
 })
 
 /**
@@ -194,7 +194,7 @@ Deno.test("runGetLatestOnCurrentBranchReleaseStep - given return latest release 
     gitCommitsAllLocalBranches: {},
   }
   const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput)
-  assertEquals(actual, expect)
+  assertEquals(actual?.output, expect)
 })
 
 Deno.test("determineNextReleaseVersionStep - given return next release as JSON, expect next release version", async () => {
@@ -225,7 +225,7 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
     gitCommitsSinceLastRelease: [],
   }
   const actual = await stepRunner.determineNextReleaseVersionStep(testInput)
-  assertEquals(actual, expect)
+  assertEquals(actual?.output, expect)
 })
 
 Deno.test("runDeployStep - given deploy command, expect to run successfully without error", async () => {
@@ -346,7 +346,7 @@ Deno.test("non-deploy step returns output from first command with valid output",
   const actual = await stepRunner.runGetLatestOnCurrentBranchReleaseStep(testInput)
 
   // Should return the first command's output, not the second
-  assertEquals(actual, firstOutput)
+  assertEquals(actual?.output, firstOutput)
   // Should have only executed the first command
   assertEquals(executedCommands.length, 1)
 })
@@ -390,7 +390,7 @@ Deno.test("non-deploy step tries next command if first returns invalid output", 
   // Should have tried both commands
   assertEquals(executedCommands.length, 2)
   // Should return the second command's valid output
-  assertEquals(actual, validOutput)
+  assertEquals(actual?.output, validOutput)
 })
 
 Deno.test("non-deploy step returns null if all commands have invalid output", async () => {

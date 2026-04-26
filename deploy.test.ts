@@ -269,7 +269,7 @@ describe("user facing logs", () => {
       nextReleaseVersion: undefined,
     })
 
-    await assertSnapshot(t, logger.lines.join("\n"))
+    await assertSnapshot(t, logger.lines.join(""))
   })
 
   it("given no commits created since last deployment, expect logs to easily communicate that to the user", async (t) => {
@@ -277,7 +277,7 @@ describe("user facing logs", () => {
       commitsSinceLatestRelease: [],
     })
 
-    await assertSnapshot(t, logger.lines.join("\n"))
+    await assertSnapshot(t, logger.lines.join(""))
   })
 
   it("given no release has ever been made, expect logs to easily communicate that to the user", async (t) => {
@@ -292,7 +292,7 @@ describe("user facing logs", () => {
       nextReleaseVersion: "1.0.0",
     })
 
-    await assertSnapshot(t, logger.lines.join("\n"))
+    await assertSnapshot(t, logger.lines.join(""))
   })
 
   it("given running in test mode, given commits that trigger a release, expect logs to easily communicate that to the user", async (t) => {
@@ -316,7 +316,7 @@ describe("user facing logs", () => {
       }],
     })
 
-    await assertSnapshot(t, logger.lines.join("\n"))
+    await assertSnapshot(t, logger.lines.join(""))
   })
 })
 
@@ -467,7 +467,10 @@ const setupTestEnvironmentAndRun = async ({
 
   let hasRanConvenienceCommandsAfterDeployment = false
   const convenienceStep = mock<ConvenienceStep>()
-  when(convenienceStep, "runConvenienceCommands", async () => {
+  when(convenienceStep, "setGitUserConfig", async () => {
+    return { gitConfigName: "github-actions[bot]", gitConfigEmail: "41898282+github-actions[bot]@users.noreply.github.com" }
+  })
+  when(convenienceStep, "parseGitCommits", async () => {
     if (hasRanDeployStep) hasRanConvenienceCommandsAfterDeployment = true
     return { gitCommitsAllLocalBranches: { "latest": [] }, gitCommitsCurrentBranch: gitCommitsCurrentBranch || [] }
   })
@@ -478,20 +481,20 @@ const setupTestEnvironmentAndRun = async ({
     "runGetLatestOnCurrentBranchReleaseStep",
     async () => {
       if (hasRanConvenienceCommandsAfterDeployment) {
-        if (latestReleaseAfterDeploy) return latestReleaseAfterDeploy
-        if (nextReleaseVersion) return { versionName: nextReleaseVersion, commitSha: "deploy-sha" }
+        if (latestReleaseAfterDeploy) return { output: latestReleaseAfterDeploy, command: "mock-command" }
+        if (nextReleaseVersion) return { output: { versionName: nextReleaseVersion, commitSha: "deploy-sha" }, command: "mock-command" }
       }
 
       if (latestRelease === null) return null
-      if (latestRelease === undefined) return GetLatestReleaseStepOutputFake
-      return latestRelease
+      if (latestRelease === undefined) return { output: GetLatestReleaseStepOutputFake, command: "mock-command" }
+      return { output: latestRelease, command: "mock-command" }
     },
   )
   const determineNextReleaseVersionStepMock = stub(
     stepRunner,
     "determineNextReleaseVersionStep",
     async () => {
-      if (nextReleaseVersion) return { version: nextReleaseVersion }
+      if (nextReleaseVersion) return { output: { version: nextReleaseVersion }, command: "mock-command" }
       return null
     },
   )
@@ -508,7 +511,7 @@ const setupTestEnvironmentAndRun = async ({
   let hasRanDeployStep = false
   const deployStepMock = stub(stepRunner, "runDeployStep", async () => {
     hasRanDeployStep = true
-    return
+    return { commands: [] }
   })
 
   const environment = {} as Environment

@@ -26,16 +26,13 @@ Deno.test("ConvenienceStepImpl", async (t) => {
 
   const createMockCommit = (): GitCommit => new GitCommitFake({})
 
-  await t.step("should set git config when user provides git committer config", async () => {
+  await t.step("setGitUserConfig should set git config when user provides git committer config", async () => {
     setupMocks()
 
     const gitConfig = { name: "Test User", email: "test@example.com" }
     when(mockEnvironment, "getGitConfigInput", () => gitConfig)
-    when(mockGit, "getBranches", () => Promise.resolve(new Map([["main", { ref: "origin/main" }]])))
-    when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
-    when(mockGit, "getCommits", () => Promise.resolve([]))
 
-    await convenience.runConvenienceCommands()
+    await convenience.setGitUserConfig()
 
     // Verify that git.setUser was called with the correct arguments
     const setUserCalls = (mockGit.setUser as unknown as { calls: { args: [{ name: string; email: string }] }[] }).calls
@@ -44,22 +41,25 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     assertEquals(setUserCalls[0].args[0].email, "test@example.com", "git.setUser should be called with correct email")
   })
 
-  await t.step("should not set git config when user does not provide git committer config", async () => {
+  await t.step("setGitUserConfig should set git config to defaults when user does not provide git committer config", async () => {
     setupMocks()
 
     when(mockEnvironment, "getGitConfigInput", () => undefined)
-    when(mockGit, "getBranches", () => Promise.resolve(new Map([["main", { ref: "origin/main" }]])))
-    when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
-    when(mockGit, "getCommits", () => Promise.resolve([]))
 
-    await convenience.runConvenienceCommands()
+    await convenience.setGitUserConfig()
 
-    // Verify that git.setUser was not called
-    const setUserCalls = (mockGit.setUser as unknown as { calls?: unknown[] }).calls
-    assertEquals(setUserCalls === undefined || setUserCalls.length === 0, true, "git.setUser should not be called")
+    // Verify that git.setUser was called with default arguments
+    const setUserCalls = (mockGit.setUser as unknown as { calls: { args: [{ name: string; email: string }] }[] }).calls
+    assertEquals(setUserCalls.length, 1, "git.setUser should be called once with defaults")
+    assertEquals(setUserCalls[0].args[0].name, "github-actions[bot]", "git.setUser should be called with default name")
+    assertEquals(
+      setUserCalls[0].args[0].email,
+      "41898282+github-actions[bot]@users.noreply.github.com",
+      "git.setUser should be called with default email",
+    )
   })
 
-  await t.step("should get commits for all local branches when no filters provided", async () => {
+  await t.step("parseGitCommits should get commits for all local branches when no filters provided", async () => {
     setupMocks()
 
     const branches = ["main", "feature", "develop"]
@@ -70,12 +70,11 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     ])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
-    const result = await convenience.runConvenienceCommands()
+    const result = await convenience.parseGitCommits([], 500)
 
     // Verify getCommits was called for each branch
     const getCommitsCalls = (mockGit.getCommits as unknown as { calls: unknown[] }).calls
@@ -90,7 +89,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     })
   })
 
-  await t.step("should filter branches based on provided filters", async () => {
+  await t.step("parseGitCommits should filter branches based on provided filters", async () => {
     setupMocks()
 
     const branchesMap = new Map([
@@ -101,12 +100,11 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     ])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
-    const result = await convenience.runConvenienceCommands(["feature/*", "main"])
+    const result = await convenience.parseGitCommits(["feature/*", "main"], 500)
 
     // Should include main (current branch), feature/test (matches filter), but not hotfix/urgent or develop
     const expectedBranches = ["main", "feature/test"]
@@ -120,7 +118,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     assertEquals(result.gitCommitsCurrentBranch, mockCommits)
   })
 
-  await t.step("should always include current branch even when it doesn't match filters", async () => {
+  await t.step("parseGitCommits should always include current branch even when it doesn't match filters", async () => {
     setupMocks()
 
     const branchesMap = new Map([
@@ -130,13 +128,12 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     ])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
     // Filter that doesn't match current branch "main"
-    const result = await convenience.runConvenienceCommands(["feature/*"])
+    const result = await convenience.parseGitCommits(["feature/*"], 500)
 
     // Should include main (current branch) and feature/test (matches filter)
     const expectedBranches = ["main", "feature/test"]
@@ -147,20 +144,19 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     assertEquals(result.gitCommitsCurrentBranch, mockCommits)
   })
 
-  await t.step("should handle empty branch list", async () => {
+  await t.step("parseGitCommits should handle empty branch list", async () => {
     setupMocks()
 
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(new Map()))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
 
-    const result = await convenience.runConvenienceCommands()
+    const result = await convenience.parseGitCommits([], 500)
 
     assertEquals(Object.keys(result.gitCommitsAllLocalBranches).length, 0)
     assertEquals(result.gitCommitsCurrentBranch, undefined)
   })
 
-  await t.step("should handle glob patterns in branch filters", async () => {
+  await t.step("parseGitCommits should handle glob patterns in branch filters", async () => {
     setupMocks()
 
     const branchesMap = new Map([
@@ -172,12 +168,11 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     ])
     const mockCommits: GitCommit[] = [createMockCommit()]
 
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
-    const result = await convenience.runConvenienceCommands(["release/*", "feature/*"])
+    const result = await convenience.parseGitCommits(["release/*", "feature/*"], 500)
 
     // Should include main (current), release/v1.0, release/v2.0, feature/auth
     const expectedBranches = ["main", "release/v1.0", "release/v2.0", "feature/auth"]
@@ -191,7 +186,7 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     assertEquals(result.gitCommitsAllLocalBranches["bugfix/login"], undefined)
   })
 
-  await t.step("should pass commit limit to getCommits when specified", async () => {
+  await t.step("parseGitCommits should pass commit limit to getCommits when specified", async () => {
     setupMocks()
 
     const branches = ["main", "develop"]
@@ -202,12 +197,11 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     const mockCommits: GitCommit[] = [createMockCommit()]
     const commitLimit = 100
 
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
-    await convenience.runConvenienceCommands([], commitLimit)
+    await convenience.parseGitCommits([], commitLimit)
 
     // Verify getCommits was called with the commit limit
     const getCommitsCalls = (mockGit.getCommits as unknown as {
@@ -221,29 +215,29 @@ Deno.test("ConvenienceStepImpl", async (t) => {
     })
   })
 
-  await t.step("should pass undefined commit limit when not specified", async () => {
+  await t.step("parseGitCommits should pass commit limit when provided", async () => {
     setupMocks()
 
     const branches = ["main"]
     const branchesMap = new Map([["main", { ref: "origin/main" }]])
     const mockCommits: GitCommit[] = [createMockCommit()]
+    const commitLimit = 500
 
-    when(mockEnvironment, "getGitConfigInput", () => undefined)
     when(mockGit, "getBranches", () => Promise.resolve(branchesMap))
     when(mockGit, "getCurrentBranch", () => Promise.resolve("main"))
     when(mockGit, "getCommits", () => Promise.resolve(mockCommits))
 
-    await convenience.runConvenienceCommands([])
+    await convenience.parseGitCommits([], commitLimit)
 
-    // Verify getCommits was called without a commit limit
+    // Verify getCommits was called with the commit limit
     const getCommitsCalls = (mockGit.getCommits as unknown as {
       calls: { args: [{ branch: { ref: string }; limit?: number }] }[]
     }).calls
     assertEquals(getCommitsCalls.length, branches.length)
 
-    // Check that the call doesn't include a commit limit (should be undefined)
+    // Check that the call includes the commit limit
     getCommitsCalls.forEach((call) => {
-      assertEquals(call.args[0].limit, undefined, "getCommits should be called without commit limit when not specified")
+      assertEquals(call.args[0].limit, commitLimit, "getCommits should be called with commit limit")
     })
   })
 })

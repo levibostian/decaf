@@ -12,9 +12,13 @@ import {
 import { Logger } from "./log.ts"
 
 export interface StepRunner {
-  runGetLatestOnCurrentBranchReleaseStep: (input: GetLatestReleaseStepInput) => Promise<GetLatestReleaseStepOutput | null>
-  determineNextReleaseVersionStep: (input: GetNextReleaseVersionStepInput) => Promise<GetNextReleaseVersionStepOutput | null>
-  runDeployStep: (input: DeployStepInput) => Promise<void>
+  runGetLatestOnCurrentBranchReleaseStep: (
+    input: GetLatestReleaseStepInput,
+  ) => Promise<{ output: GetLatestReleaseStepOutput; command: string } | null>
+  determineNextReleaseVersionStep: (
+    input: GetNextReleaseVersionStepInput,
+  ) => Promise<{ output: GetNextReleaseVersionStepOutput; command: string } | null>
+  runDeployStep: (input: DeployStepInput) => Promise<{ commands: string[] }>
 }
 
 export class StepRunnerImpl implements StepRunner {
@@ -38,34 +42,56 @@ export class StepRunnerImpl implements StepRunner {
     this.userScriptCurrentWorkingDirectory = options.userScriptCurrentWorkingDirectory
   }
 
-  runGetLatestOnCurrentBranchReleaseStep(input: GetLatestReleaseStepInput): Promise<GetLatestReleaseStepOutput | null> {
-    return this.getCommandFromUserAndRun({ step: "get_latest_release_current_branch", input, outputCheck: isGetLatestReleaseStepOutput })
+  async runGetLatestOnCurrentBranchReleaseStep(
+    input: GetLatestReleaseStepInput,
+  ): Promise<{ output: GetLatestReleaseStepOutput; command: string } | null> {
+    const { output, commands } = await this.getCommandFromUserAndRun<GetLatestReleaseStepOutput>({
+      step: "get_latest_release_current_branch",
+      input,
+      outputCheck: isGetLatestReleaseStepOutput,
+    })
+
+    if (!output) return null
+    return { output, command: commands[0] }
   }
 
-  determineNextReleaseVersionStep(input: GetNextReleaseVersionStepInput): Promise<GetNextReleaseVersionStepOutput | null> {
-    return this.getCommandFromUserAndRun({ step: "get_next_release_version", input, outputCheck: isGetNextReleaseVersionStepOutput })
+  async determineNextReleaseVersionStep(
+    input: GetNextReleaseVersionStepInput,
+  ): Promise<{ output: GetNextReleaseVersionStepOutput; command: string } | null> {
+    const { output, commands } = await this.getCommandFromUserAndRun<GetNextReleaseVersionStepOutput>({
+      step: "get_next_release_version",
+      input,
+      outputCheck: isGetNextReleaseVersionStepOutput,
+    })
+
+    if (!output) return null
+    return { output, command: commands[0] }
   }
 
-  async runDeployStep(input: DeployStepInput): Promise<void> {
+  async runDeployStep(input: DeployStepInput): Promise<{ commands: string[] }> {
     // Deploy step doesn't require any specific output format, so we use a function that always returns true
     // This allows the step to complete successfully regardless of what (if anything) the deployment script outputs
-    await this.getCommandFromUserAndRun({ step: "deploy", input, outputCheck: () => true })
+    const { commands } = await this.getCommandFromUserAndRun({ step: "deploy", input, outputCheck: () => true })
+    return { commands }
   }
 
   async getCommandFromUserAndRun<Output>(
     { step, input, outputCheck }: { step: AnyStepName; input: AnyStepInput; outputCheck: (output: unknown) => boolean },
-  ): Promise<Output | null> {
-    const commands = this.environment.getCommandsForStep({ stepName: step })
+  ): Promise<{ output: Output | null; commands: string[] }> {
+    const commandsTemplates = this.environment.getCommandsForStep({ stepName: step })
+    const commands: string[] = [] // after templates converted into actual command strings.
 
-    if (!commands) return null
+    if (!commandsTemplates) return { output: null, commands: [] }
 
     // Run each command in the array
-    for (const command of commands) {
-      const commandToRun = await renderStringTemplate(command, input as unknown as Record<string, unknown>)
+    for (const commandTemplate of commandsTemplates) {
+      const commandToRun = await renderStringTemplate(commandTemplate, input as unknown as Record<string, unknown>)
+      commands.push(commandToRun)
 
       // input contains all git commits. too much data to log.
       // this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
       this.logger.debug(`Running step, ${step}. Command: ${commandToRun}`)
+
       const runResult = await this.exec.run({
         command: commandToRun,
         input: input,
@@ -84,12 +110,18 @@ export class StepRunnerImpl implements StepRunner {
 
       // For non-deploy steps, check if we got valid output
       if (outputCheck(runResult.output)) {
-        return runResult.output as Output
+        return {
+          commands,
+          output: runResult.output as Output,
+        }
       }
 
       const stdoutAsParsedJSON = jsonParse(runResult.stdout)
       if (outputCheck(stdoutAsParsedJSON)) {
-        return stdoutAsParsedJSON as Output
+        return {
+          commands,
+          output: stdoutAsParsedJSON as Output,
+        }
       }
 
       // Output was not valid, continue to next command
@@ -97,6 +129,6 @@ export class StepRunnerImpl implements StepRunner {
 
     // For deploy: all commands ran successfully
     // For other steps: no command produced valid output
-    return null
+    return { output: null, commands }
   }
 }
