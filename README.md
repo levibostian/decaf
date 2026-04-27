@@ -348,12 +348,35 @@ You can provide multiple commands for the `deploy`, `get_latest_release_current_
 
 **Execution behavior**
 
-If you do run multiple commands, the execution behavior differs per step: 
+All commands for a step always run sequentially in order — no step exits early. After each script runs, its output is made available as template variables for the next command string. That means you can forward specific values from one script to the next by injecting them directly as CLI arguments in the command string using `{{ variableName }}` syntax.
 
-- **`get_latest_release_current_branch` and `get_next_release_version`** steps: Commands execute sequentially until one command returns valid output, then stops
-  - **Order matters!** List commands from most preferred to least preferred
-  - Useful for fallback strategies (e.g., try GitHub API first, fall back to git tags)
-- **`deploy`** step: All commands execute sequentially, regardless of success or failure of previous commands, and does not exit early. 
+If two scripts produce the same output field, the later script's value wins. Original decaf input fields (like `gitCurrentBranch`) always take precedence over any script output with the same name.
+
+For example, with two scripts for `get_latest_release_current_branch`:
+
+```
+# Script 1 command:
+#   python scripts/fetch-github-release.py
+#
+# Script 1 writes:
+#   { versionName: "1.4.2", commitSha: "abc123" }
+
+# Script 2 command (uses output from script 1 as CLI args):
+#   python scripts/enrich-release-data.py --version {{ versionName }} --sha {{ commitSha }}
+#
+# Rendered as:
+#   python scripts/enrich-release-data.py --version 1.4.2 --sha abc123
+#
+# Script 2 writes:
+#   { versionName: "1.4.2", commitSha: "abc123" }   ← confirmed/enriched output
+```
+
+After all commands have run, decaf uses the final cumulative output to determine the result of the step:
+
+- **`get_latest_release_current_branch` and `get_next_release_version`** steps: the cumulative merge of all script outputs is checked for validity after all scripts run. If the merged result is valid, it is used as the step result. If no script produced valid output, the step returns no result.
+- **`deploy`** step: all commands run regardless. No output is required.
+
+This composability is useful for splitting logic across focused scripts. For example, one script can fetch a release from GitHub and write its version to the output, and a second script can receive that version as a CLI argument, enrich it, and write the final result.
 
 Ok, now here are examples of how to run multiple commands per step:
 
@@ -367,10 +390,10 @@ Ok, now here are examples of how to run multiple commands per step:
       npm run build
       npm run test
       python scripts/deploy.py
-    # Get latest release: stops at first valid output
+    # Get latest release: all commands run; later commands can reference earlier output as template vars
     get_latest_release_current_branch: |
-      python scripts/check-github-releases.py
-      python scripts/fallback-git-tags.py
+      python scripts/fetch-github-release.py
+      python scripts/enrich-release-data.py --version {{ versionName }} --sha {{ commitSha }}
 ```
 
 **CLI example:**
@@ -393,7 +416,7 @@ If you want to be a bash nerd, instead of using separate commands, as explained 
   --deploy "npm run build && npm run test && python scripts/deploy.py" 
 ```
 
-But be careful! After each command executes, decaf will check the output of the command to see if it gave output. If you use `&&` to run multiple commands where both commands produce output, only the output of the last command will be seen by decaf! 
+Be aware that when you chain commands inside a single string with `&&`, decaf treats the entire string as one script. Only the output written by the last command in the chain will be available as template variables for subsequent scripts. Using separate commands (as shown above) is preferred because it makes data flow between scripts explicit and visible in the config.
 
 # Push git commits to your deployment branch
 
