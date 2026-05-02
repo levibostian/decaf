@@ -4,7 +4,6 @@ import { restore, stub } from "@std/testing/mock"
 import { assertSnapshot } from "@std/testing/snapshot"
 import { run } from "./deploy.ts"
 import { GetCommitsSinceLatestReleaseStep } from "./lib/steps/get-commits-since-latest-release.ts"
-import { getLogMock } from "./lib/log.test.ts"
 import { Environment } from "./lib/environment.ts"
 import { PrepareTestModeEnvStep } from "./lib/steps/prepare-testmode-env.ts"
 import { mock, when } from "./lib/mock/mock.ts"
@@ -15,6 +14,7 @@ import { ConvenienceStep } from "./lib/steps/convenience.ts"
 import { GitCommit } from "./lib/types/git.ts"
 import { GitCommitFake } from "./lib/types/git.test.ts"
 import { Git } from "./lib/git.ts"
+import { Logger } from "./lib/log.ts"
 
 describe("run the tool in different scenarios", () => {
   afterEach(() => {
@@ -264,20 +264,20 @@ describe("test github actions output", () => {
 
 describe("user facing logs", () => {
   it("given no commits will trigger a release, expect logs to easily communicate that to the user", async (t) => {
-    const { logMock } = await setupTestEnvironmentAndRun({
+    const { logger } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [new GitCommitFake()],
       nextReleaseVersion: undefined,
     })
 
-    await assertSnapshot(t, logMock.getLogs({ includeDebugLogs: false }))
+    await assertSnapshot(t, logger.lines.join(""))
   })
 
   it("given no commits created since last deployment, expect logs to easily communicate that to the user", async (t) => {
-    const { logMock } = await setupTestEnvironmentAndRun({
+    const { logger } = await setupTestEnvironmentAndRun({
       commitsSinceLatestRelease: [],
     })
 
-    await assertSnapshot(t, logMock.getLogs({ includeDebugLogs: false }))
+    await assertSnapshot(t, logger.lines.join(""))
   })
 
   it("given no release has ever been made, expect logs to easily communicate that to the user", async (t) => {
@@ -286,13 +286,13 @@ describe("user facing logs", () => {
       sha: "trigger-release",
     })
 
-    const { logMock } = await setupTestEnvironmentAndRun({
+    const { logger } = await setupTestEnvironmentAndRun({
       latestRelease: null,
       commitsSinceLatestRelease: [givenLatestCommitOnBranch],
       nextReleaseVersion: "1.0.0",
     })
 
-    await assertSnapshot(t, logMock.getLogs({ includeDebugLogs: false }))
+    await assertSnapshot(t, logger.lines.join(""))
   })
 
   it("given running in test mode, given commits that trigger a release, expect logs to easily communicate that to the user", async (t) => {
@@ -304,15 +304,19 @@ describe("user facing logs", () => {
       sha: "trigger-release",
     })
 
-    const { logMock } = await setupTestEnvironmentAndRun({
+    const { logger } = await setupTestEnvironmentAndRun({
       pullRequestTargetBranchName: givenTargetBranch,
       currentBranchName: givenBaseBranch,
       githubActionEventThatTriggeredTool: "pull_request",
       commitsSinceLatestRelease: [givenLatestCommitOnBranch],
       nextReleaseVersion: "1.0.0",
+      pullRequestsMerged: [{ pullRequestTitle: "Add sweet feature", pullRequestNumber: 123 }, {
+        pullRequestTitle: "Update main branch",
+        pullRequestNumber: 124,
+      }],
     })
 
-    await assertSnapshot(t, logMock.getLogs({ includeDebugLogs: false }))
+    await assertSnapshot(t, logger.lines.join(""))
   })
 })
 
@@ -434,6 +438,7 @@ const setupTestEnvironmentAndRun = async ({
   pullRequestTargetBranchName,
   currentBranchName,
   commitsCreatedBySimulatedMerge,
+  pullRequestsMerged,
   gitCommitsCurrentBranch,
   simulatedMergeType,
 }: {
@@ -445,9 +450,13 @@ const setupTestEnvironmentAndRun = async ({
   pullRequestTargetBranchName?: string
   currentBranchName?: string
   commitsCreatedBySimulatedMerge?: GitCommit[]
+  pullRequestsMerged?: { pullRequestTitle: string; pullRequestNumber: number }[]
   gitCommitsCurrentBranch?: GitCommit[]
   simulatedMergeType?: "merge" | "rebase" | "squash"
 }) => {
+  const logger = new Logger()
+  logger.init() // must call init so we record the lines logged.
+
   // Set some defaults.
   const pullRequestTargetBranch = pullRequestTargetBranchName || "main" // assume we are running a pull_request event that merges into main
   const currentBranch = currentBranchName || "main" // assume we are running a push event
@@ -458,7 +467,10 @@ const setupTestEnvironmentAndRun = async ({
 
   let hasRanConvenienceCommandsAfterDeployment = false
   const convenienceStep = mock<ConvenienceStep>()
-  when(convenienceStep, "runConvenienceCommands", async () => {
+  when(convenienceStep, "setGitUserConfig", async () => {
+    return { gitConfigName: "github-actions[bot]", gitConfigEmail: "41898282+github-actions[bot]@users.noreply.github.com" }
+  })
+  when(convenienceStep, "parseGitCommits", async () => {
     if (hasRanDeployStep) hasRanConvenienceCommandsAfterDeployment = true
     return { gitCommitsAllLocalBranches: { "latest": [] }, gitCommitsCurrentBranch: gitCommitsCurrentBranch || [] }
   })
@@ -469,20 +481,20 @@ const setupTestEnvironmentAndRun = async ({
     "runGetLatestOnCurrentBranchReleaseStep",
     async () => {
       if (hasRanConvenienceCommandsAfterDeployment) {
-        if (latestReleaseAfterDeploy) return latestReleaseAfterDeploy
-        if (nextReleaseVersion) return { versionName: nextReleaseVersion, commitSha: "deploy-sha" }
+        if (latestReleaseAfterDeploy) return { output: latestReleaseAfterDeploy, command: "mock-command" }
+        if (nextReleaseVersion) return { output: { versionName: nextReleaseVersion, commitSha: "deploy-sha" }, command: "mock-command" }
       }
 
       if (latestRelease === null) return null
-      if (latestRelease === undefined) return GetLatestReleaseStepOutputFake
-      return latestRelease
+      if (latestRelease === undefined) return { output: GetLatestReleaseStepOutputFake, command: "mock-command" }
+      return { output: latestRelease, command: "mock-command" }
     },
   )
   const determineNextReleaseVersionStepMock = stub(
     stepRunner,
     "determineNextReleaseVersionStep",
     async () => {
-      if (nextReleaseVersion) return { version: nextReleaseVersion }
+      if (nextReleaseVersion) return { output: { version: nextReleaseVersion }, command: "mock-command" }
       return null
     },
   )
@@ -499,10 +511,8 @@ const setupTestEnvironmentAndRun = async ({
   let hasRanDeployStep = false
   const deployStepMock = stub(stepRunner, "runDeployStep", async () => {
     hasRanDeployStep = true
-    return
+    return { commands: [] }
   })
-
-  const logMock = getLogMock()
 
   const environment = {} as Environment
   const setOutputMock = stub(
@@ -560,7 +570,11 @@ const setupTestEnvironmentAndRun = async ({
   const prepareEnvironmentForTestModeMock = when(prepareEnvironmentForTestMode, "prepareEnvironmentForTestMode", async () => {
     if (!isRunningInPullRequest) return undefined
 
-    return { currentGitBranch: pullRequestTargetBranch, commitsCreatedDuringSimulatedMerges: commitsCreatedBySimulatedMerge || [] }
+    return {
+      currentGitBranch: pullRequestTargetBranch,
+      commitsCreatedDuringSimulatedMerges: commitsCreatedBySimulatedMerge || [],
+      pullRequestsMerged: pullRequestsMerged || [],
+    }
   })
 
   const gitMock = mock<Git>()
@@ -570,7 +584,7 @@ const setupTestEnvironmentAndRun = async ({
     stepRunner,
     prepareEnvironmentForTestMode,
     getCommitsSinceLatestReleaseStep,
-    log: logMock,
+    log: logger,
     git: gitMock,
     environment,
     simulatedMergeType: simulatedMergeType || "merge",
@@ -581,7 +595,7 @@ const setupTestEnvironmentAndRun = async ({
     getCommitsSinceLatestReleaseStepMock,
     determineNextReleaseVersionStepMock,
     deployStepMock,
-    logMock,
+    logger,
     setOutputMock,
     environmentIsRunningInPullRequestMock,
     prepareEnvironmentForTestModeMock,

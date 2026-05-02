@@ -129,6 +129,10 @@ describe("prepareEnvironmentForTestMode", () => {
     assertEquals(result, {
       currentGitBranch: "main",
       commitsCreatedDuringSimulatedMerges: expectedCommitsCreatedBySimulatedMerge,
+      pullRequestsMerged: [
+        { pullRequestTitle: givenTopPullRequestInPRStack.title, pullRequestNumber: givenTopPullRequestInPRStack.prNumber },
+        { pullRequestTitle: givenSecondPullRequestInPRStack.title, pullRequestNumber: givenSecondPullRequestInPRStack.prNumber },
+      ],
     })
   })
 })

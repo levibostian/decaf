@@ -1,9 +1,9 @@
-import { exec } from "./exec.ts"
-import * as log from "./log.ts"
+import { Exec } from "./exec.ts"
 import { AnyStepName } from "./steps/types/any-step.ts"
 import envCi from "env-ci"
 import { GitHubApi } from "./github-api.ts"
 import { isAbsolute, resolve } from "@std/path"
+import { Logger } from "./log.ts"
 
 export interface Environment {
   getRepository(): { owner: string; repo: string }
@@ -27,13 +27,17 @@ export class EnvironmentImpl implements Environment {
   private outputFileCache: Record<string, string>
   private simulatedMergeTypeCache: ("merge" | "rebase" | "squash")[] | null = null
   private readonly githubApi: GitHubApi
+  private readonly log: Logger
+  private readonly exec: Exec
 
-  constructor(githubApi: GitHubApi) {
+  constructor(githubApi: GitHubApi, logger: Logger, exec: Exec) {
     // Example of the values in `this.env`:
     // {"isCi":true,"name":"GitHub Actions","service":"github","commit":"7d4aec10df2b2dcbe99643662beca90a24a8a81f","build":"15876053587","isPr":true,"branch":"alpha","prBranch":"refs/pull/68/merge","slug":"levibostian/decaf","root":"/home/runner/work/decaf/decaf","pr":68}
     this.env = envCi()
     this.outputFileCache = {}
     this.githubApi = githubApi
+    this.log = logger
+    this.exec = exec
   }
 
   // Note: For pull requests, the return value is pretty useless. Example: "refs/pull/68/merge"
@@ -99,7 +103,7 @@ export class EnvironmentImpl implements Environment {
         repo: this.getRepository().repo,
       })
 
-      log.debug(`Repository merge types retrieved from github api: ${JSON.stringify(mergeTypes)}`)
+      this.log.debug(`Repository merge types retrieved from github api: ${JSON.stringify(mergeTypes)}`)
 
       const enabledTypes: ("merge" | "rebase" | "squash")[] = []
 
@@ -120,7 +124,7 @@ export class EnvironmentImpl implements Environment {
         return enabledTypes
       }
     } catch (error) {
-      log.debug(`Failed to get repository merge types from GitHub API: ${error}`)
+      this.log.debug(`Failed to get repository merge types from GitHub API: ${error}`)
     }
 
     // use a default of all types if we can't get the info from the API.
@@ -151,7 +155,7 @@ export class EnvironmentImpl implements Environment {
     await this.setOutputFile(key, value)
 
     if (this.env.service == "github") {
-      await exec.run({
+      await this.exec.run({
         command: `echo "${key}=${value}" >> "$GITHUB_OUTPUT"`,
         input: undefined,
       })
@@ -259,7 +263,7 @@ export class EnvironmentImpl implements Environment {
         const fileContents = await Deno.readTextFile(templateFile)
         return fileContents
       } catch (error) {
-        log.error(`Failed to read pull request comment template file at "${templateFile}": ${error}`)
+        this.log.error([`Failed to read pull request comment template file at "${templateFile}": ${error}`])
         throw error
       }
     }
@@ -314,7 +318,7 @@ export class EnvironmentImpl implements Environment {
           `The configured current_working_directory "${cwd}" (resolved to "${resolvedPath}") is not a directory`,
         )
       }
-      log.debug(`Using configured working directory: ${resolvedPath}`)
+      this.log.debug(`Using configured working directory: ${resolvedPath}`)
       // Use realpath to resolve symlinks for consistent paths (e.g., /private/var -> /var on macOS)
       return Deno.realPathSync(resolvedPath)
     } catch (error) {
@@ -337,8 +341,8 @@ export class EnvironmentImpl implements Environment {
     // Expect format: "Name <email>"
     const match = gitConfigInput.match(/^(.*)\s+<([^>]+)>$/)
     if (!match) {
-      log.error(
-        `The git_config input must be in the format "name <email>". The value provided was: ${gitConfigInput}`,
+      this.log.error(
+        [`The git_config input must be in the format "name <email>". The value provided was: ${gitConfigInput}`],
       )
       throw new Error()
     }
@@ -401,9 +405,9 @@ export class EnvironmentImpl implements Environment {
         nameOfOutputFile,
         new TextEncoder().encode(JSON.stringify(existingData, null, 2)),
       )
-      log.debug(`Output written to file: ${nameOfOutputFile}`)
+      this.log.debug(`Output written to file: ${nameOfOutputFile}`)
     } catch (error) {
-      log.error(`Failed to write output to file ${nameOfOutputFile}: ${error}`)
+      this.log.error([`Failed to write output to file ${nameOfOutputFile}: ${error}`])
       throw error
     }
   }
