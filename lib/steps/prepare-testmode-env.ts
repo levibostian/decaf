@@ -13,7 +13,13 @@ export interface PrepareTestModeEnvStep {
     {
       currentGitBranch: string
       commitsCreatedDuringSimulatedMerges: GitCommit[]
-      pullRequestsMerged: { pullRequestTitle: string; pullRequestNumber: number }[]
+      pullRequestsMerged: {
+        pullRequestTitle: string
+        pullRequestNumber: number
+        sourceBranchName: string
+        targetBranchName: string
+        mergeType: "merge" | "rebase" | "squash"
+      }[]
     } | undefined
   >
 }
@@ -34,7 +40,13 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
     {
       currentGitBranch: string
       commitsCreatedDuringSimulatedMerges: GitCommit[]
-      pullRequestsMerged: { pullRequestTitle: string; pullRequestNumber: number }[]
+      pullRequestsMerged: {
+        pullRequestTitle: string
+        pullRequestNumber: number
+        sourceBranchName: string
+        targetBranchName: string
+        mergeType: "merge" | "rebase" | "squash"
+      }[]
     } | undefined
   > => {
     const testModeContext = this.environment.isRunningInPullRequest()
@@ -44,7 +56,13 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
 
     const pullRequestStack = await this.githubApi.getPullRequestStack({ owner, repo, startingPrNumber: testModeContext.prNumber })
     const commitsCreatedDuringSimulatedMerges: GitCommit[] = []
-    const pullRequestsMerged: { pullRequestTitle: string; pullRequestNumber: number }[] = []
+    const pullRequestsMerged: {
+      pullRequestTitle: string
+      pullRequestNumber: number
+      sourceBranchName: string
+      targetBranchName: string
+      mergeType: "merge" | "rebase" | "squash"
+    }[] = []
     let currentBranch: string = "" // will be set to the last target branch after all simulated merges are done.
 
     for await (const pr of pullRequestStack) {
@@ -60,7 +78,13 @@ export class PrepareTestModeEnvStepImpl implements PrepareTestModeEnvStep {
         pullRequestDescription: pr.description,
       })
 
-      pullRequestsMerged.push({ pullRequestTitle: pr.title, pullRequestNumber: pr.prNumber })
+      pullRequestsMerged.push({
+        pullRequestTitle: pr.title,
+        pullRequestNumber: pr.prNumber,
+        sourceBranchName: pr.sourceBranchName,
+        targetBranchName: pr.targetBranchName,
+        mergeType: simulatedMergeType,
+      })
       commitsCreatedDuringSimulatedMerges.unshift(...commitsCreated)
       currentBranch = pr.targetBranchName // after merging, the branch we are on will be different.
     }

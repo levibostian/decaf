@@ -310,10 +310,22 @@ describe("user facing logs", () => {
       githubActionEventThatTriggeredTool: "pull_request",
       commitsSinceLatestRelease: [givenLatestCommitOnBranch],
       nextReleaseVersion: "1.0.0",
-      pullRequestsMerged: [{ pullRequestTitle: "Add sweet feature", pullRequestNumber: 123 }, {
-        pullRequestTitle: "Update main branch",
-        pullRequestNumber: 124,
-      }],
+      pullRequestsMerged: [
+        {
+          pullRequestTitle: "Add sweet feature",
+          pullRequestNumber: 123,
+          sourceBranchName: "feature-branch-A",
+          targetBranchName: "feature-branch-B",
+          mergeType: "squash",
+        },
+        {
+          pullRequestTitle: "Update main branch",
+          pullRequestNumber: 124,
+          sourceBranchName: "feature-branch-B",
+          targetBranchName: "main",
+          mergeType: "rebase",
+        },
+      ],
     })
 
     await assertSnapshot(t, logger.lines.join(""))
@@ -450,7 +462,13 @@ const setupTestEnvironmentAndRun = async ({
   pullRequestTargetBranchName?: string
   currentBranchName?: string
   commitsCreatedBySimulatedMerge?: GitCommit[]
-  pullRequestsMerged?: { pullRequestTitle: string; pullRequestNumber: number }[]
+  pullRequestsMerged?: {
+    pullRequestTitle: string
+    pullRequestNumber: number
+    sourceBranchName: string
+    targetBranchName: string
+    mergeType: "merge" | "rebase" | "squash"
+  }[]
   gitCommitsCurrentBranch?: GitCommit[]
   simulatedMergeType?: "merge" | "rebase" | "squash"
 }) => {

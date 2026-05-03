@@ -55,8 +55,6 @@ export class SimulateMergeImpl implements SimulateMerge {
       pullRequestDescription: string
     },
   ) {
-    this.log.msg(`Simulate merging pull request #${pullRequestNumber} using '${simulateMergeType}' method...`)
-
     switch (simulateMergeType) {
       case "merge":
         return this.merge({ baseBranch, targetBranch, commitTitle: `Merge pull request #${pullRequestNumber} from ${baseBranch}`, commitMessage: "" })

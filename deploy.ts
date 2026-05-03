@@ -52,9 +52,9 @@ export const run = async ({
   log.title(`Calm & reliable automated deployments. No more coffee breaks.`)
 
   log.msg(`Hello! I am a tool called decaf. I help you deploy your projects.
-To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.
 
-To learn more about the tool: https://github.com/levibostian/decaf/`)
+Want to know the deployment process of this codebase? Continue reading where each step is explained to you. 
+Want to learn more about me? Visit the docs --> https://github.com/levibostian/decaf/`)
 
   // --- Simulate pull request merges, if running in pull request
 
@@ -65,17 +65,21 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
   const pullRequestInfo = environment.isRunningInPullRequest()
   const runInTestMode = pullRequestInfo !== undefined
   if (runInTestMode && pullRequestInfo) {
-    log.phase(`Prepare environment for pull request event`)
+    log.phase(`Perform setup before running deployment`)
 
-    log.msg(
-      `I see that I got triggered from a pull request event. This means that I will still run the full deployment process but I will not actually make a release. This allows you to safely test the deployment process without affecting the actual release.`,
-    )
+    log.msg(`Before we can start the deployment process, I need to perform some setup steps to prepare for the deployment.`)
 
     log.step(`Simulate merging pull requests...`)
 
     log.msg(
-      `In order to accurately test the deployment process, I will simulate what would happen if this pull request and all of it's parent pull requests get merged. To simulate the merge, I will simply perform a series of git merges in the temporary environment where I am running. Don't worry, this will not affect your actual pull request or git history!`,
+      `I see that I got triggered from a pull request event. This means that I will run the full deployment process but I will not actually push a release. This allows you to safely test your full deployment process.`,
     )
+
+    log.msg(
+      `To make the test most accurate. I'm going to simulate what would happen if this pull request and all of its parent pull requests are merged. Don't worry, this will not actually merge any pull requests!`,
+    )
+
+    log.msg(`Simulating pull request merges...`)
 
     const prepareEnvironmentForTestModeResults = await prepareEnvironmentForTestMode.prepareEnvironmentForTestMode({
       owner,
@@ -83,35 +87,23 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
       simulatedMergeType,
     })
 
-    const pullRequestBranchBeforeSimulatedMerges = currentBranch
     currentBranch = prepareEnvironmentForTestModeResults?.currentGitBranch || currentBranch
 
-    log.list(
-      `Pull requests merged during simulation:`,
-      prepareEnvironmentForTestModeResults?.pullRequestsMerged.map((pr) => `${pr.pullRequestTitle} - #${pr.pullRequestNumber}`) || [],
-    )
+    for (const pr of prepareEnvironmentForTestModeResults?.pullRequestsMerged ?? []) {
+      log.msg(`\`${pr.sourceBranchName}\` (#${pr.pullRequestNumber}) --> \`${pr.targetBranchName}\`... using '${pr.mergeType}'.`)
+    }
 
     log.done(
-      `Simulated merges complete. For the remainder of the deployment process, the current branch will be ${currentBranch} instead of the pull request branch ${pullRequestBranchBeforeSimulatedMerges}.`,
+      `Merging complete. The deployment will run on the \`${currentBranch}\` branch, as if all of the pull requests were merged.`,
     )
   }
 
   await environment.setOutput({ key: "test_mode_on", value: runInTestMode.toString() })
 
-  // --- Setup & environment
-
-  log.phase(`Setup & environment`)
-
-  log.step(`Printing environment info...`)
-
-  const { failOnDeployVerification, makePullRequestComment } = environment.getUserConfigurationOptions()
-  log.kv(`Environment info`, [
-    ["GitHub repository", `${owner}/${repo}`],
-    ["Current git branch", currentBranch],
-    ["Running in test mode?", runInTestMode.toString()],
-    ["Fail on deploy verification", failOnDeployVerification.toString()],
-    ["Make pull request comment", makePullRequestComment.toString()],
-  ])
+  if (!runInTestMode) {
+    log.phase(`Perform setup before running deployment`)
+    log.msg(`Before we can start the deployment process, I need to perform some setup steps to prepare for the deployment.`)
+  }
 
   log.step(`Setting up git user config...`)
 
@@ -125,24 +117,39 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
     ],
   )
 
+  log.msg(`If you would rather use a different name and email, you can change it with the \`git_config\` option.`)
+
   log.step(`Parsing git commits...`)
 
+  log.msg(
+    `To make writing scripts more convenient, I run \`git log\` and parse all of the git commits into a format that is much easier to work with. All of them are passed as input data into each of the scripts. \n\nDocs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts`,
+  )
+
+  const branchFilters = environment.getBranchFilters()
+  const commitLimit = environment.getCommitLimit()
+
+  log.msg(`Parsing commits for the following git branches: ${branchFilters?.join(", ") ?? currentBranch}...`)
+
   const { gitCommitsAllLocalBranches, gitCommitsCurrentBranch } = await convenienceStep.parseGitCommits(
-    environment.getBranchFilters(),
-    environment.getCommitLimit(),
+    branchFilters,
+    commitLimit,
   )
 
   log.done(
-    `Finished parsing git commits. I found ${gitCommitsCurrentBranch.length} commits on the current branch, ${currentBranch}, and ${
+    `${
       Object.values(gitCommitsAllLocalBranches).reduce((sum, commits) => sum + commits.length, 0)
-    } commits across all local branches that match the branch filters.`,
+    } commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\` options.`,
   )
 
   // --- Find latest release and commits since then
 
   log.phase(`Find latest release & git commits made since then`)
 
-  log.step(`Finding the latest release on the current git branch, ${currentBranch}...`)
+  log.step(`Finding the latest release...`)
+
+  log.msg(
+    `I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will run the script that you have provided for getting the latest release...`,
+  )
 
   const latestReleaseResult = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
     gitCurrentBranch: currentBranch,
@@ -158,9 +165,13 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
   log.debug(`Latest release on branch ${currentBranch} is: ${JSON.stringify(lastRelease)}`)
 
   if (!lastRelease) {
-    log.done(`I have been told that the git branch, ${currentBranch}, has never been released before. This will be the first release. Exciting!`)
+    log.done(`The script told me that the git branch, ${currentBranch}, has never been released before. This will be the first release. Exciting!`)
   } else {
-    log.done(`I have been told that the latest release on the git branch ${currentBranch} is: ${lastRelease.versionName}`)
+    log.done(
+      `The script told me that the latest release is version: ${lastRelease.versionName}, which was shipped from git commit: ${
+        lastRelease.commitSha?.substring(0, 10)
+      }`,
+    )
   }
 
   log.step(`Finding all git commits created since the latest release...`)
@@ -196,7 +207,11 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
 
   log.phase(`Analyze git commits`)
 
-  log.step(`Analyzing the git commits one-by-one to determine the next release version...`)
+  log.step(`Analyze git commits to determine the next release version...`)
+
+  log.msg(
+    `I need to know if any of the ${listOfCommits.length} commits created since the latest release (1) is important enough to trigger a new release and (2) if any are, what will be the next release's version name? To do that, I will run the script that you have provided for getting the next release version...`,
+  )
 
   const determineNextReleaseVersionEnvironment: GetNextReleaseVersionStepInput = {
     gitCurrentBranch: currentBranch,
@@ -219,7 +234,7 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
     )
     return { nextReleaseVersion: null, commitsSinceLastRelease: listOfCommits, latestRelease: lastRelease }
   }
-  log.done(`After analyzing all of the git commits, I have determined the next release version will be: ${nextReleaseVersion}`)
+  log.done(`The script told me that the next release version will be: ${nextReleaseVersion}`)
 
   // --- Run deployment commands
 
@@ -227,7 +242,7 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
 
   log.step(`Running all of your deployment commands...`)
 
-  log.msg(`It's time to ship ${nextReleaseVersion}! I will now run all of the deployment commands provided in your project's configuration...`)
+  log.msg(`It's time to ship ${nextReleaseVersion}! To do that, I will run all of the scripts that you have provided for deploying the project...`)
 
   const deployEnvironment: DeployStepInput = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
 
@@ -236,13 +251,13 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
     log.cmd(command)
   }
 
-  log.done(`Finished running deployment commands. The deployment should now be complete!`)
+  log.done(`Finished running all of the deployment commands.`)
 
   log.step(`Verifying deployment...`)
 
   // Re-run get-latest-release step to verify the new release
   log.msg(
-    `Getting the latest release version again to verify that the new release, ${nextReleaseVersion}, was successfully created. If the latest version does not match, the verification fails, it could indicate a problem with the deployment process.`,
+    `Deployments fail sometimes. To help you feel confident that your deployment was successful, I perform a verification step. To run the verification, I run the script you provided to me to get the latest release again. If the script doesn't produce the expected result, the verification fails, which could indicate a problem with the deployment process.`,
   )
   // Re-run convenience commands to ensure any git changes done in deployment commands are included. This will
   // run a git fetch again and parse commits all over again.
@@ -252,8 +267,8 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
     gitCommitsAllLocalBranches: gitCommitsAllLocalBranchesAfterDeploy,
     gitCommitsCurrentBranch: gitCommitsCurrentBranchAfterDeploy,
   } = await convenienceStep.parseGitCommits(
-    environment.getBranchFilters(),
-    environment.getCommitLimit(),
+    branchFilters,
+    commitLimit,
   )
 
   const latestReleaseAfterDeployResult = await stepRunner.runGetLatestOnCurrentBranchReleaseStep({
@@ -298,10 +313,6 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
 
   log.phase(`All done!`)
 
-  log.msg(
-    `Congratulations! The deployment process has completed. Bye-bye!`,
-  )
-
   log.kv(`Summary of deployment`, [
     ["New release version", nextReleaseVersion],
     ["Latest release before deployment", lastRelease ? lastRelease.versionName : "This is the first release!"],
@@ -310,6 +321,8 @@ To learn more about the tool: https://github.com/levibostian/decaf/`)
     ["Latest git commit deployed", `${listOfCommits[0].title} (${listOfCommits[0].abbreviatedSha})`],
     ["Oldest git commit deployed", `${listOfCommits[listOfCommits.length - 1].title} (${listOfCommits[listOfCommits.length - 1].abbreviatedSha})`],
   ])
+
+  log.msg(`The deployment process has completed. Bye-bye!`)
 
   await environment.setOutput({ key: "new_release_version", value: nextReleaseVersion })
 

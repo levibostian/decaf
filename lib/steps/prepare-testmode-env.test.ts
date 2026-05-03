@@ -130,8 +130,20 @@ describe("prepareEnvironmentForTestMode", () => {
       currentGitBranch: "main",
       commitsCreatedDuringSimulatedMerges: expectedCommitsCreatedBySimulatedMerge,
       pullRequestsMerged: [
-        { pullRequestTitle: givenTopPullRequestInPRStack.title, pullRequestNumber: givenTopPullRequestInPRStack.prNumber },
-        { pullRequestTitle: givenSecondPullRequestInPRStack.title, pullRequestNumber: givenSecondPullRequestInPRStack.prNumber },
+        {
+          pullRequestTitle: givenTopPullRequestInPRStack.title,
+          pullRequestNumber: givenTopPullRequestInPRStack.prNumber,
+          sourceBranchName: givenTopPullRequestInPRStack.sourceBranchName,
+          targetBranchName: givenTopPullRequestInPRStack.targetBranchName,
+          mergeType: givenMergeType,
+        },
+        {
+          pullRequestTitle: givenSecondPullRequestInPRStack.title,
+          pullRequestNumber: givenSecondPullRequestInPRStack.prNumber,
+          sourceBranchName: givenSecondPullRequestInPRStack.sourceBranchName,
+          targetBranchName: givenSecondPullRequestInPRStack.targetBranchName,
+          mergeType: givenMergeType,
+        },
       ],
     })
   })
