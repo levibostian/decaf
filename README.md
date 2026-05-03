@@ -69,6 +69,8 @@ jobs:
 
 Install the CLI tool on your CI server and run it. [This is the list of CI services this tool supports](https://github.com/semantic-release/env-ci#supported-ci). 
 
+### Install CLI via script
+
 ```sh 
 # Install a specific version of the tool (recommended for teams)
 curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash "1.0.0"
@@ -79,6 +81,23 @@ curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bas
 ~/.local/bin/decaf --args-go-here 
 # dont worry about the arguments yet, we will go over them in the remaining sections
 ```
+
+### Install CLI via aqua 
+
+Install via [aqua](https://aquaproj.github.io/):
+
+```sh
+# install: 
+aqua g -i levibostian/decaf@<version>
+aqua install
+
+# run: 
+decaf ...
+# alternative: 
+aqua exec -- decaf ...
+```
+
+> Note: Replace `<version>` with [the latest version](https://github.com/levibostian/decaf/releases): ![GitHub Release](https://img.shields.io/github/v/release/levibostian/decaf?color=%236F4E37)
 
 ## Options
 
