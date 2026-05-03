@@ -159,7 +159,6 @@ Want to learn more about me? Visit the docs --> https://github.com/levibostian/d
     gitCommitsCurrentBranch,
     gitCommitsAllLocalBranches,
   })
-  if (latestReleaseResult?.command) log.cmd(latestReleaseResult.command)
   const lastRelease = latestReleaseResult?.output ?? null
 
   log.debug(`Latest release on branch ${currentBranch} is: ${JSON.stringify(lastRelease)}`)
@@ -225,7 +224,6 @@ Want to learn more about me? Visit the docs --> https://github.com/levibostian/d
   }
 
   const determineNextReleaseResult = await stepRunner.determineNextReleaseVersionStep(determineNextReleaseVersionEnvironment)
-  if (determineNextReleaseResult?.command) log.cmd(determineNextReleaseResult.command)
   const nextReleaseVersion = determineNextReleaseResult?.output?.version
 
   if (!nextReleaseVersion) {
@@ -246,10 +244,7 @@ Want to learn more about me? Visit the docs --> https://github.com/levibostian/d
 
   const deployEnvironment: DeployStepInput = { ...determineNextReleaseVersionEnvironment, nextVersionName: nextReleaseVersion }
 
-  const deployResult = await stepRunner.runDeployStep(deployEnvironment)
-  for (const command of deployResult?.commands ?? []) {
-    log.cmd(command)
-  }
+  await stepRunner.runDeployStep(deployEnvironment)
 
   log.done(`Finished running all of the deployment commands.`)
 

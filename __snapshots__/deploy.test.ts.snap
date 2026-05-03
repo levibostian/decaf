@@ -59,7 +59,6 @@ DONE: 0 commits parsed. If that took too long to run, you can optimize it with t
 I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will
 run the script that you have provided for getting the latest release...
  
-  \$ mock-command
 DONE: The script told me that the latest release is version: v1.0.0, which was shipped from git commit: abc123
  
 ----------
@@ -148,7 +147,6 @@ DONE: 0 commits parsed. If that took too long to run, you can optimize it with t
 I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will
 run the script that you have provided for getting the latest release...
  
-  \$ mock-command
 DONE: The script told me that the latest release is version: v1.0.0, which was shipped from git commit: abc123
  
 ----------
@@ -244,7 +242,6 @@ I need to know if any of the 1 commits created since the latest release (1) is i
 and (2) if any are, what will be the next release's version name? To do that, I will run the script that you have
 provided for getting the next release version...
  
-  \$ mock-command
 DONE: The script told me that the next release version will be: 1.0.0
  
 ------------------------------------------------------------------------------------------------------------------------
@@ -364,7 +361,6 @@ DONE: 0 commits parsed. If that took too long to run, you can optimize it with t
 I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will
 run the script that you have provided for getting the latest release...
  
-  \$ mock-command
 DONE: The script told me that the latest release is version: v1.0.0, which was shipped from git commit: abc123
  
 ----------
@@ -388,7 +384,6 @@ I need to know if any of the 1 commits created since the latest release (1) is i
 and (2) if any are, what will be the next release's version name? To do that, I will run the script that you have
 provided for getting the next release version...
  
-  \$ mock-command
 DONE: The script told me that the next release version will be: 1.0.0
  
 ------------------------------------------------------------------------------------------------------------------------
