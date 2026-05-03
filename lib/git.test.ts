@@ -1,13 +1,18 @@
 import { assertEquals, assertInstanceOf, assertRejects } from "@std/assert"
 import { assertSpyCall, restore, stub } from "@std/testing/mock"
-import { exec } from "./exec.ts"
+import { ExecImpl } from "./exec.ts"
 import * as gitModule from "./git.ts"
 import { GitCommit } from "./types/git.ts"
+import { Logger } from "./log.ts"
+import { mock } from "./mock/mock.ts"
 
+let exec: ExecImpl
 let git: gitModule.Git
-Deno.test.beforeEach(() => {
+Deno.test.beforeEach(async () => {
   restore()
-  git = new gitModule.GitImpl(exec, Deno.cwd())
+  const logger = mock<Logger>()
+  exec = new ExecImpl(logger)
+  git = new gitModule.GitImpl(exec, Deno.cwd(), logger)
 })
 
 Deno.test("checkoutBranch - should execute the expected command", async () => {

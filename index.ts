@@ -1,7 +1,5 @@
 import { run } from "./deploy.ts"
 import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
-import { exec } from "./lib/exec.ts"
-import { logger } from "./lib/log.ts"
 import { MergeConflictError } from "./lib/git.ts"
 import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
 import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
@@ -16,6 +14,8 @@ import { postPullRequestComment, pullRequestCommentTemplate, PullRequestCommentT
 // at the top level, the e2e tests would not be able to reset the DI graph between tests.
 // Was using dynamic imports in the e2e tests, but code coverage didn't recognize any of this code then.
 export async function main() {
+  const logger = di.getGraph().get("logger")
+
   // After args are processed, they are available to the environment module.
   processCommandLineArgs(Deno.args)
 
@@ -24,6 +24,7 @@ export async function main() {
   const githubApi = diGraph.get("github")
   const environment = diGraph.get("environment")
   const gitRepo = diGraph.get("gitRepoManager")
+  const exec = diGraph.get("exec")
 
   const pullRequestInfo = environment.isRunningInPullRequest()
   const buildInfo = environment.getBuild()
@@ -93,7 +94,7 @@ export async function main() {
           gitRootDirectory: git.getDirectory(),
           userScriptCurrentWorkingDirectory: environment.getUserScriptCurrentWorkingDirectory(git.getDirectory()),
         }),
-        prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git), git),
+        prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, logger), git),
         getCommitsSinceLatestReleaseStep: new GetCommitsSinceLatestReleaseStepImpl(git),
         log: logger,
         git,
@@ -143,7 +144,7 @@ export async function main() {
       if (error instanceof MergeConflictError) {
         // Merge conflicts are expected — log a clear message and continue to the next merge type.
         // The process will exit with 0 after all types are processed; GitHub will block the PR from merging anyway.
-        logger.warning(error.message)
+        logger.warn(error.message)
       } else {
         // Unexpected error — rethrow to ensure the action fails visibly
         throw error
@@ -155,7 +156,7 @@ export async function main() {
         try {
           await gitRepo.removeIsolatedClone(isolatedCloneDirectory)
         } catch (cleanupError) {
-          logger.warning(`Failed to remove isolated git clone at ${isolatedCloneDirectory}: ${cleanupError}`)
+          logger.warn(`Failed to remove isolated git clone at ${isolatedCloneDirectory}: ${cleanupError}`)
         }
       }
     }

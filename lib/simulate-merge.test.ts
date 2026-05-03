@@ -1,23 +1,26 @@
 import { assertEquals } from "@std/assert"
 import { afterEach, beforeEach, describe, it } from "@std/testing/bdd"
 import { assertSpyCall, restore, Stub, stub } from "@std/testing/mock"
-import { exec } from "./exec.ts"
+import { ExecImpl } from "./exec.ts"
 import { SimulateMerge, SimulateMergeImpl } from "./simulate-merge.ts"
 import * as gitModule from "./git.ts"
-import { Exec } from "./exec.ts"
 import { assertSnapshot } from "@std/testing/snapshot"
 import { GitCommit } from "./types/git.ts"
 import { GitCommitFake } from "./types/git.test.ts"
 import { mock, when } from "./mock/mock.ts"
+import { Logger } from "./log.ts"
 
+let exec: ExecImpl
 let git: gitModule.Git
-Deno.test.beforeEach(() => {
-  git = new gitModule.GitImpl(exec, Deno.cwd())
+Deno.test.beforeEach(async () => {
+  const logger = mock<Logger>()
+  exec = new ExecImpl(logger)
+  git = new gitModule.GitImpl(exec, Deno.cwd(), logger)
 })
 
 describe("snapshot test all of the merge options", () => {
   let simulateMerge: SimulateMerge
-  let execMock: Stub<Exec>
+  let execMock: Stub<ExecImpl>
 
   beforeEach(() => {
     execMock = stub(exec, "run", async (args) => {
@@ -42,7 +45,7 @@ describe("snapshot test all of the merge options", () => {
 
       return { exitCode: 0, stdout: "success", stderr: "", output: undefined }
     })
-    simulateMerge = new SimulateMergeImpl(git)
+    simulateMerge = new SimulateMergeImpl(git, mock<Logger>())
   })
 
   afterEach(() => {
@@ -111,7 +114,7 @@ describe("unit tests for commits returned by simulation methods", () => {
     })
 
     git = mock()
-    simulateMerge = new SimulateMergeImpl(git)
+    simulateMerge = new SimulateMergeImpl(git, mock<Logger>())
   }
 
   // Helper to create a mock commit

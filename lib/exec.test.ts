@@ -1,7 +1,12 @@
-import { exec } from "./exec.ts"
+import { ExecImpl } from "./exec.ts"
 import { assertEquals } from "@std/assert"
 import { DeployStepInput } from "./types/environment.ts"
 import { GitCommitFake } from "./types/git.test.ts"
+import { Logger } from "./log.ts"
+import { mock } from "./mock/mock.ts"
+
+const logger = mock<Logger>()
+const exec = new ExecImpl(logger)
 
 const givenPluginInput: DeployStepInput = {
   gitCurrentBranch: "main",

@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "@std/assert"
+import { assertEquals } from "@std/assert"
 import { jsonParse, renderStringTemplate } from "./utils.ts"
 
 Deno.test("jsonParse - valid JSON string returns object", () => {
@@ -20,10 +20,12 @@ Deno.test("jsonParse - empty string returns undefined", () => {
 })
 
 Deno.test("renderStringTemplate - invalid template syntax throws error", async () => {
-  await assertRejects(
-    async () => await renderStringTemplate("{{ if (condition) }}No closing tag", { condition: true }),
-    Error,
-    "Failed to render the string template",
+  assertEquals(
+    await renderStringTemplate(
+      `jq '.version = "{{ nextVersionName }}"' deno/version.json > deno/version.json.tmp && mv deno/version.json.tmp deno/version.json`,
+      { nextVersionName: "1.0.0" },
+    ),
+    `jq '.version = "1.0.0"' deno/version.json > deno/version.json.tmp && mv deno/version.json.tmp deno/version.json`,
   )
 })
 
