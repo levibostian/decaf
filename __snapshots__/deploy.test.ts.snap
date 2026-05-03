@@ -1,78 +1,427 @@
 export const snapshot = {};
 
 snapshot[`user facing logs > given no commits will trigger a release, expect logs to easily communicate that to the user 1`] = `
-[
-  "👋 Hello! I am a tool called decaf. I help you deploy your projects.",
-  "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
-  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/",
-  "Ok, let's get started with the deployment!",
-  "--------------------------------",
-  "👀 I see that the git branch main is checked out. We will begin the deployment process from the latest commit of this branch.",
-  "🔍 First, I need to get the latest release that was created on the git branch main. I'll look for it now...",
-  "I have been told that the latest release on the git branch main is: v1.0.0",
-  "📜 Next, I need to know all of the changes (git commits) that have been done on git branch main since the latest release: v1.0.0, commit: abc123. I'll look for them now...",
-  "I found 1 git commits created since the latest release of v1.0.0.",
-  "📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...",
-  "After analyzing all of the git commits, none of the commits need to be deployed. Therefore, the deployment process stops here with no new release to be made. Bye-bye 👋!",
-]
+"
+                                           __                             ___
+                                          /\\\\ \\\\                          /'___\\\\
+                                          \\\\_\\\\ \\\\     __    ___     __   /\\\\ \\\\__/
+                                          /'_' \\\\  /'__'\\\\ /'___\\\\ /'__'\\\\ \\\\ \\\\ ,__\\\\
+                                         /\\\\ \\\\L\\\\ \\\\/\\\\  __//\\\\ \\\\__//\\\\ \\\\L\\\\.\\\\_\\\\ \\\\ \\\\_/
+                                         \\\\ \\\\___,_\\\\ \\\\____\\\\ \\\\____\\\\ \\\\__/.\\\\_\\\\\\\\ \\\\_\\\\\\\\
+                                          \\\\/__,_ /\\\\/____/\\\\/____/\\\\/__/\\\\/_/ \\\\/_/
+  ========================================================================================================================
+                             Calm & reliable automated deployments. No more coffee breaks.
+========================================================================================================================
+ 
+Hello! I am a tool called decaf. I help you deploy your projects.
+ 
+Want to know the deployment process of this codebase? Continue reading where each step is explained to you. 
+Want to learn more about me? Visit the docs --> https://github.com/levibostian/decaf/
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Perform setup before running deployment
+------------------------------------------------------------------------------------------------------------------------
+ 
+Before we can start the deployment process, I need to perform some setup steps to prepare for the deployment.
+ 
+----------
+### Setting up git user config...
+----------
+ 
+For convenience, I set the git committer name and email, just in case you wanted to make any commits in your deployment commands:
+  name: github-actions[bot]
+  email: 41898282+github-actions[bot]@users.noreply.github.com
+ 
+If you would rather use a different name and email, you can change it with the \`git_config\` option.
+ 
+----------
+### Parsing git commits...
+----------
+ 
+To make writing scripts more convenient, I run \`git log\` and parse all of the git commits into a format that is much
+easier to work with. All of them are passed as input data into each of the scripts. 
+ 
+Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
+ 
+Parsing commits for the following git branches: ...
+ 
+DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
+      options.
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Find latest release & git commits made since then
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Finding the latest release...
+----------
+ 
+I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will
+run the script that you have provided for getting the latest release...
+ 
+DONE: The script told me that the latest release is version: v1.0.0, which was shipped from git commit: abc123
+ 
+----------
+### Finding all git commits created since the latest release...
+----------
+ 
+DONE: I found 1 git commits created since the latest release of v1.0.0.
+ 
+Here are the commits I found since the latest release:
+  - chore: does not trigger a release (abc123)
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Analyze git commits
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Analyze git commits to determine the next release version...
+----------
+ 
+I need to know if any of the 1 commits created since the latest release (1) is important enough to trigger a new release
+and (2) if any are, what will be the next release's version name? To do that, I will run the script that you have
+provided for getting the next release version...
+ 
+DONE: After analyzing all of the git commits, none of the commits need to be deployed. Therefore, the deployment process
+      stops here with no new release to be made. Bye-bye!
+ 
+"
 `;
 
 snapshot[`user facing logs > given no commits created since last deployment, expect logs to easily communicate that to the user 1`] = `
-[
-  "👋 Hello! I am a tool called decaf. I help you deploy your projects.",
-  "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
-  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/",
-  "Ok, let's get started with the deployment!",
-  "--------------------------------",
-  "👀 I see that the git branch main is checked out. We will begin the deployment process from the latest commit of this branch.",
-  "🔍 First, I need to get the latest release that was created on the git branch main. I'll look for it now...",
-  "I have been told that the latest release on the git branch main is: v1.0.0",
-  "📜 Next, I need to know all of the changes (git commits) that have been done on git branch main since the latest release: v1.0.0, commit: abc123. I'll look for them now...",
-  "Looks like zero commits have been created since the latest release. This means there is no new code created and therefore, the deployment process stops here. Bye-bye 👋!",
-]
+"
+                                           __                             ___
+                                          /\\\\ \\\\                          /'___\\\\
+                                          \\\\_\\\\ \\\\     __    ___     __   /\\\\ \\\\__/
+                                          /'_' \\\\  /'__'\\\\ /'___\\\\ /'__'\\\\ \\\\ \\\\ ,__\\\\
+                                         /\\\\ \\\\L\\\\ \\\\/\\\\  __//\\\\ \\\\__//\\\\ \\\\L\\\\.\\\\_\\\\ \\\\ \\\\_/
+                                         \\\\ \\\\___,_\\\\ \\\\____\\\\ \\\\____\\\\ \\\\__/.\\\\_\\\\\\\\ \\\\_\\\\\\\\
+                                          \\\\/__,_ /\\\\/____/\\\\/____/\\\\/__/\\\\/_/ \\\\/_/
+  ========================================================================================================================
+                             Calm & reliable automated deployments. No more coffee breaks.
+========================================================================================================================
+ 
+Hello! I am a tool called decaf. I help you deploy your projects.
+ 
+Want to know the deployment process of this codebase? Continue reading where each step is explained to you. 
+Want to learn more about me? Visit the docs --> https://github.com/levibostian/decaf/
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Perform setup before running deployment
+------------------------------------------------------------------------------------------------------------------------
+ 
+Before we can start the deployment process, I need to perform some setup steps to prepare for the deployment.
+ 
+----------
+### Setting up git user config...
+----------
+ 
+For convenience, I set the git committer name and email, just in case you wanted to make any commits in your deployment commands:
+  name: github-actions[bot]
+  email: 41898282+github-actions[bot]@users.noreply.github.com
+ 
+If you would rather use a different name and email, you can change it with the \`git_config\` option.
+ 
+----------
+### Parsing git commits...
+----------
+ 
+To make writing scripts more convenient, I run \`git log\` and parse all of the git commits into a format that is much
+easier to work with. All of them are passed as input data into each of the scripts. 
+ 
+Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
+ 
+Parsing commits for the following git branches: ...
+ 
+DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
+      options.
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Find latest release & git commits made since then
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Finding the latest release...
+----------
+ 
+I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will
+run the script that you have provided for getting the latest release...
+ 
+DONE: The script told me that the latest release is version: v1.0.0, which was shipped from git commit: abc123
+ 
+----------
+### Finding all git commits created since the latest release...
+----------
+ 
+DONE: Looks like zero commits have been created since the latest release. This means there is no new code created and
+      therefore, the deployment process stops here. Bye-bye!
+ 
+"
 `;
 
 snapshot[`user facing logs > given no release has ever been made, expect logs to easily communicate that to the user 1`] = `
-[
-  "👋 Hello! I am a tool called decaf. I help you deploy your projects.",
-  "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
-  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/",
-  "Ok, let's get started with the deployment!",
-  "--------------------------------",
-  "👀 I see that the git branch main is checked out. We will begin the deployment process from the latest commit of this branch.",
-  "🔍 First, I need to get the latest release that was created on the git branch main. I'll look for it now...",
-  "I have been told that the git branch, main, has never been released before. This will be the first release. Exciting!",
-  "📜 Next, I need to know all of the changes (git commits) that have been done on git branch main since the latest release: undefined, commit: undefined. I'll look for them now...",
-  "I found 1 git commits created since the git branch main was created.",
-  "📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...",
-  "After analyzing all of the git commits, I have determined the next release version will be: 1.0.0",
-  "🚢 It's time to ship 1.0.0! I will now run all of the deployment commands provided in your project's configuration file...",
-  "🔄 Verifying that the new release was created by re-running the get-latest-release step...",
-  "✅ Verification successful! The latest release is now 1.0.0, which matches the version that was just deployed.",
-  "🎉 Congratulations! The deployment process has completed. Bye-bye 👋!",
-]
+"
+                                           __                             ___
+                                          /\\\\ \\\\                          /'___\\\\
+                                          \\\\_\\\\ \\\\     __    ___     __   /\\\\ \\\\__/
+                                          /'_' \\\\  /'__'\\\\ /'___\\\\ /'__'\\\\ \\\\ \\\\ ,__\\\\
+                                         /\\\\ \\\\L\\\\ \\\\/\\\\  __//\\\\ \\\\__//\\\\ \\\\L\\\\.\\\\_\\\\ \\\\ \\\\_/
+                                         \\\\ \\\\___,_\\\\ \\\\____\\\\ \\\\____\\\\ \\\\__/.\\\\_\\\\\\\\ \\\\_\\\\\\\\
+                                          \\\\/__,_ /\\\\/____/\\\\/____/\\\\/__/\\\\/_/ \\\\/_/
+  ========================================================================================================================
+                             Calm & reliable automated deployments. No more coffee breaks.
+========================================================================================================================
+ 
+Hello! I am a tool called decaf. I help you deploy your projects.
+ 
+Want to know the deployment process of this codebase? Continue reading where each step is explained to you. 
+Want to learn more about me? Visit the docs --> https://github.com/levibostian/decaf/
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Perform setup before running deployment
+------------------------------------------------------------------------------------------------------------------------
+ 
+Before we can start the deployment process, I need to perform some setup steps to prepare for the deployment.
+ 
+----------
+### Setting up git user config...
+----------
+ 
+For convenience, I set the git committer name and email, just in case you wanted to make any commits in your deployment commands:
+  name: github-actions[bot]
+  email: 41898282+github-actions[bot]@users.noreply.github.com
+ 
+If you would rather use a different name and email, you can change it with the \`git_config\` option.
+ 
+----------
+### Parsing git commits...
+----------
+ 
+To make writing scripts more convenient, I run \`git log\` and parse all of the git commits into a format that is much
+easier to work with. All of them are passed as input data into each of the scripts. 
+ 
+Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
+ 
+Parsing commits for the following git branches: ...
+ 
+DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
+      options.
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Find latest release & git commits made since then
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Finding the latest release...
+----------
+ 
+I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will
+run the script that you have provided for getting the latest release...
+ 
+DONE: The script told me that the git branch, main, has never been released before. This will be the first release.
+      Exciting!
+ 
+----------
+### Finding all git commits created since the latest release...
+----------
+ 
+DONE: I found 1 git commits created since the git branch main was created.
+ 
+Here are the commits I found since the latest release:
+  - feat: trigger a release (trigger-)
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Analyze git commits
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Analyze git commits to determine the next release version...
+----------
+ 
+I need to know if any of the 1 commits created since the latest release (1) is important enough to trigger a new release
+and (2) if any are, what will be the next release's version name? To do that, I will run the script that you have
+provided for getting the next release version...
+ 
+DONE: The script told me that the next release version will be: 1.0.0
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Deploying new release 1.0.0
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Running all of your deployment commands...
+----------
+ 
+It's time to ship 1.0.0! To do that, I will run all of the scripts that you have provided for deploying the project...
+ 
+DONE: Finished running all of the deployment commands.
+ 
+----------
+### Verifying deployment...
+----------
+ 
+Deployments fail sometimes. To help you feel confident that your deployment was successful, I perform a verification
+step. To run the verification, I run the script you provided to me to get the latest release again. If the script
+doesn't produce the expected result, the verification fails, which could indicate a problem with the deployment process.
+ 
+  \$ mock-command
+DONE: Verification successful! The latest release is now 1.0.0, which matches the version that was just deployed.
+ 
+------------------------------------------------------------------------------------------------------------------------
+## All done!
+------------------------------------------------------------------------------------------------------------------------
+ 
+Summary of deployment:
+  New release version: 1.0.0
+  Latest release before deployment: This is the first release!
+  Branch deployed: main
+  Number of commits deployed: 1
+  Latest git commit deployed: feat: trigger a release (trigger-)
+  Oldest git commit deployed: feat: trigger a release (trigger-)
+ 
+The deployment process has completed. Bye-bye!
+ 
+"
 `;
 
 snapshot[`user facing logs > given running in test mode, given commits that trigger a release, expect logs to easily communicate that to the user 1`] = `
-[
-  "👋 Hello! I am a tool called decaf. I help you deploy your projects.",
-  "To learn how the deployment process of your project works, I suggest reading all of the logs that I print to you below.",
-  "If you have more questions after reading the logs, you can optionally view the documentation to learn more about the tool: https://github.com/levibostian/decaf/",
-  "Ok, let's get started with the deployment!",
-  "--------------------------------",
-  "🧪 I see that I got triggered to run from a pull request event. In pull requests, I run in test mode which means that I will run the deployment process but I will not actually deploy anything.",
-  "🧪 In test mode, I also simulate merging the current pull request and all parent pull requests (Note, I don't actually merge any pull requests). Simulating now...",
-  "🧪 Simulated merges complete. You will notice that for the remainder of the deployment process, the current branch will be main instead of the pull request branch sweet-feature.",
-  "👀 I see that the git branch main is checked out. We will begin the deployment process from the latest commit of this branch.",
-  "🔍 First, I need to get the latest release that was created on the git branch main. I'll look for it now...",
-  "I have been told that the latest release on the git branch main is: v1.0.0",
-  "📜 Next, I need to know all of the changes (git commits) that have been done on git branch main since the latest release: v1.0.0, commit: abc123. I'll look for them now...",
-  "I found 1 git commits created since the latest release of v1.0.0.",
-  "📊 Now I need to know (1) if any of these new commits need to be deployed and (2) if they should, what should the new version be. To determine this, I will analyze each git commit one-by-one...",
-  "After analyzing all of the git commits, I have determined the next release version will be: 1.0.0",
-  "🚢 It's time to ship 1.0.0! I will now run all of the deployment commands provided in your project's configuration file...",
-  "🔄 Verifying that the new release was created by re-running the get-latest-release step...",
-  "✅ Verification successful! The latest release is now 1.0.0, which matches the version that was just deployed.",
-  "🎉 Congratulations! The deployment process has completed. Bye-bye 👋!",
-]
+"
+                                           __                             ___
+                                          /\\\\ \\\\                          /'___\\\\
+                                          \\\\_\\\\ \\\\     __    ___     __   /\\\\ \\\\__/
+                                          /'_' \\\\  /'__'\\\\ /'___\\\\ /'__'\\\\ \\\\ \\\\ ,__\\\\
+                                         /\\\\ \\\\L\\\\ \\\\/\\\\  __//\\\\ \\\\__//\\\\ \\\\L\\\\.\\\\_\\\\ \\\\ \\\\_/
+                                         \\\\ \\\\___,_\\\\ \\\\____\\\\ \\\\____\\\\ \\\\__/.\\\\_\\\\\\\\ \\\\_\\\\\\\\
+                                          \\\\/__,_ /\\\\/____/\\\\/____/\\\\/__/\\\\/_/ \\\\/_/
+  ========================================================================================================================
+                             Calm & reliable automated deployments. No more coffee breaks.
+========================================================================================================================
+ 
+Hello! I am a tool called decaf. I help you deploy your projects.
+ 
+Want to know the deployment process of this codebase? Continue reading where each step is explained to you. 
+Want to learn more about me? Visit the docs --> https://github.com/levibostian/decaf/
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Perform setup before running deployment
+------------------------------------------------------------------------------------------------------------------------
+ 
+Before we can start the deployment process, I need to perform some setup steps to prepare for the deployment.
+ 
+----------
+### Simulate merging pull requests...
+----------
+ 
+I see that I got triggered from a pull request event. This means that I will run the full deployment process but I will
+not actually push a release. This allows you to safely test your full deployment process.
+ 
+To make the test most accurate. I'm going to simulate what would happen if this pull request and all of its parent pull
+requests are merged. Don't worry, this will not actually merge any pull requests!
+ 
+Simulating pull request merges...
+ 
+\`feature-branch-A\` (#123) --> \`feature-branch-B\`... using 'squash'.
+ 
+\`feature-branch-B\` (#124) --> \`main\`... using 'rebase'.
+ 
+DONE: Merging complete. The deployment will run on the \`main\` branch, as if all of the pull requests were merged.
+ 
+----------
+### Setting up git user config...
+----------
+ 
+For convenience, I set the git committer name and email, just in case you wanted to make any commits in your deployment commands:
+  name: github-actions[bot]
+  email: 41898282+github-actions[bot]@users.noreply.github.com
+ 
+If you would rather use a different name and email, you can change it with the \`git_config\` option.
+ 
+----------
+### Parsing git commits...
+----------
+ 
+To make writing scripts more convenient, I run \`git log\` and parse all of the git commits into a format that is much
+easier to work with. All of them are passed as input data into each of the scripts. 
+ 
+Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
+ 
+Parsing commits for the following git branches: ...
+ 
+DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
+      options.
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Find latest release & git commits made since then
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Finding the latest release...
+----------
+ 
+I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will
+run the script that you have provided for getting the latest release...
+ 
+DONE: The script told me that the latest release is version: v1.0.0, which was shipped from git commit: abc123
+ 
+----------
+### Finding all git commits created since the latest release...
+----------
+ 
+DONE: I found 1 git commits created since the latest release of v1.0.0.
+ 
+Here are the commits I found since the latest release:
+  - feat: trigger a release (trigger-)
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Analyze git commits
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Analyze git commits to determine the next release version...
+----------
+ 
+I need to know if any of the 1 commits created since the latest release (1) is important enough to trigger a new release
+and (2) if any are, what will be the next release's version name? To do that, I will run the script that you have
+provided for getting the next release version...
+ 
+DONE: The script told me that the next release version will be: 1.0.0
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Deploying new release 1.0.0
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Running all of your deployment commands...
+----------
+ 
+It's time to ship 1.0.0! To do that, I will run all of the scripts that you have provided for deploying the project...
+ 
+DONE: Finished running all of the deployment commands.
+ 
+----------
+### Verifying deployment...
+----------
+ 
+Deployments fail sometimes. To help you feel confident that your deployment was successful, I perform a verification
+step. To run the verification, I run the script you provided to me to get the latest release again. If the script
+doesn't produce the expected result, the verification fails, which could indicate a problem with the deployment process.
+ 
+  \$ mock-command
+DONE: Verification successful! The latest release is now 1.0.0, which matches the version that was just deployed.
+ 
+------------------------------------------------------------------------------------------------------------------------
+## All done!
+------------------------------------------------------------------------------------------------------------------------
+ 
+Summary of deployment:
+  New release version: 1.0.0
+  Latest release before deployment: v1.0.0
+  Branch deployed: main
+  Number of commits deployed: 1
+  Latest git commit deployed: feat: trigger a release (trigger-)
+  Oldest git commit deployed: feat: trigger a release (trigger-)
+ 
+The deployment process has completed. Bye-bye!
+ 
+"
 `;

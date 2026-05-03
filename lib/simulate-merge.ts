@@ -1,4 +1,5 @@
 import { Git } from "./git.ts"
+import { Logger } from "./log.ts"
 import { GitCommit } from "./types/git.ts"
 
 export interface SimulateMerge {
@@ -42,7 +43,7 @@ export interface SimulateMerge {
 }
 
 export class SimulateMergeImpl implements SimulateMerge {
-  constructor(private git: Git) {}
+  constructor(private git: Git, private log: Logger) {}
 
   performSimulation(
     simulateMergeType: "merge" | "rebase" | "squash",

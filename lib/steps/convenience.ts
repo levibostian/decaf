@@ -11,7 +11,8 @@ import globrex from "globrex"
  * One goal of this project is to deploy your code quickly and easily. One way to do that is avoid a lot of the gotchas.
  */
 export interface ConvenienceStep {
-  runConvenienceCommands(branchFilters?: string[], commitLimit?: number): Promise<{
+  setGitUserConfig(): Promise<{ gitConfigName: string; gitConfigEmail: string }>
+  parseGitCommits(branchFilters: string[], commitLimit: number): Promise<{
     gitCommitsCurrentBranch: GitCommit[]
     gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
   }>
@@ -34,22 +35,37 @@ export class ConvenienceStepImpl implements ConvenienceStep {
     })
   }
 
-  async runConvenienceCommands(branchFilters: string[] = [], commitLimit?: number): Promise<{
-    gitCommitsCurrentBranch: GitCommit[]
-    gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
-  }> {
-    this.log.debug(`Running convenience commands...`)
-
+  async setGitUserConfig(): Promise<{ gitConfigName: string; gitConfigEmail: string }> {
     // Set the git user name and email so the user can create commits in their deployment commands.
     const userProvidedGitCommitterConfig = this.environment.getGitConfigInput()
     if (userProvidedGitCommitterConfig) {
       this.log.debug(`User provided git committer config: ${JSON.stringify(userProvidedGitCommitterConfig)}`)
-      this.log.notice(
-        `I will set the git committer config to the user provided values: name: ${userProvidedGitCommitterConfig.name}, email: ${userProvidedGitCommitterConfig.email}`,
-      )
-      await this.git.setUser({ name: userProvidedGitCommitterConfig.name, email: userProvidedGitCommitterConfig.email })
-    }
 
+      await this.git.setUser({ name: userProvidedGitCommitterConfig.name, email: userProvidedGitCommitterConfig.email })
+
+      return {
+        gitConfigName: userProvidedGitCommitterConfig.name,
+        gitConfigEmail: userProvidedGitCommitterConfig.email,
+      }
+    } else {
+      const defaultGitConfigName = "github-actions[bot]"
+      const defaultGitConfigEmail = "41898282+github-actions[bot]@users.noreply.github.com"
+
+      this.log.debug(`No user provided git committer config found, using defaults: ${defaultGitConfigName} <${defaultGitConfigEmail}>`)
+
+      await this.git.setUser({ name: defaultGitConfigName, email: defaultGitConfigEmail })
+
+      return {
+        gitConfigName: defaultGitConfigName,
+        gitConfigEmail: defaultGitConfigEmail,
+      }
+    }
+  }
+
+  async parseGitCommits(branchFilters: string[], commitLimit: number): Promise<{
+    gitCommitsCurrentBranch: GitCommit[]
+    gitCommitsAllLocalBranches: { [branchName: string]: GitCommit[] }
+  }> {
     this.log.debug(`Getting commits for all branches and parsing commits...`)
     this.log.debug(`Branch filters provided: ${JSON.stringify(branchFilters)}`)
 
