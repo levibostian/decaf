@@ -1,30 +1,49 @@
+import { parseArgs } from "@std/cli/parse-args"
 import { run } from "./deploy.ts"
-import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
-import { MergeConflictError } from "./lib/git.ts"
-import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
-import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
-import { StepRunnerImpl } from "./lib/step-runner.ts"
-import { ConvenienceStepImpl } from "./lib/steps/convenience.ts"
 import { processCommandLineArgs } from "./cli.ts"
 import * as di from "./lib/di.ts"
+import { MergeConflictError } from "./lib/git.ts"
 import { postPullRequestComment, pullRequestCommentTemplate, PullRequestCommentTemplateData } from "./lib/pull-request-comment.ts"
+import { PrepareTestModeEnvStepImpl } from "./lib/steps/prepare-testmode-env.ts"
+import { ConvenienceStepImpl } from "./lib/steps/convenience.ts"
+import { GetCommitsSinceLatestReleaseStepImpl } from "./lib/steps/get-commits-since-latest-release.ts"
+import { runShebangCommand } from "./lib/shebang.ts"
+import { SimulateMergeImpl } from "./lib/simulate-merge.ts"
+import { StepRunnerImpl } from "./lib/step-runner.ts"
 
 // put all the logic in a main function so that the e2e tests can run the
 // function and be able to have a clean environment for each test. If all this code was defined
 // at the top level, the e2e tests would not be able to reset the DI graph between tests.
 // Was using dynamic imports in the e2e tests, but code coverage didn't recognize any of this code then.
 export async function main() {
-  const logger = di.getGraph().get("logger")
+  const parsedArgs = parseArgs(Deno.args, { stopEarly: true })
+  const positionalArgs = parsedArgs._.map((arg) => String(arg))
+  const [command, ...restArgs] = positionalArgs
+  const diGraph = di.getGraph()
+  const logger = diGraph.get("logger")
+  const exec = diGraph.get("exec")
+
+  // there is 1 command, "shebang". Else, we run the normal process.
+  if (command === "shebang") {
+    try {
+      await runShebangCommand({
+        command: restArgs.join(" ").trim(),
+        exec,
+        logger,
+      })
+    } catch (_error) {
+      Deno.exit(1)
+    }
+    return
+  }
 
   // After args are processed, they are available to the environment module.
   processCommandLineArgs(Deno.args)
 
   // DI resolution happens here, after any test overrides have been applied
-  const diGraph = di.getGraph()
   const githubApi = diGraph.get("github")
   const environment = diGraph.get("environment")
   const gitRepo = diGraph.get("gitRepoManager")
-  const exec = diGraph.get("exec")
 
   const pullRequestInfo = environment.isRunningInPullRequest()
   const buildInfo = environment.getBuild()
