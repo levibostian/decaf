@@ -3,16 +3,10 @@
   "extends": [
     "config:best-practices", 
     ":automergeDigest",
-    "github>Omochice/renovate-config:deno"
-],
-  "automerge": true,
-  "timezone": "America/Chicago",
-  "schedule": ["every weekend"],
-  "packageRules": [
-    {
-      "groupName": "GitHub Actions",
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch"]
-    }
-  ]
+    ":automergeAll",
+    ":separateMultipleMajorReleases",
+    ":maintainLockFilesWeekly",
+    "schedule:weekends",
+    ":timezone(America/Chicago)"
+  ],
 }

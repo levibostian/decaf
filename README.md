@@ -69,6 +69,8 @@ jobs:
 
 Install the CLI tool on your CI server and run it. [This is the list of CI services this tool supports](https://github.com/semantic-release/env-ci#supported-ci). 
 
+### Install CLI via script
+
 ```sh 
 # Install a specific version of the tool (recommended for teams)
 curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bash "1.0.0"
@@ -79,6 +81,23 @@ curl -fsSL https://github.com/levibostian/decaf/blob/HEAD/install?raw=true | bas
 ~/.local/bin/decaf --args-go-here 
 # dont worry about the arguments yet, we will go over them in the remaining sections
 ```
+
+### Install CLI via aqua 
+
+Install via [aqua](https://aquaproj.github.io/):
+
+```sh
+# install: 
+aqua g -i levibostian/decaf@<version>
+aqua install
+
+# run: 
+decaf ...
+# alternative: 
+aqua exec -- decaf ...
+```
+
+> Note: Replace `<version>` with [the latest version](https://github.com/levibostian/decaf/releases): ![GitHub Release](https://img.shields.io/github/v/release/levibostian/decaf?color=%236F4E37)
 
 ## Options
 
@@ -132,6 +151,8 @@ You will follow this pattern for all 3 of your deployment scripts. Now, let's be
 > **Writing your scripts using Node.js, Bun, or Deno?:** Use the [decaf SDK](https://github.com/levibostian/decaf-sdk-deno/) to make writing your step scripts easier! 
 
 > Tip: Use the `current_working_directory` option to run all commands from a subdirectory (e.g., `current_working_directory: "./deployment"`). This keeps deployment scripts and dependencies separate from your application code. decaf also sets the `DECAF_ROOT_WORKING_DIRECTORY` environment variable to the root of your repository (where decaf is executed from), so you can change back to the root directory in your script. 
+>
+> **Shebang shortcut:** You can run a reusable script straight from any git repo using the `shebang` command: `decaf shebang <git-url>/<file>@<ref> [args...]`. Example: `decaf shebang git@github.com/levibostian/decaf-script-major-tag.git/run.ts@0.13.0 --commit-sha $(git rev-parse HEAD) --tag-prefix v`.
 
 ### Deployment script 1: Get latest release version
 
