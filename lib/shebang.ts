@@ -9,6 +9,11 @@ type ParsedShebangCommand = {
   args: string
 }
 
+type ParsedFetchHead = {
+  refType: "tag" | "branch" | "commit"
+  refName: string
+}
+
 /**
  * Format: <git-clone-url>/<relative-file>@<ref> [args...]
  *
@@ -28,6 +33,38 @@ const parseShebangCommand = (command: string): ParsedShebangCommand | undefined 
     ref,
     args: rawArgs.trim(),
   }
+}
+
+const parseFetchHead = (contents: string): ParsedFetchHead | undefined => {
+  const firstLine = contents.split("\n").find((line) => line.trim())
+  if (!firstLine) return undefined
+
+  const [sha, ...rest] = firstLine.split("\t")
+  if (!sha?.trim()) return undefined
+
+  const description = rest.join("\t").trim()
+
+  const tagMatch = /tag '([^']+)'/.exec(description)
+  if (tagMatch) {
+    return { refType: "tag", refName: tagMatch[1] }
+  }
+
+  const branchMatch = /branch '([^']+)'/.exec(description)
+  if (branchMatch) {
+    return { refType: "branch", refName: branchMatch[1] }
+  }
+
+  const refTagMatch = /ref 'refs\/tags\/([^']+)'/.exec(description)
+  if (refTagMatch) {
+    return { refType: "tag", refName: refTagMatch[1] }
+  }
+
+  const refBranchMatch = /ref 'refs\/heads\/([^']+)'/.exec(description)
+  if (refBranchMatch) {
+    return { refType: "branch", refName: refBranchMatch[1] }
+  }
+
+  return { refType: "commit", refName: sha.trim() }
 }
 
 export async function runShebangCommand(
@@ -88,6 +125,15 @@ export async function runShebangCommand(
 
     const commandToRun = parsed.args ? `${absoluteFilePath} ${parsed.args}` : absoluteFilePath
 
+    const fetchHeadContents = await Deno.readTextFile(join(tempDir, ".git", "FETCH_HEAD"))
+    const fetchHead = parseFetchHead(fetchHeadContents)
+    const envVars = fetchHead
+      ? {
+        DECAF_SHEBANG_REF: fetchHead.refType,
+        DECAF_SHEBANG_REF_NAME: fetchHead.refName,
+      }
+      : undefined
+
     await exec.run({
       command: `chmod +x ${absoluteFilePath}`,
       input: undefined,
@@ -100,6 +146,7 @@ export async function runShebangCommand(
       input: undefined,
       displayLogs: true, // so user sees the output of their script
       currentWorkingDirectory: Deno.cwd(),
+      envVars,
       throwOnNonZeroExitCode: true,
     })
   } catch (error) {

@@ -43,8 +43,11 @@
     }
   },
   "lock": {
-    "path": "./deno.lock",
-    "frozen": true
+    "path": "./deno.lock"
+    // dont enable frozen to make renovatebot work. renovatebot will run 'deno install' which should 
+    // update the lock file for you. if frozen is enabled, deno will fail the deno install command. 
+    // renovatebot needs to add a feature allowing you to pass in --frozen=false to the deno install command.
+    // "frozen": true
   },
   "test": {
     // run the deploy script tests separately. 

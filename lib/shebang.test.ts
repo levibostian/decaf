@@ -43,12 +43,17 @@ Deno.test("runShebangCommand - throws on invalid target", async () => {
   )
 })
 
-const runAndCaptureCommands = async (command: string): Promise<string[]> => {
-  const execMock = mock<Exec>()
-  const commands: string[] = []
+type CapturedRun = {
+  command: string
+  envVars?: { [key: string]: string }
+}
 
-  when(execMock, "run", async ({ command: execCommand }) => {
-    commands.push(execCommand)
+const runAndCaptureCommands = async (command: string): Promise<CapturedRun[]> => {
+  const execMock = mock<Exec>()
+  const runs: CapturedRun[] = []
+
+  when(execMock, "run", async ({ command: execCommand, envVars }) => {
+    runs.push({ command: execCommand, envVars })
     return successRunResult
   })
 
@@ -60,7 +65,7 @@ const runAndCaptureCommands = async (command: string): Promise<string[]> => {
     logger,
   })
 
-  return commands
+  return runs
 }
 
 Deno.test("runShebangCommand - clones and runs resolved command", async () => {
@@ -69,18 +74,19 @@ Deno.test("runShebangCommand - clones and runs resolved command", async () => {
   stub(Deno, "makeTempDir", async () => tempDir)
   stub(Deno, "remove", async () => {})
   stub(Deno, "stat", async () => ({} as Deno.FileInfo))
+  stub(Deno, "readTextFile", async () => "fd1f6c959200073e4f532cc82cc1cdaa65b45e21\t\tbranch 'main' of github.com:levibostian/decaf")
 
-  const commands = await runAndCaptureCommands(
+  const runs = await runAndCaptureCommands(
     "git@github.com/owner/repo.git/run.ts@v1.0.0 --flag value",
   )
 
-  assertEquals(commands.length, 6)
-  assertEquals(commands[0], `git init ${tempDir}`)
-  assertEquals(commands[1], `git -C ${tempDir} remote add origin git@github.com/owner/repo.git`)
-  assertEquals(commands[2], `git -C ${tempDir} fetch --depth 1 origin v1.0.0`)
-  assertEquals(commands[3], `git -C ${tempDir} checkout FETCH_HEAD`)
-  assertEquals(commands[4], `chmod +x ${tempDir}/run.ts`)
-  assertEquals(commands[5], `${tempDir}/run.ts --flag value`)
+  assertEquals(runs.length, 6)
+  assertEquals(runs[0].command, `git init ${tempDir}`)
+  assertEquals(runs[1].command, `git -C ${tempDir} remote add origin git@github.com/owner/repo.git`)
+  assertEquals(runs[2].command, `git -C ${tempDir} fetch --depth 1 origin v1.0.0`)
+  assertEquals(runs[3].command, `git -C ${tempDir} checkout FETCH_HEAD`)
+  assertEquals(runs[4].command, `chmod +x ${tempDir}/run.ts`)
+  assertEquals(runs[5].command, `${tempDir}/run.ts --flag value`)
 })
 
 Deno.test("runShebangCommand - parses clone URLs and refs", async () => {
@@ -89,6 +95,7 @@ Deno.test("runShebangCommand - parses clone URLs and refs", async () => {
   stub(Deno, "makeTempDir", async () => tempDir)
   stub(Deno, "remove", async () => {})
   stub(Deno, "stat", async () => ({} as Deno.FileInfo))
+  stub(Deno, "readTextFile", async () => "fd1f6c959200073e4f532cc82cc1cdaa65b45e21\t\tbranch 'main' of github.com:levibostian/decaf")
 
   const scenarios = [
     {
@@ -118,13 +125,67 @@ Deno.test("runShebangCommand - parses clone URLs and refs", async () => {
   ]
 
   for (const scenario of scenarios) {
-    const commands = await runAndCaptureCommands(
+    const runs = await runAndCaptureCommands(
       scenario.command,
     )
 
-    assertEquals(commands[1], `git -C ${tempDir} remote add origin ${scenario.cloneUrl}`)
-    assertEquals(commands[2], `git -C ${tempDir} fetch --depth 1 origin ${scenario.ref}`)
-    assertEquals(commands[4], `chmod +x ${tempDir}/run.ts`)
-    assertEquals(commands[5], scenario.expectedRun)
+    assertEquals(runs[1].command, `git -C ${tempDir} remote add origin ${scenario.cloneUrl}`)
+    assertEquals(runs[2].command, `git -C ${tempDir} fetch --depth 1 origin ${scenario.ref}`)
+    assertEquals(runs[4].command, `chmod +x ${tempDir}/run.ts`)
+    assertEquals(runs[5].command, scenario.expectedRun)
   }
+})
+
+Deno.test("runShebangCommand - sets ref env vars from tag FETCH_HEAD", async () => {
+  const tempDir = "/tmp/decaf-shebang-ref-tag"
+
+  stub(Deno, "makeTempDir", async () => tempDir)
+  stub(Deno, "remove", async () => {})
+  stub(Deno, "stat", async () => ({} as Deno.FileInfo))
+  stub(Deno, "readTextFile", async () => "672d4ed6704faecd9ab58cb44255f9f16af34f49\t\ttag '0.15.0' of github.com:levibostian/decaf")
+
+  const runs = await runAndCaptureCommands(
+    "https://github.com/owner/repo.git/run.ts@v1.0.0",
+  )
+
+  assertEquals(runs[5].envVars, {
+    DECAF_SHEBANG_REF: "tag",
+    DECAF_SHEBANG_REF_NAME: "0.15.0",
+  })
+})
+
+Deno.test("runShebangCommand - sets ref env vars from branch FETCH_HEAD", async () => {
+  const tempDir = "/tmp/decaf-shebang-ref-branch"
+
+  stub(Deno, "makeTempDir", async () => tempDir)
+  stub(Deno, "remove", async () => {})
+  stub(Deno, "stat", async () => ({} as Deno.FileInfo))
+  stub(Deno, "readTextFile", async () => "fd1f6c959200073e4f532cc82cc1cdaa65b45e21\t\tbranch 'main' of github.com:levibostian/decaf")
+
+  const runs = await runAndCaptureCommands(
+    "https://github.com/owner/repo.git/run.ts@main",
+  )
+
+  assertEquals(runs[5].envVars, {
+    DECAF_SHEBANG_REF: "branch",
+    DECAF_SHEBANG_REF_NAME: "main",
+  })
+})
+
+Deno.test("runShebangCommand - sets ref env vars from commit FETCH_HEAD", async () => {
+  const tempDir = "/tmp/decaf-shebang-ref-commit"
+
+  stub(Deno, "makeTempDir", async () => tempDir)
+  stub(Deno, "remove", async () => {})
+  stub(Deno, "stat", async () => ({} as Deno.FileInfo))
+  stub(Deno, "readTextFile", async () => "a4f51d9a7b5a9ad9eaef9d64dcd2be3d5b602f3c\t\tnot-for-merge")
+
+  const runs = await runAndCaptureCommands(
+    "https://github.com/owner/repo.git/run.ts@a4f51d9",
+  )
+
+  assertEquals(runs[5].envVars, {
+    DECAF_SHEBANG_REF: "commit",
+    DECAF_SHEBANG_REF_NAME: "a4f51d9a7b5a9ad9eaef9d64dcd2be3d5b602f3c",
+  })
 })
