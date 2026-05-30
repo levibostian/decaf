@@ -95,10 +95,45 @@ export async function runShebangCommand(
 
     const commandToRun = parsed.args ? `${absoluteFilePath} ${parsed.args}` : absoluteFilePath
 
+    let envVars = Deno.env.toObject()
+    logger.debug(`Running shebang command with env vars: ${JSON.stringify(envVars)}`)
+
+    const miseCheck = await exec.run({
+      command: "command -v mise",
+      input: undefined,
+      displayLogs: false,
+      throwOnNonZeroExitCode: false,
+    })
+
+    if (miseCheck.exitCode !== 0) {
+      logger.debug("Mise not found in PATH, installing it for shebang command...")
+
+      const installMiseResult = await exec.run({
+        command: "curl https://mise.run | MISE_INSTALL_PATH=~/.local/bin/mise sh",
+        input: undefined,
+        displayLogs: false,
+        throwOnNonZeroExitCode: true,
+      })
+
+      if (installMiseResult.exitCode === 0) {
+        logger.debug("Mise installed successfully, adding it to PATH for shebang command...")
+
+        const misePath = "~/.local/bin/mise"
+        const currentPath = Deno.env.get("PATH") || ""
+        const updatedPath = currentPath ? `${currentPath}:${misePath}` : misePath
+
+        envVars = {
+          ...envVars,
+          PATH: updatedPath,
+        }
+      }
+    }
+
     await exec.run({
       command: commandToRun,
       input: undefined,
       displayLogs: true, // so user sees the output of their script
+      envVars,
       currentWorkingDirectory: Deno.cwd(),
       throwOnNonZeroExitCode: true,
     })
