@@ -134,7 +134,7 @@ export async function runShebangCommand(
       input: undefined,
       displayLogs: true, // so user sees the output of their script
       envVars,
-      currentWorkingDirectory: Deno.cwd(),
+      currentWorkingDirectory: tempDir,
       throwOnNonZeroExitCode: true,
     })
   } catch (error) {
