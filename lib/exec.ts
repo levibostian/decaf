@@ -89,21 +89,21 @@ export class ExecImpl implements Exec {
 
     const builder = new CommandBuilder()
       .command(command)
-      .stdout("piped")
-      .stderr("piped")
+      //      .stdout("piped")
+      //    .stderr("piped")
       .env(environmentVariablesToPassToCommand)
       .cwd(currentWorkingDirectory || Deno.cwd())
 
     const result = await builder.spawn()
 
     if (!suppressOutputLogs) {
-      if (displayLogs) {
-        log.msg(result.stdout)
-        log.msg(result.stderr)
-      } else {
-        log.debug(result.stdout)
-        log.debug(result.stderr)
-      }
+      //   if (displayLogs) {
+      //     log.msg(result.stdout)
+      //     log.msg(result.stderr)
+      //   } else {
+      //     log.debug(result.stdout)
+      //     log.debug(result.stderr)
+      //   }
     }
 
     // We want to capture the stdout of the command but we also want to stream it to the console. By using streams, this allows us to
@@ -194,8 +194,8 @@ export class ExecImpl implements Exec {
 
     return {
       exitCode: code,
-      stdout: result.stdout,
-      stderr: result.stderr,
+      stdout: "", // result.stdout,
+      stderr: "", // result.stderr,
       output: commandOutput,
     }
   }
