@@ -87,12 +87,14 @@ export class ExecImpl implements Exec {
       environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
     }
 
-    const result = await new CommandBuilder()
+    const builder = new CommandBuilder()
       .command(command)
       .stdout("piped")
       .stderr("piped")
       .env(environmentVariablesToPassToCommand)
       .cwd(currentWorkingDirectory || Deno.cwd())
+
+    const result = await builder.spawn()
 
     if (!suppressOutputLogs) {
       if (displayLogs) {
