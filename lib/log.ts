@@ -100,7 +100,7 @@ export class Logger implements ShStyleLogger, Pick<Console, "debug">, Pick<Conso
       // Fix: split every argument on newlines before printing so each line gets its own ::debug:: prefix.
       data.forEach((item) => {
         String(item).split("\n").forEach((line) => {
-          console.log(this.isOnGitHubActions ? `::debug::${line}` : line)
+          process.stdout.write((this.isOnGitHubActions ? `::debug::${line}` : line) + "\n")
         })
       })
     }
