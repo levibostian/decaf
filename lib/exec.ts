@@ -1,5 +1,6 @@
 import { AnyStepInput } from "./types/environment.ts"
 import { Logger } from "./log.ts"
+import { CommandBuilder } from "@david/shell"
 
 export interface RunResult {
   exitCode: number
@@ -86,60 +87,77 @@ export class ExecImpl implements Exec {
       environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
     }
 
+    const result = await new CommandBuilder()
+      .command(command)
+      .stdout("piped")
+      .stderr("piped")
+      .env(environmentVariablesToPassToCommand)
+      .cwd(currentWorkingDirectory || Deno.cwd())
+
+    if (!suppressOutputLogs) {
+      if (displayLogs) {
+        log.msg(result.stdout)
+        log.msg(result.stderr)
+      } else {
+        log.debug(result.stdout)
+        log.debug(result.stderr)
+      }
+    }
+
     // We want to capture the stdout of the command but we also want to stream it to the console. By using streams, this allows us to
     // output the stdout/stderr to the console in real-time instead of waiting for the command to finish before we see the output.
     //
     // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
     // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
-    const process = new Deno.Command("sh", {
-      args: ["-c", command],
-      stdout: "piped",
-      stderr: "piped",
-      env: environmentVariablesToPassToCommand,
-      cwd: currentWorkingDirectory,
-    })
+    // const process = new Deno.Command("sh", {
+    //   args: ["-c", command],
+    //   stdout: "piped",
+    //   stderr: "piped",
+    //   env: environmentVariablesToPassToCommand,
+    //   cwd: currentWorkingDirectory,
+    // })
 
-    const child = process.spawn()
+    //const child = process.spawn()
 
-    let capturedStdout = ""
-    let capturedStderr = ""
+    // let capturedStdout = ""
+    // let capturedStderr = ""
 
-    child.stdout.pipeTo(
-      new WritableStream({
-        write(chunk) {
-          const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+    // child.stdout.pipeTo(
+    //   new WritableStream({
+    //     write(chunk) {
+    //       const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
-          if (!suppressOutputLogs) {
-            if (displayLogs) {
-              log.msg(decodedChunk)
-            } else {
-              log.debug(decodedChunk)
-            }
-          }
+    //       if (!suppressOutputLogs) {
+    //         if (displayLogs) {
+    //           log.msg(decodedChunk)
+    //         } else {
+    //           log.debug(decodedChunk)
+    //         }
+    //       }
 
-          capturedStdout += decodedChunk
-        },
-      }),
-    )
-    child.stderr.pipeTo(
-      new WritableStream({
-        write(chunk) {
-          const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+    //       capturedStdout += decodedChunk
+    //     },
+    //   }),
+    // )
+    // child.stderr.pipeTo(
+    //   new WritableStream({
+    //     write(chunk) {
+    //       const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
 
-          if (!suppressOutputLogs) {
-            if (displayLogs) {
-              log.msg(decodedChunk)
-            } else {
-              log.debug(decodedChunk)
-            }
-          }
+    //       if (!suppressOutputLogs) {
+    //         if (displayLogs) {
+    //           log.msg(decodedChunk)
+    //         } else {
+    //           log.debug(decodedChunk)
+    //         }
+    //       }
 
-          capturedStderr += decodedChunk
-        },
-      }),
-    )
+    //       capturedStderr += decodedChunk
+    //     },
+    //   }),
+    // )
 
-    const code = (await child.status).code
+    const code = result.code
 
     let commandOutput: Record<string, unknown> | undefined = undefined
 
@@ -174,8 +192,8 @@ export class ExecImpl implements Exec {
 
     return {
       exitCode: code,
-      stdout: capturedStdout,
-      stderr: capturedStderr,
+      stdout: result.stdout,
+      stderr: result.stderr,
       output: commandOutput,
     }
   }

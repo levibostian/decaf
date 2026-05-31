@@ -10,6 +10,7 @@
     "jsr:@david/path@~0.3.2": "0.3.2",
     "jsr:@david/service-store@0.3": "0.3.1",
     "jsr:@david/shell@0.4": "0.4.0",
+    "jsr:@david/shell@0.5.1": "0.5.1",
     "jsr:@david/which@0.7": "0.7.0",
     "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
     "jsr:@levibostian/sh-style@0.9": "0.9.0",
@@ -57,7 +58,7 @@
       "dependencies": [
         "jsr:@david/console-static-text",
         "jsr:@david/path@~0.3.2",
-        "jsr:@david/shell",
+        "jsr:@david/shell@0.4",
         "jsr:@david/which",
         "jsr:@std/fmt@1"
       ]
@@ -70,6 +71,17 @@
     },
     "@david/shell@0.4.0": {
       "integrity": "7863cce36754571dabd593132b32a3aa68a55b7d6e09a4b7964da4165c37abe9",
+      "dependencies": [
+        "jsr:@david/console-static-text",
+        "jsr:@david/path@0.3",
+        "jsr:@david/which",
+        "jsr:@std/fmt@1",
+        "jsr:@std/io",
+        "jsr:@std/path@1"
+      ]
+    },
+    "@david/shell@0.5.1": {
+      "integrity": "2469318121505246c0633fd0cc34e907d8ee1716cbe41264eb78026f31b53d6c",
       "dependencies": [
         "jsr:@david/console-static-text",
         "jsr:@david/path@0.3",
@@ -260,6 +272,7 @@
     "dependencies": [
       "jsr:@david/dax@0.47",
       "jsr:@david/service-store@0.3",
+      "jsr:@david/shell@0.5.1",
       "jsr:@levibostian/cathy@^2.0.1",
       "jsr:@levibostian/sh-style@0.9",
       "jsr:@std/assert@^1.0.12",
