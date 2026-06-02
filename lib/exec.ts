@@ -87,77 +87,50 @@ export class ExecImpl implements Exec {
       environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
     }
 
+    let capturedStdout = ""
+    let capturedStderr = ""
+
     const builder = new CommandBuilder()
       .command(command)
-      //      .stdout("piped")
-      //    .stderr("piped")
+      .stdout(
+        new WritableStream({
+          write(chunk) {
+            const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+
+            if (!suppressOutputLogs) {
+              if (displayLogs) {
+                log.msg(decodedChunk)
+              } else {
+                log.debug(decodedChunk)
+              }
+            }
+
+            capturedStdout += decodedChunk
+          },
+        }),
+      )
+      .stderr(
+        new WritableStream({
+          write(chunk) {
+            const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+
+            if (!suppressOutputLogs) {
+              if (displayLogs) {
+                log.msg(decodedChunk)
+              } else {
+                log.debug(decodedChunk)
+              }
+            }
+
+            capturedStderr += decodedChunk
+          },
+        }),
+      )
       .env(environmentVariablesToPassToCommand)
       .cwd(currentWorkingDirectory || Deno.cwd())
+      .noThrow()
 
     const result = await builder.spawn()
-
-    if (!suppressOutputLogs) {
-      //   if (displayLogs) {
-      //     log.msg(result.stdout)
-      //     log.msg(result.stderr)
-      //   } else {
-      //     log.debug(result.stdout)
-      //     log.debug(result.stderr)
-      //   }
-    }
-
-    // We want to capture the stdout of the command but we also want to stream it to the console. By using streams, this allows us to
-    // output the stdout/stderr to the console in real-time instead of waiting for the command to finish before we see the output.
-    //
-    // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
-    // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
-    // const process = new Deno.Command("sh", {
-    //   args: ["-c", command],
-    //   stdout: "piped",
-    //   stderr: "piped",
-    //   env: environmentVariablesToPassToCommand,
-    //   cwd: currentWorkingDirectory,
-    // })
-
-    //const child = process.spawn()
-
-    // let capturedStdout = ""
-    // let capturedStderr = ""
-
-    // child.stdout.pipeTo(
-    //   new WritableStream({
-    //     write(chunk) {
-    //       const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
-
-    //       if (!suppressOutputLogs) {
-    //         if (displayLogs) {
-    //           log.msg(decodedChunk)
-    //         } else {
-    //           log.debug(decodedChunk)
-    //         }
-    //       }
-
-    //       capturedStdout += decodedChunk
-    //     },
-    //   }),
-    // )
-    // child.stderr.pipeTo(
-    //   new WritableStream({
-    //     write(chunk) {
-    //       const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
-
-    //       if (!suppressOutputLogs) {
-    //         if (displayLogs) {
-    //           log.msg(decodedChunk)
-    //         } else {
-    //           log.debug(decodedChunk)
-    //         }
-    //       }
-
-    //       capturedStderr += decodedChunk
-    //     },
-    //   }),
-    // )
 
     const code = result.code
 
@@ -194,8 +167,8 @@ export class ExecImpl implements Exec {
 
     return {
       exitCode: code,
-      stdout: "", // result.stdout,
-      stderr: "", // result.stderr,
+      stdout: capturedStdout,
+      stderr: capturedStderr,
       output: commandOutput,
     }
   }
