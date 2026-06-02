@@ -95,34 +95,36 @@ export class ExecImpl implements Exec {
       .stdout(
         new WritableStream({
           write(chunk) {
-            const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+            const decodedChunk = new TextDecoder().decode(chunk)
 
             if (!suppressOutputLogs) {
               if (displayLogs) {
-                log.msg(decodedChunk)
+                // passthrough exact command output so nested ::debug:: control lines are not mutated by sh-style.
+                log.log(decodedChunk)
               } else {
-                log.debug(decodedChunk)
+                log.debug(decodedChunk.trimEnd())
               }
             }
 
-            capturedStdout += decodedChunk
+            capturedStdout += decodedChunk.trimEnd()
           },
         }),
       )
       .stderr(
         new WritableStream({
           write(chunk) {
-            const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+            const decodedChunk = new TextDecoder().decode(chunk)
 
             if (!suppressOutputLogs) {
               if (displayLogs) {
-                log.msg(decodedChunk)
+                // passthrough exact command output so nested ::debug:: control lines are not mutated by sh-style.
+                log.log(decodedChunk)
               } else {
-                log.debug(decodedChunk)
+                log.debug(decodedChunk.trimEnd())
               }
             }
 
-            capturedStderr += decodedChunk
+            capturedStderr += decodedChunk.trimEnd()
           },
         }),
       )

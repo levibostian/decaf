@@ -1,5 +1,6 @@
 import { ExecImpl } from "./exec.ts"
 import { assertEquals } from "@std/assert"
+import process from "node:process"
 import { DeployStepInput } from "./types/environment.ts"
 import { GitCommitFake } from "./types/git.test.ts"
 import { getGraph } from "../lib/di.ts"
@@ -279,4 +280,30 @@ Deno.test("command with both input and custom envVars", async () => {
 
   assertEquals(exitCode, 0)
   assertEquals(stdout.startsWith("custom_value-"), true)
+})
+
+Deno.test("displayLogs passthrough preserves preformatted debug blank lines", async () => {
+  const logger = getGraph().get("logger")
+  const localExec = new ExecImpl(logger)
+
+  const originalStdoutWrite = process.stdout.write
+  let capturedOutput = ""
+
+  // deno-lint-ignore no-explicit-any
+  process.stdout.write = ((chunk: any) => {
+    capturedOutput += typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk)
+    return true
+  }) as typeof process.stdout.write
+
+  try {
+    await localExec.run({
+      command: `python3 -c "import sys; sys.stdout.write('::debug::line1\\n::debug::\\u200B\\n::debug::line3\\n')"`,
+      input: givenPluginInput,
+      displayLogs: true,
+    })
+  } finally {
+    process.stdout.write = originalStdoutWrite
+  }
+
+  assertEquals(capturedOutput.includes("::debug::line1\n::debug::\u200B\n::debug::line3\n"), true)
 })
