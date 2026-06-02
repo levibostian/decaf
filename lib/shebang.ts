@@ -129,14 +129,21 @@ export async function runShebangCommand(
       }
     }
 
-    await exec.run({
+    const result = await exec.run({
       command: commandToRun,
       input: undefined,
       displayLogs: true, // so user sees the output of their script
       envVars,
       currentWorkingDirectory: tempDir,
-      throwOnNonZeroExitCode: true,
+      throwOnNonZeroExitCode: false,
     })
+
+    // if the shebang command failed, just exit.
+    // dont throw because user seeing decaf stacktrace doesn't make sense.
+    // also no need for logging because we already display all logs from the command.
+    if (result.exitCode !== 0) {
+      Deno.exit(result.exitCode)
+    }
   } catch (error) {
     throw error // re-throw to be caught by caller. we just need finally to run for cleanup.
   } finally {
