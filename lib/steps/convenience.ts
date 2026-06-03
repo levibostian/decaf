@@ -2,7 +2,7 @@ import { Environment } from "../environment.ts"
 import { Logger } from "../log.ts"
 import { GitCommit } from "../types/git.ts"
 import { Git } from "../git.ts"
-import globrex from "globrex"
+import { globToRegExp } from "@std/path/glob-to-regexp"
 
 /**
  * To make life easier for the user, we perform some prep to avoid common issues that can happen when running commands on
@@ -30,7 +30,7 @@ export class ConvenienceStepImpl implements ConvenienceStep {
     }
 
     return filters.some((filter) => {
-      const regex = globrex(filter).regex
+      const regex = globToRegExp(filter)
       return regex.test(branchName)
     })
   }
