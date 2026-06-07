@@ -95,6 +95,28 @@ export class ExecImpl implements Exec {
     //
     // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
     // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
+
+    /*
+     * ARCHITECTURE DECISION: Using 'sh -c' (Shell) vs. Direct Execution
+     *
+     * PROS:
+     * - Shell Features: Enables pipes (|), redirects (>, 2>&1), and globs (*).
+     * - Environment: Handles PATH resolution and environment variable expansion natively.
+     * - Logic: Easier for complex one-liners (e.g., "cd /tmp && ./run.sh").
+     *
+     * CONS:
+     * - SECURITY: High risk of Shell Injection if user input is concatenated.
+     * - PERFORMANCE: Slower; requires forking the shell AND the target process.
+     * - QUOTING: Escaping spaces and special characters becomes a "nesting hell."
+     * - SIGNALS: The shell may catch SIGTERM/SIGINT but not forward them to the child.
+     * - PORTABILITY: /bin/sh behavior varies (dash vs bash) across Linux distros.
+     *
+     * STRATEGY:
+     * - Use Direct Exec (spawn/execFile) for speed, security, and simple commands.
+     * - Use Shell (sh -c / exec) ONLY for complex piping where input is 100% sanitized.
+     *
+     * With all this being said, using "sh -c" does add value to the developer experience. Devs can write commands the same way they would in their terminal and it should run as they expect it to. If we used direct execution, there would be many commands and features that would not be allowed. Something like @david/dax module has a lot of shell features built-in but it still isn't a complete replacement of a real shell.
+     */
     const process = new Deno.Command("sh", {
       args: ["-c", command],
       stdout: "piped",
