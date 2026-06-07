@@ -3,7 +3,7 @@ import { assertEquals } from "@std/assert"
 import { DeployStepInput } from "./types/environment.ts"
 import { GitCommitFake } from "./types/git.test.ts"
 import { Logger } from "./log.ts"
-import { mock } from "./mock/mock.ts"
+import { mock, when } from "./mock/mock.ts"
 
 const logger = mock<Logger>()
 const exec = new ExecImpl(logger)
@@ -280,4 +280,41 @@ Deno.test("command with both input and custom envVars", async () => {
 
   assertEquals(exitCode, 0)
   assertEquals(stdout.startsWith("custom_value-"), true)
+})
+
+Deno.test("suppressCommandLogs defaults to false", async () => {
+  const logger = mock<Logger>()
+  const exec = new ExecImpl(logger)
+  const debugCalls: string[] = []
+
+  when(logger, "debug", (...data: unknown[]) => {
+    debugCalls.push(data.map((item) => String(item)).join(" "))
+  })
+
+  const result = await exec.run({
+    command: "true",
+    input: givenPluginInput,
+  })
+
+  assertEquals(result.exitCode, 0)
+  assertEquals(debugCalls.some((line) => line.includes(" $> true")), true)
+})
+
+Deno.test("suppressCommandLogs true hides command log", async () => {
+  const logger = mock<Logger>()
+  const exec = new ExecImpl(logger)
+  const debugCalls: string[] = []
+
+  when(logger, "debug", (...data: unknown[]) => {
+    debugCalls.push(data.map((item) => String(item)).join(" "))
+  })
+
+  const result = await exec.run({
+    command: "true",
+    input: givenPluginInput,
+    suppressCommandLogs: true,
+  })
+
+  assertEquals(result.exitCode, 0)
+  assertEquals(debugCalls.some((line) => line.includes(" $> true")), false)
 })

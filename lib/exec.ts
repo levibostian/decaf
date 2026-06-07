@@ -14,6 +14,7 @@ export interface Exec {
       command: string
       input: AnyStepInput | undefined
       displayLogs?: boolean
+      suppressCommandLogs?: boolean
       suppressOutputLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
@@ -40,10 +41,11 @@ export class ExecImpl implements Exec {
   }
 
   async run(
-    { command, input, displayLogs, suppressOutputLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
+    { command, input, displayLogs, suppressCommandLogs, suppressOutputLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
       command: string
       input: AnyStepInput | undefined
       displayLogs?: boolean
+      suppressCommandLogs?: boolean
       suppressOutputLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
@@ -52,10 +54,12 @@ export class ExecImpl implements Exec {
   ): Promise<RunResult> {
     const log = this.log
 
-    if (displayLogs) {
-      log.msg(` $> ${command}`)
-    } else {
-      log.debug(` $> ${command}`)
+    if (!suppressCommandLogs) {
+      if (displayLogs) {
+        log.msg(` $> ${command}`)
+      } else {
+        log.debug(` $> ${command}`)
+      }
     }
 
     const environmentVariablesToPassToCommand: { [key: string]: string } = envVars || {}
