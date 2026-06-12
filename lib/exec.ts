@@ -1,5 +1,6 @@
 import { AnyStepInput } from "./types/environment.ts"
 import { Logger } from "./log.ts"
+import { CommandBuilder } from "@david/shell"
 
 export interface RunResult {
   exitCode: number
@@ -86,60 +87,54 @@ export class ExecImpl implements Exec {
       environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
     }
 
-    // We want to capture the stdout of the command but we also want to stream it to the console. By using streams, this allows us to
-    // output the stdout/stderr to the console in real-time instead of waiting for the command to finish before we see the output.
-    //
-    // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
-    // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
-    const process = new Deno.Command("sh", {
-      args: ["-c", command],
-      stdout: "piped",
-      stderr: "piped",
-      env: environmentVariablesToPassToCommand,
-      cwd: currentWorkingDirectory,
-    })
-
-    const child = process.spawn()
-
     let capturedStdout = ""
     let capturedStderr = ""
 
-    child.stdout.pipeTo(
-      new WritableStream({
-        write(chunk) {
-          const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+    const builder = new CommandBuilder()
+      .command(command)
+      .stdout(
+        new WritableStream({
+          write(chunk) {
+            const decodedChunk = new TextDecoder().decode(chunk)
 
-          if (!suppressOutputLogs) {
-            if (displayLogs) {
-              log.msg(decodedChunk)
-            } else {
-              log.debug(decodedChunk)
+            if (!suppressOutputLogs) {
+              if (displayLogs) {
+                // passthrough exact command output so nested ::debug:: control lines are not mutated by sh-style.
+                log.log(decodedChunk)
+              } else {
+                log.debug(decodedChunk.trimEnd())
+              }
             }
-          }
 
-          capturedStdout += decodedChunk
-        },
-      }),
-    )
-    child.stderr.pipeTo(
-      new WritableStream({
-        write(chunk) {
-          const decodedChunk = new TextDecoder().decode(chunk).trimEnd()
+            capturedStdout += decodedChunk.trimEnd()
+          },
+        }),
+      )
+      .stderr(
+        new WritableStream({
+          write(chunk) {
+            const decodedChunk = new TextDecoder().decode(chunk)
 
-          if (!suppressOutputLogs) {
-            if (displayLogs) {
-              log.msg(decodedChunk)
-            } else {
-              log.debug(decodedChunk)
+            if (!suppressOutputLogs) {
+              if (displayLogs) {
+                // passthrough exact command output so nested ::debug:: control lines are not mutated by sh-style.
+                log.log(decodedChunk)
+              } else {
+                log.debug(decodedChunk.trimEnd())
+              }
             }
-          }
 
-          capturedStderr += decodedChunk
-        },
-      }),
-    )
+            capturedStderr += decodedChunk.trimEnd()
+          },
+        }),
+      )
+      .env(environmentVariablesToPassToCommand)
+      .cwd(currentWorkingDirectory || Deno.cwd())
+      .noThrow()
 
-    const code = (await child.status).code
+    const result = await builder.spawn()
+
+    const code = result.code
 
     let commandOutput: Record<string, unknown> | undefined = undefined
 

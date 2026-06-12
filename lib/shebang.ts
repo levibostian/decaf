@@ -9,11 +9,6 @@ type ParsedShebangCommand = {
   args: string
 }
 
-type ParsedFetchHead = {
-  refType: "tag" | "branch" | "commit"
-  refName: string
-}
-
 /**
  * Format: <git-clone-url>/<relative-file>@<ref> [args...]
  *
@@ -33,38 +28,6 @@ const parseShebangCommand = (command: string): ParsedShebangCommand | undefined 
     ref,
     args: rawArgs.trim(),
   }
-}
-
-const parseFetchHead = (contents: string): ParsedFetchHead | undefined => {
-  const firstLine = contents.split("\n").find((line) => line.trim())
-  if (!firstLine) return undefined
-
-  const [sha, ...rest] = firstLine.split("\t")
-  if (!sha?.trim()) return undefined
-
-  const description = rest.join("\t").trim()
-
-  const tagMatch = /tag '([^']+)'/.exec(description)
-  if (tagMatch) {
-    return { refType: "tag", refName: tagMatch[1] }
-  }
-
-  const branchMatch = /branch '([^']+)'/.exec(description)
-  if (branchMatch) {
-    return { refType: "branch", refName: branchMatch[1] }
-  }
-
-  const refTagMatch = /ref 'refs\/tags\/([^']+)'/.exec(description)
-  if (refTagMatch) {
-    return { refType: "tag", refName: refTagMatch[1] }
-  }
-
-  const refBranchMatch = /ref 'refs\/heads\/([^']+)'/.exec(description)
-  if (refBranchMatch) {
-    return { refType: "branch", refName: refBranchMatch[1] }
-  }
-
-  return { refType: "commit", refName: sha.trim() }
 }
 
 export async function runShebangCommand(
@@ -123,17 +86,6 @@ export async function runShebangCommand(
       throw new Error("Shebang target file not found")
     }
 
-    const commandToRun = parsed.args ? `${absoluteFilePath} ${parsed.args}` : absoluteFilePath
-
-    const fetchHeadContents = await Deno.readTextFile(join(tempDir, ".git", "FETCH_HEAD"))
-    const fetchHead = parseFetchHead(fetchHeadContents)
-    const envVars = fetchHead
-      ? {
-        DECAF_SHEBANG_REF: fetchHead.refType,
-        DECAF_SHEBANG_REF_NAME: fetchHead.refName,
-      }
-      : undefined
-
     await exec.run({
       command: `chmod +x ${absoluteFilePath}`,
       input: undefined,
@@ -141,14 +93,57 @@ export async function runShebangCommand(
       throwOnNonZeroExitCode: true,
     })
 
-    await exec.run({
+    const commandToRun = parsed.args ? `${absoluteFilePath} ${parsed.args}` : absoluteFilePath
+
+    let envVars = Deno.env.toObject()
+    logger.debug(`Running shebang command with env vars: ${JSON.stringify(envVars)}`)
+
+    const miseCheck = await exec.run({
+      command: "command -v mise",
+      input: undefined,
+      displayLogs: false,
+      throwOnNonZeroExitCode: false,
+    })
+
+    if (miseCheck.exitCode !== 0) {
+      logger.debug("Mise not found in PATH, installing it for shebang command...")
+
+      const installMiseResult = await exec.run({
+        command: "curl https://mise.run | MISE_INSTALL_PATH=~/.local/bin/mise sh",
+        input: undefined,
+        displayLogs: false,
+        throwOnNonZeroExitCode: true,
+      })
+
+      if (installMiseResult.exitCode === 0) {
+        logger.debug("Mise installed successfully, adding it to PATH for shebang command...")
+
+        const misePath = "~/.local/bin/mise"
+        const currentPath = Deno.env.get("PATH") || ""
+        const updatedPath = currentPath ? `${currentPath}:${misePath}` : misePath
+
+        envVars = {
+          ...envVars,
+          PATH: updatedPath,
+        }
+      }
+    }
+
+    const result = await exec.run({
       command: commandToRun,
       input: undefined,
       displayLogs: true, // so user sees the output of their script
-      currentWorkingDirectory: Deno.cwd(),
       envVars,
-      throwOnNonZeroExitCode: true,
+      currentWorkingDirectory: tempDir,
+      throwOnNonZeroExitCode: false,
     })
+
+    // if the shebang command failed, just exit.
+    // dont throw because user seeing decaf stacktrace doesn't make sense.
+    // also no need for logging because we already display all logs from the command.
+    if (result.exitCode !== 0) {
+      Deno.exit(result.exitCode)
+    }
   } catch (error) {
     throw error // re-throw to be caught by caller. we just need finally to run for cleanup.
   } finally {

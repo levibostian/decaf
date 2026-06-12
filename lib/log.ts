@@ -99,14 +99,37 @@ export class Logger implements ShStyleLogger, Pick<Console, "debug">, Pick<Conso
       //
       // Fix: split every argument on newlines before printing so each line gets its own ::debug:: prefix.
       data.forEach((item) => {
-        String(item).split("\n").forEach((line) => {
-          console.log(this.isOnGitHubActions ? `::debug::${line}` : line)
-        })
+        String(item)
+          .replace(/\r\n/g, "\n")
+          .replace(/\r/g, "\n")
+          .split("\n")
+          .forEach((line) => {
+            // must wrap text so we can put "::debug::" prefix in front of every line.
+            // if we dont wrap, github actions is going to wrap for us and it breaks debug
+            // logs because when it force wraps a line, it doesn't add the prefix for us.
+            this.wrapText(line, 110).forEach((lineToPrint) => {
+              const lineForOutput = this.isOnGitHubActions && lineToPrint.length === 0 ? "\u200B" : lineToPrint
+              process.stdout.write((this.isOnGitHubActions ? `::debug::${lineForOutput}` : lineForOutput) + "\n")
+            })
+          })
       })
     }
   }
   log(msg: string): void {
     this.lines.push(msg)
     process.stdout.write(msg)
+  }
+
+  private wrapText(str: string, maxLen = 120): string[] {
+    if (str.length === 0) {
+      return [""]
+    }
+
+    const lines: string[] = []
+    for (let i = 0; i < str.length; i += maxLen) {
+      lines.push(str.slice(i, i + maxLen))
+    }
+
+    return lines
   }
 }
