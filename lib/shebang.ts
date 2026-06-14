@@ -66,7 +66,6 @@ export async function runShebangCommand(
     // - For the user provided script, show the logs as if the script ran outside of decaf.
     const result = await exec.run({
       command: setupCommand,
-      input: undefined,
       displayLogs: false,
       suppressCommandLogs: true,
       suppressOutputLogs: true,
@@ -124,7 +123,6 @@ export async function runShebangCommand(
 
   const miseCheck = await exec.run({
     command: "command -v mise",
-    input: undefined,
     displayLogs: false,
     suppressCommandLogs: true,
     throwOnNonZeroExitCode: false,
@@ -133,7 +131,6 @@ export async function runShebangCommand(
   if (miseCheck.exitCode !== 0) {
     const installMiseResult = await exec.run({
       command: "curl https://mise.run | MISE_INSTALL_PATH=~/.local/bin/mise sh",
-      input: undefined,
       displayLogs: false,
       suppressCommandLogs: true,
       throwOnNonZeroExitCode: false,
@@ -153,7 +150,6 @@ export async function runShebangCommand(
 
   const shebangResult = await exec.run({
     command: commandToRun,
-    input: undefined,
     displayLogs: true,
     suppressCommandLogs: true, // the script is located in /tmp/ with a random string name so this would just look odd.
     envVars,

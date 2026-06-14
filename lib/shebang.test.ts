@@ -9,7 +9,6 @@ const successRunResult: RunResult = {
   exitCode: 0,
   stdout: "",
   stderr: "",
-  output: undefined,
 }
 
 Deno.test.beforeEach(() => {

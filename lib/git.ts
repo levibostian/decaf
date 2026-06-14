@@ -69,7 +69,6 @@ export class GitImpl implements Git {
     try {
       const { stdout: partialCloneConfig } = await this.exec.run({
         command: `git config --get remote.origin.partialclonefilter`,
-        input: undefined,
         currentWorkingDirectory: this.directory,
         displayLogs: false,
       })
@@ -81,7 +80,6 @@ export class GitImpl implements Git {
         // Remove the partial clone configuration to get all objects
         await this.exec.run({
           command: `git config --unset remote.origin.partialclonefilter`,
-          input: undefined,
           currentWorkingDirectory: this.directory,
         })
       }
@@ -95,7 +93,6 @@ export class GitImpl implements Git {
     try {
       await this.exec.run({
         command: `git fetch --unshallow --tags --all`,
-        input: undefined,
         currentWorkingDirectory: this.directory,
       })
     } catch (_error) {
@@ -105,7 +102,6 @@ export class GitImpl implements Git {
         // --tags ensures that we get all tags from the remote repository.
         // --all ensures that we get all branches from the origin remote.
         command: `git fetch --tags --all`,
-        input: undefined,
         currentWorkingDirectory: this.directory,
       })
     }
@@ -118,7 +114,6 @@ export class GitImpl implements Git {
         // Fetch all missing objects (blobs) from all reachable commits
         await this.exec.run({
           command: `git fetch origin --refetch`,
-          input: undefined,
           currentWorkingDirectory: this.directory,
         })
       } catch (_refetchError) {
@@ -126,7 +121,6 @@ export class GitImpl implements Git {
         this.log.debug(`--refetch not supported, trying alternative approach...`)
         await this.exec.run({
           command: `git fetch origin '+refs/heads/*:refs/heads/*' --force`,
-          input: undefined,
           currentWorkingDirectory: this.directory,
         })
       }
@@ -136,7 +130,6 @@ export class GitImpl implements Git {
   async checkoutBranch(args: { branch: string; createBranchIfNotExist: boolean }): Promise<void> {
     await this.exec.run({
       command: `git checkout ${args.createBranchIfNotExist ? "-b " : ""}${args.branch}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
   }
@@ -152,7 +145,6 @@ export class GitImpl implements Git {
     const escapedCommitMessage = shellQuote.quote([args.commitMessage])
     const result = await this.exec.run({
       command: `git merge ${args.branchToMergeIn} -m ${escapedCommitTitle} -m ${escapedCommitMessage} ${args.fastForward || ""}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
       throwOnNonZeroExitCode: false,
     })
@@ -169,7 +161,6 @@ export class GitImpl implements Git {
 
     await this.exec.run({
       command: `git pull origin ${currentBranchName}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
   }
@@ -177,13 +168,11 @@ export class GitImpl implements Git {
   async setUser(args: { name: string; email: string }): Promise<void> {
     await this.exec.run({
       command: `git config user.name "${args.name}"`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
 
     await this.exec.run({
       command: `git config user.email "${args.email}"`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
   }
@@ -203,7 +192,6 @@ export class GitImpl implements Git {
     // would occur with rebase but not with GitHub's own squash merge.
     const mergeResult = await this.exec.run({
       command: `git merge --squash ${args.branchToSquash}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
       throwOnNonZeroExitCode: false,
     })
@@ -219,7 +207,6 @@ export class GitImpl implements Git {
     const escapedCommitMessage = shellQuote.quote([args.commitMessage])
     await this.exec.run({
       command: `git commit -m ${escapedCommitTitle} -m ${escapedCommitMessage}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
   }
@@ -227,7 +214,6 @@ export class GitImpl implements Git {
   async rebase(args: { branchToRebaseOnto: string }): Promise<void> {
     const result = await this.exec.run({
       command: `git rebase ${args.branchToRebaseOnto}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
       throwOnNonZeroExitCode: false,
     })
@@ -275,14 +261,12 @@ export class GitImpl implements Git {
     const currentBranchName = await this.getCurrentBranch()
     const doesBranchExist = (await this.exec.run({
       command: `git branch --list ${args.branch}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })).stdout.trim() !== ""
     // Only run if it doesn't exist locally. This is to avoid a error that crashes the tool: "fatal: a branch named '<branch-name>' already exists"
     if (!doesBranchExist) {
       await this.exec.run({
         command: `git branch --track ${args.branch} origin/${args.branch}`,
-        input: undefined,
         currentWorkingDirectory: this.directory,
       })
     }
@@ -290,7 +274,6 @@ export class GitImpl implements Git {
     // Checkout the branch so we can pull it.
     await this.exec.run({
       command: `git checkout ${args.branch}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
 
@@ -299,14 +282,12 @@ export class GitImpl implements Git {
     // The error is: You have divergent branches and need to specify how to reconcile them.
     await this.exec.run({
       command: `git pull --no-rebase origin ${args.branch}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
 
     // Switch back to the branch we were on before.
     await this.exec.run({
       command: `git checkout ${currentBranchName}`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
   }
@@ -339,7 +320,6 @@ export class GitImpl implements Git {
        */
       command:
         `git log ${limitArg} --pretty=format:"[[⬛]]%H[⬛]%s[⬛]%B[⬛]%an[⬛]%ae[⬛]%cn[⬛]%ce[⬛]%ci[⬛]%P[⬛]%D" --numstat ${args.branch.ref}`,
-      input: undefined,
       displayLogs: false,
       // git log output is just wayyyyy too noisey. it has made debugging difficult to do.
       // sure, there can be an error in the git log command. if there is, I think we can make
@@ -442,7 +422,6 @@ export class GitImpl implements Git {
   async getCurrentBranch(): Promise<string> {
     const { stdout } = await this.exec.run({
       command: `git branch --show-current`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
     return stdout.trim()
@@ -455,7 +434,6 @@ export class GitImpl implements Git {
      */
     const { stdout } = await this.exec.run({
       command: `git branch -a --format='%(refname:short)'`,
-      input: undefined,
       currentWorkingDirectory: this.directory,
     })
 
@@ -551,7 +529,6 @@ export class GitRepoManagerImpl implements GitRepoManager {
     // Get the remote URL from the original repository
     const { stdout: remoteUrl } = await this.exec.run({
       command: `git config --get remote.origin.url`,
-      input: undefined,
     })
 
     // Clone directly from the remote URL instead of the local repository.
@@ -561,7 +538,6 @@ export class GitRepoManagerImpl implements GitRepoManager {
     this.log.debug(`Cloning from remote ${remoteUrl.trim()} to create isolated clone...`)
     await this.exec.run({
       command: `git clone ${remoteUrl.trim()} ${cloneDirectory}`,
-      input: undefined,
     })
 
     this.log.debug(`Created isolated git clone at ${cloneDirectory}`)
@@ -578,7 +554,6 @@ export class GitRepoManagerImpl implements GitRepoManager {
     // Using rm -rf is safe here because we created a temp directory specifically for this
     await this.exec.run({
       command: `rm -rf ${directory}`,
-      input: undefined,
     })
 
     this.log.debug(`Removed isolated git clone at ${directory}`)
