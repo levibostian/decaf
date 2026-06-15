@@ -5,11 +5,11 @@
     "jsr:@cross/env@^1.0.3": "1.0.3",
     "jsr:@cross/runtime@1": "1.2.1",
     "jsr:@david/console-static-text@~0.3.4": "0.3.4",
-    "jsr:@david/dax@0.48": "0.48.2",
+    "jsr:@david/dax@0.48": "0.48.3",
     "jsr:@david/path@0.3": "0.3.2",
     "jsr:@david/path@~0.3.2": "0.3.2",
     "jsr:@david/service-store@0.3": "0.3.1",
-    "jsr:@david/shell@~0.5.1": "0.5.1",
+    "jsr:@david/shell@~0.5.2": "0.5.2",
     "jsr:@david/which@0.7": "0.7.0",
     "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
     "jsr:@levibostian/sh-style@0.9": "0.9.0",
@@ -52,8 +52,8 @@
     "@david/console-static-text@0.3.4": {
       "integrity": "1c596f500b075ff3c8bab1d328ca7148a88067fd9a506b16a73eeaf230c229fd"
     },
-    "@david/dax@0.48.2": {
-      "integrity": "14e4656aad5542c39b6c963e8e9573a9d6ab31711bc7a1581608b68e2ca2b030",
+    "@david/dax@0.48.3": {
+      "integrity": "478cfa76677bfdef08f9eacc942a0bea35b3dc82239984a3a327fc09a1c4b5b7",
       "dependencies": [
         "jsr:@david/console-static-text",
         "jsr:@david/path@~0.3.2",
@@ -68,8 +68,8 @@
     "@david/service-store@0.3.1": {
       "integrity": "644853b912d281d42f00a1dff0bf1731a9c046d5db5c154350b40bda880bc6fb"
     },
-    "@david/shell@0.5.1": {
-      "integrity": "2469318121505246c0633fd0cc34e907d8ee1716cbe41264eb78026f31b53d6c",
+    "@david/shell@0.5.2": {
+      "integrity": "e6a1b9d3712373f2811d5c66a502afdd07c99d0aedbd910b0c2ea1744fe1dd88",
       "dependencies": [
         "jsr:@david/console-static-text",
         "jsr:@david/path@0.3",
