@@ -152,7 +152,22 @@ You will follow this pattern for all 3 of your deployment scripts. Now, let's be
 
 > Tip: Use the `current_working_directory` option to run all commands from a subdirectory (e.g., `current_working_directory: "./deployment"`). This keeps deployment scripts and dependencies separate from your application code. decaf also sets the `DECAF_ROOT_WORKING_DIRECTORY` environment variable to the root of your repository (where decaf is executed from), so you can change back to the root directory in your script. 
 >
-> **Shebang shortcut:** You can run a reusable script straight from any git repo using the `shebang` command: `decaf shebang <git-url>/<file>@<ref> [args...]`. Example: `decaf shebang git@github.com/levibostian/decaf-script-major-tag.git/run.ts@0.13.0 --commit-sha $(git rev-parse HEAD) --tag-prefix v`.
+
+### Create a shebang file to run your script
+
+If you create a script that is hosted in a separate repo outside of your project, consider making a *shebang file* to run your script. All you need to do is create a file that lives alongside your script, and it provides the command that runs your script. 
+
+Example of this file: 
+
+```bash
+#!/bin/bash
+
+mise exec -- node ./get-latest-release.js
+```
+
+The `mise exec --` part is a convenient way to install `node` if it's not already installed on the CI server using the [mise tool](https://mise.jdx.dev/). You can replace `node` with any language/runtime you want! 
+
+Then, in order to run your script, use the built-in decaf shebang command: `decaf shebang <git-url>/<file>@<ref> [args...]`. Example: `decaf shebang git@github.com/levibostian/decaf-script-major-tag.git/run.ts@0.13.0 --commit-sha $(git rev-parse HEAD) --tag-prefix v` (here, `run.ts` is the shebang file that runs the actual script in the repo).
 
 ### Deployment script 1: Get latest release version
 
