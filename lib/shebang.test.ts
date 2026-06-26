@@ -45,6 +45,7 @@ Deno.test("runShebangCommand - throws on invalid target", async () => {
 type CapturedRun = {
   command: string
   envVars?: { [key: string]: string }
+  currentWorkingDirectory?: string
 }
 
 const runAndCaptureCommands = async (
@@ -54,8 +55,8 @@ const runAndCaptureCommands = async (
   const execMock = mock<Exec>()
   const runs: CapturedRun[] = []
 
-  when(execMock, "run", async ({ command: execCommand, envVars }) => {
-    runs.push({ command: execCommand, envVars })
+  when(execMock, "run", async ({ command: execCommand, envVars, currentWorkingDirectory }) => {
+    runs.push({ command: execCommand, envVars, currentWorkingDirectory })
     return runResultForCommand?.(execCommand) ?? successRunResult
   })
 
@@ -90,6 +91,7 @@ Deno.test("runShebangCommand - clones and runs resolved command", async () => {
   assertEquals(runs[4].command, `chmod +x ${tempDir}/run.ts`)
   assertEquals(runs[5].command, "command -v mise")
   assertEquals(runs[6].command, `${tempDir}/run.ts --flag value`)
+  assertEquals(runs[6].currentWorkingDirectory, Deno.cwd())
 })
 
 Deno.test("runShebangCommand - parses clone URLs and refs", async () => {
@@ -136,6 +138,7 @@ Deno.test("runShebangCommand - parses clone URLs and refs", async () => {
     assertEquals(runs[2].command, `git -C ${tempDir} fetch --depth 1 origin ${scenario.ref}`)
     assertEquals(runs[4].command, `chmod +x ${tempDir}/run.ts`)
     assertEquals(runs[6].command, scenario.expectedRun)
+    assertEquals(runs[6].currentWorkingDirectory, Deno.cwd())
   }
 })
 
@@ -165,4 +168,5 @@ Deno.test("runShebangCommand - installs mise and appends PATH when missing", asy
   assertEquals(runs[5].command, "command -v mise")
   assertEquals(runs[6].command, "curl https://mise.run | MISE_INSTALL_PATH=~/.local/bin/mise sh")
   assertEquals(runs[7].envVars!["PATH"], "/usr/bin:~/.local/bin/mise")
+  assertEquals(runs[7].currentWorkingDirectory, Deno.cwd())
 })
