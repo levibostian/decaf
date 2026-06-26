@@ -152,7 +152,7 @@ export async function runShebangCommand(
     displayLogs: true,
     suppressCommandLogs: true, // the script is located in /tmp/ with a random string name so this would just look odd.
     envVars,
-    currentWorkingDirectory: Deno.cwd(),
+    currentWorkingDirectory: tempDir,
     throwOnNonZeroExitCode: false,
   })
 
