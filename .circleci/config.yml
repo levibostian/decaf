@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  gh: circleci/github-cli@2.7.2
+  gh: circleci/github-cli@3.0.0
 jobs:
   build:
     machine:
