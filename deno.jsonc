@@ -1,7 +1,7 @@
 {
   "imports": {
     "@david/service-store": "jsr:@david/service-store@^0.3.0",
-    "@david/dax": "jsr:@david/dax@^0.47.0",
+    "@david/dax": "jsr:@david/dax@^0.48.0",
     "@levibostian/cathy": "jsr:@levibostian/cathy@^2.0.1",
     "@levibostian/sh-style": "jsr:@levibostian/sh-style@^0.9.0",
     "@std/cli": "jsr:@std/cli@^1.0.20",
@@ -12,17 +12,14 @@
     "cathy": "npm:cathy@^1.4.0",
     "env-ci": "npm:env-ci@^11.2.0",
     "shell-quote": "npm:shell-quote@^1.8.2",
-    "globrex": "npm:globrex@^0.1.2",
     "ventojs": "npm:ventojs@^2.2.0"
   },
   "tasks": {
-    // run tests for deployment scripts. separate from main tests as they are different codebases. 
-    "test-deploy-scripts": "deno test --allow-all --config=steps/deno.jsonc", 
     "run-tests": "deno test --allow-all --junit-path reports/junit.xml --coverage=reports/coverage/ --coverage-raw-data-only",    
     // runs coverage twice - once for showing a table in terminal, once for generating lcov file for codecov
     "run-coverage": "deno coverage reports/coverage/ --include=$(pwd) && deno coverage reports/coverage/ --include=$(pwd) --lcov --output=reports/coverage.lcov",    
     // main test task that runs *all* tests and coverage commands. 
-    "test": "deno task test-deploy-scripts && deno task run-tests && deno task run-coverage", 
+    "test": "deno task run-tests && deno task run-coverage", 
     "test-update": "deno task test -- --update",
     // run a specific test file. example: 'deno task test-file tests/my-test-file.test.ts'
     "test-file": "deno test --allow-all",

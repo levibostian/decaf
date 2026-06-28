@@ -3,7 +3,7 @@ import { assertEquals } from "@std/assert"
 import { DeployStepInput } from "./types/environment.ts"
 import { GitCommitFake } from "./types/git.test.ts"
 import { Logger } from "./log.ts"
-import { mock } from "./mock/mock.ts"
+import { mock, when } from "./mock/mock.ts"
 
 const logger = mock<Logger>()
 const exec = new ExecImpl(logger)
@@ -32,7 +32,6 @@ const givenPluginInput: DeployStepInput = {
 Deno.test("allow commands that contain && that do not chain commands together", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `echo 'foo && bar'`,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -42,7 +41,6 @@ Deno.test("allow commands that contain && that do not chain commands together", 
 Deno.test("allow commands that contain && that chain commands together", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `echo 'foo' && echo 'bar'`,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -54,7 +52,6 @@ Deno.test("allow commands that use >> for output redirection", async () => {
   try {
     const { exitCode } = await exec.run({
       command: `echo "test_output" >> "${tempFile}"`,
-      input: givenPluginInput,
     })
 
     const content = await Deno.readTextFile(tempFile)
@@ -66,7 +63,7 @@ Deno.test("allow commands that use >> for output redirection", async () => {
 })
 
 Deno.test("given contextual input data, expect the executed command receives the input data", async () => {
-  const { exitCode, stdout } = await exec.run({
+  const { exitCode, stdout } = await exec.runStep({
     command: `python3 -c "import os; print(open(os.getenv('DECAF_COMM_FILE_PATH'), 'r').read());"`,
     input: givenPluginInput,
   })
@@ -76,7 +73,7 @@ Deno.test("given contextual input data, expect the executed command receives the
 })
 
 Deno.test("given command forgets to write the output, expect to get undefined for the output", async () => {
-  const { output } = await exec.run({
+  const { output } = await exec.runStep({
     command: `echo 'foo'`,
     input: givenPluginInput,
   })
@@ -85,7 +82,7 @@ Deno.test("given command forgets to write the output, expect to get undefined fo
 })
 
 Deno.test("given command writes output data to file, expect to get that data back", async () => {
-  const { output } = await exec.run({
+  const { output } = await exec.runStep({
     command: `python3 -c 'import json, os; json.dump({"filesToCommit": ["foo.txt"]}, open(os.getenv("DECAF_COMM_FILE_PATH"), "w"));'`,
     input: givenPluginInput,
   })
@@ -98,7 +95,6 @@ Deno.test("given command writes output data to file, expect to get that data bac
 Deno.test("throwOnNonZeroExitCode: false allows non-zero exit codes", async () => {
   const { exitCode } = await exec.run({
     command: `exit 42`,
-    input: givenPluginInput,
     throwOnNonZeroExitCode: false,
   })
 
@@ -111,7 +107,6 @@ Deno.test("throwOnNonZeroExitCode: true throws on non-zero exit code", async () 
   try {
     await exec.run({
       command: `exit 1`,
-      input: givenPluginInput,
       throwOnNonZeroExitCode: true,
     })
   } catch (error) {
@@ -128,7 +123,6 @@ Deno.test("default behavior throws on non-zero exit code", async () => {
   try {
     await exec.run({
       command: `exit 5`,
-      input: givenPluginInput,
     })
   } catch {
     caughtError = true
@@ -140,7 +134,6 @@ Deno.test("default behavior throws on non-zero exit code", async () => {
 Deno.test("envVars parameter passes custom environment variables", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `echo $CUSTOM_VAR`,
-    input: givenPluginInput,
     envVars: { CUSTOM_VAR: "test_value" },
   })
 
@@ -151,7 +144,6 @@ Deno.test("envVars parameter passes custom environment variables", async () => {
 Deno.test("envVars parameter supports multiple environment variables", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `echo "$VAR1-$VAR2-$VAR3"`,
-    input: givenPluginInput,
     envVars: {
       VAR1: "foo",
       VAR2: "bar",
@@ -166,7 +158,6 @@ Deno.test("envVars parameter supports multiple environment variables", async () 
 Deno.test("allow commands that use pipes", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `echo "hello world" | tr 'a-z' 'A-Z'`,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -176,7 +167,6 @@ Deno.test("allow commands that use pipes", async () => {
 Deno.test("allow commands that use semicolons to run commands sequentially", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `echo "first"; echo "second"`,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -187,7 +177,6 @@ Deno.test("allow commands that use semicolons to run commands sequentially", asy
 Deno.test("allow commands that use || operator", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `false || echo "fallback"`,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -197,7 +186,6 @@ Deno.test("allow commands that use || operator", async () => {
 Deno.test("commands with special characters in strings", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `echo 'special: $%^&*()[]{}|\\<>?'`,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -207,7 +195,6 @@ Deno.test("commands with special characters in strings", async () => {
 Deno.test("commands with quotes and escaping", async () => {
   const { exitCode, stdout } = await exec.run({
     command: `echo "she said \\"hello\\""`,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -219,7 +206,6 @@ Deno.test("command with > output redirection", async () => {
   try {
     const { exitCode } = await exec.run({
       command: `echo "test_output" > "${tempFile}"`,
-      input: givenPluginInput,
     })
 
     const content = await Deno.readTextFile(tempFile)
@@ -236,7 +222,6 @@ Deno.test("command with input redirection", async () => {
     await Deno.writeTextFile(tempFile, "input_data")
     const { exitCode, stdout } = await exec.run({
       command: `cat < "${tempFile}"`,
-      input: givenPluginInput,
     })
 
     assertEquals(exitCode, 0)
@@ -249,7 +234,6 @@ Deno.test("command with input redirection", async () => {
 Deno.test("command that writes to stderr still succeeds", async () => {
   const { exitCode } = await exec.run({
     command: `echo "error message" >&2`,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -262,7 +246,6 @@ Deno.test("complex multi-line command", async () => {
         echo "Line $i"
       done
     `,
-    input: givenPluginInput,
   })
 
   assertEquals(exitCode, 0)
@@ -272,7 +255,7 @@ Deno.test("complex multi-line command", async () => {
 })
 
 Deno.test("command with both input and custom envVars", async () => {
-  const { exitCode, stdout } = await exec.run({
+  const { exitCode, stdout } = await exec.runStep({
     command: `python3 -c "import os; print(os.getenv('CUSTOM_ENV') + '-' + os.getenv('DECAF_COMM_FILE_PATH')[:6])"`,
     input: givenPluginInput,
     envVars: { CUSTOM_ENV: "custom_value" },
@@ -280,4 +263,39 @@ Deno.test("command with both input and custom envVars", async () => {
 
   assertEquals(exitCode, 0)
   assertEquals(stdout.startsWith("custom_value-"), true)
+})
+
+Deno.test("suppressCommandLogs defaults to false", async () => {
+  const logger = mock<Logger>()
+  const exec = new ExecImpl(logger)
+  const debugCalls: string[] = []
+
+  when(logger, "debug", (...data: unknown[]) => {
+    debugCalls.push(data.map((item) => String(item)).join(" "))
+  })
+
+  const result = await exec.run({
+    command: "true",
+  })
+
+  assertEquals(result.exitCode, 0)
+  assertEquals(debugCalls.some((line) => line.includes(" $> true")), true)
+})
+
+Deno.test("suppressCommandLogs true hides command log", async () => {
+  const logger = mock<Logger>()
+  const exec = new ExecImpl(logger)
+  const debugCalls: string[] = []
+
+  when(logger, "debug", (...data: unknown[]) => {
+    debugCalls.push(data.map((item) => String(item)).join(" "))
+  })
+
+  const result = await exec.run({
+    command: "true",
+    suppressCommandLogs: true,
+  })
+
+  assertEquals(result.exitCode, 0)
+  assertEquals(debugCalls.some((line) => line.includes(" $> true")), false)
 })

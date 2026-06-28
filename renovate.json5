@@ -4,6 +4,7 @@
     "config:best-practices", 
     ":automergeDigest",
     ":automergeAll",
+    ":automergeRequireAllStatusChecks",
     ":separateMultipleMajorReleases",
     ":maintainLockFilesWeekly",
     "schedule:weekends",

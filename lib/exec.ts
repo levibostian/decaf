@@ -5,21 +5,39 @@ export interface RunResult {
   exitCode: number
   stdout: string
   stderr: string
+}
+
+export interface RunStepResult extends RunResult {
   output: Record<string, unknown> | undefined
 }
 
 export interface Exec {
+  // Very simple - just run the command.
   run: (
-    { command, input, displayLogs, currentWorkingDirectory }: {
+    { command, displayLogs, currentWorkingDirectory }: {
       command: string
-      input: AnyStepInput | undefined
       displayLogs?: boolean
+      suppressCommandLogs?: boolean
       suppressOutputLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
       currentWorkingDirectory?: string
     },
   ) => Promise<RunResult>
+
+  // Run the command, but as a decaf step. So, it includes more features like passing step input and getting output.
+  runStep: (
+    { command, input, displayLogs, currentWorkingDirectory }: {
+      command: string
+      input: AnyStepInput | undefined
+      displayLogs?: boolean
+      suppressCommandLogs?: boolean
+      suppressOutputLogs?: boolean
+      envVars?: { [key: string]: string }
+      throwOnNonZeroExitCode?: boolean
+      currentWorkingDirectory?: string
+    },
+  ) => Promise<RunStepResult>
 }
 
 /*
@@ -40,10 +58,10 @@ export class ExecImpl implements Exec {
   }
 
   async run(
-    { command, input, displayLogs, suppressOutputLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
+    { command, displayLogs, suppressCommandLogs, suppressOutputLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
       command: string
-      input: AnyStepInput | undefined
       displayLogs?: boolean
+      suppressCommandLogs?: boolean
       suppressOutputLogs?: boolean
       envVars?: { [key: string]: string }
       throwOnNonZeroExitCode?: boolean
@@ -52,45 +70,43 @@ export class ExecImpl implements Exec {
   ): Promise<RunResult> {
     const log = this.log
 
-    if (displayLogs) {
-      log.msg(` $> ${command}`)
-    } else {
-      log.debug(` $> ${command}`)
+    if (!suppressCommandLogs) {
+      if (displayLogs) {
+        log.msg(` $> ${command}`)
+      } else {
+        log.debug(` $> ${command}`)
+      }
     }
 
     const environmentVariablesToPassToCommand: { [key: string]: string } = envVars || {}
-
-    // For some features to work, we need to communicate with the command. We need to send data to it and read data that it produces.
-    // We use JSON as the data format to communicate with the command since pretty much every language has built-in support for it.
-    // Since we are creating subprocesses to run the command, we are limited in how we can communicate with the command.
-    // One common way would be to ask the subprocess to stdout a JSON string that we simply read, but this tool tries to promote stdout
-    // as a way to communicate with the user, not the tool. So instead, we write the JSON to a file and pass the file path to the command.
-    let tempFilePathToCommunicateWithCommand: string | undefined
-    let inputDataFileContents: string | undefined
-    if (input) {
-      tempFilePathToCommunicateWithCommand = await Deno.makeTempFile({
-        prefix: "decaf-",
-        suffix: ".json",
-      })
-      inputDataFileContents = JSON.stringify(input)
-      await Deno.writeTextFile(
-        tempFilePathToCommunicateWithCommand,
-        inputDataFileContents,
-      )
-
-      // Set environment variable to pass the file path to the user script.
-      //
-      // In v1.0, we plan to change the name of this environment variable to DECAF_COMM_FILE_PATH and remove the old one DATA_FILE_PATH.
-      // For now, we set both for backward compatibility.
-      environmentVariablesToPassToCommand["DECAF_COMM_FILE_PATH"] = tempFilePathToCommunicateWithCommand
-      environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
-    }
 
     // We want to capture the stdout of the command but we also want to stream it to the console. By using streams, this allows us to
     // output the stdout/stderr to the console in real-time instead of waiting for the command to finish before we see the output.
     //
     // using 'sh -c' allows us to run complex commands that contain &&, |, >, etc.
     // without it, commands like `echo "test" >> output.txt` would not work. you could only do simple commands like `echo "test"`.
+
+    /*
+     * ARCHITECTURE DECISION: Using 'sh -c' (Shell) vs. Direct Execution
+     *
+     * PROS:
+     * - Shell Features: Enables pipes (|), redirects (>, 2>&1), and globs (*).
+     * - Environment: Handles PATH resolution and environment variable expansion natively.
+     * - Logic: Easier for complex one-liners (e.g., "cd /tmp && ./run.sh").
+     *
+     * CONS:
+     * - SECURITY: High risk of Shell Injection if user input is concatenated.
+     * - PERFORMANCE: Slower; requires forking the shell AND the target process.
+     * - QUOTING: Escaping spaces and special characters becomes a "nesting hell."
+     * - SIGNALS: The shell may catch SIGTERM/SIGINT but not forward them to the child.
+     * - PORTABILITY: /bin/sh behavior varies (dash vs bash) across Linux distros.
+     *
+     * STRATEGY:
+     * - Use Direct Exec (spawn/execFile) for speed, security, and simple commands.
+     * - Use Shell (sh -c / exec) ONLY for complex piping where input is 100% sanitized.
+     *
+     * With all this being said, using "sh -c" does add value to the developer experience. Devs can write commands the same way they would in their terminal and it should run as they expect it to. If we used direct execution, there would be many commands and features that would not be allowed. Something like @david/dax module has a lot of shell features built-in but it still isn't a complete replacement of a real shell.
+     */
     const process = new Deno.Command("sh", {
       args: ["-c", command],
       stdout: "piped",
@@ -140,6 +156,74 @@ export class ExecImpl implements Exec {
     )
 
     const code = (await child.status).code
+
+    let shouldThrowError = true
+    if (throwOnNonZeroExitCode !== undefined && throwOnNonZeroExitCode == false) {
+      shouldThrowError = false
+    }
+
+    if (code !== 0 && shouldThrowError) {
+      throw new Error(`Command: ${command}, failed with exit code: ${code}`)
+    }
+
+    return {
+      exitCode: code,
+      stdout: capturedStdout,
+      stderr: capturedStderr,
+    }
+  }
+
+  async runStep(
+    { command, input, displayLogs, suppressCommandLogs, suppressOutputLogs, envVars, throwOnNonZeroExitCode, currentWorkingDirectory }: {
+      command: string
+      input: AnyStepInput | undefined
+      displayLogs?: boolean
+      suppressCommandLogs?: boolean
+      suppressOutputLogs?: boolean
+      envVars?: { [key: string]: string }
+      throwOnNonZeroExitCode?: boolean
+      currentWorkingDirectory?: string
+    },
+  ): Promise<RunStepResult> {
+    const log = this.log
+
+    const environmentVariablesToPassToCommand: { [key: string]: string } = envVars || {}
+
+    // For some features to work, we need to communicate with the command. We need to send data to it and read data that it produces.
+    // We use JSON as the data format to communicate with the command since pretty much every language has built-in support for it.
+    // Since we are creating subprocesses to run the command, we are limited in how we can communicate with the command.
+    // One common way would be to ask the subprocess to stdout a JSON string that we simply read, but this tool tries to promote stdout
+    // as a way to communicate with the user, not the tool. So instead, we write the JSON to a file and pass the file path to the command.
+    let tempFilePathToCommunicateWithCommand: string | undefined
+    let inputDataFileContents: string | undefined
+    if (input) {
+      tempFilePathToCommunicateWithCommand = await Deno.makeTempFile({
+        prefix: "decaf-",
+        suffix: ".json",
+      })
+      inputDataFileContents = JSON.stringify(input)
+      await Deno.writeTextFile(
+        tempFilePathToCommunicateWithCommand,
+        inputDataFileContents,
+      )
+
+      // Set environment variable to pass the file path to the user script.
+      //
+      // In v1.0, we plan to change the name of this environment variable to DECAF_COMM_FILE_PATH and remove the old one DATA_FILE_PATH.
+      // For now, we set both for backward compatibility.
+      environmentVariablesToPassToCommand["DECAF_COMM_FILE_PATH"] = tempFilePathToCommunicateWithCommand
+      environmentVariablesToPassToCommand["DATA_FILE_PATH"] = tempFilePathToCommunicateWithCommand
+    }
+
+    const { exitCode: code, stdout: capturedStdout, stderr: capturedStderr } = await this.run({
+      command,
+      displayLogs,
+      suppressCommandLogs,
+      suppressOutputLogs,
+      envVars: environmentVariablesToPassToCommand,
+      throwOnNonZeroExitCode,
+      currentWorkingDirectory,
+    })
 
     let commandOutput: Record<string, unknown> | undefined = undefined
 

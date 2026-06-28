@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  gh: circleci/github-cli@2.7.2
+  gh: circleci/github-cli@3.0.0
 jobs:
   build:
     machine:
@@ -36,9 +36,15 @@ jobs:
           command: |
             ./decaf \
               --github_token "$GH_TOKEN" \
-              --current_working_directory "steps/" \
-              --deploy "./deploy.ts" \
-              --get_latest_release_current_branch "./get-latest-release.ts" \
+              --deploy "OUTPUT_FILE_NAME=dist/bin-x86_64-Linux DENO_TARGET=x86_64-unknown-linux-gnu deno task compile && \
+                OUTPUT_FILE_NAME=dist/bin-aarch64-Linux DENO_TARGET=aarch64-unknown-linux-gnu deno task compile && \
+                OUTPUT_FILE_NAME=dist/bin-x86_64-Darwin DENO_TARGET=x86_64-apple-darwin deno task compile && \
+                OUTPUT_FILE_NAME=dist/bin-aarch64-Darwin DENO_TARGET=aarch64-apple-darwin deno task compile && \
+                deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-git.git/shebang.sh@shebang merge-into-release-branch --release-branch latest && \
+                deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-git.git/shebang.sh@shebang commit-and-push --add version.txt && \
+                deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@shebang set-github-release-assets dist/bin-x86_64-Linux#x86_64-unknown-linux-gnu dist/bin-aarch64-Linux#aarch64-unknown-linux-gnu dist/bin-x86_64-Darwin#x86_64-apple-darwin dist/bin-aarch64-Darwin#aarch64-apple-darwin && \
+                deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@shebang set --release-branch latest" \
+              --get_latest_release_current_branch "deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@shebang get --release-branch latest" \
               --get_next_release_version "deno run --allow-all --quiet jsr:@levibostian/decaf-script-conventional-commits" \
               --make_pull_request_comment false \
               --output_file "/tmp/decaf-output.json" \
