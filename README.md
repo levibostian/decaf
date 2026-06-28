@@ -169,6 +169,23 @@ The `mise exec --` part is a convenient way to install `node` if it's not alread
 
 Then, in order to run your script, use the built-in decaf shebang command: `decaf shebang <git-url>/<file>@<ref> [args...]`. Example: `decaf shebang git@github.com/levibostian/decaf-script-major-tag.git/run.ts@0.13.0 --commit-sha $(git rev-parse HEAD) --tag-prefix v` (here, `run.ts` is the shebang file that runs the actual script in the repo).
 
+> **Running scripts against the codebase:** The shebang script runs in the cloned repo's directory so it can resolve its own relative imports. If your script needs to operate on the codebase at the project root (e.g., reading/writing files in the user's project), use the `DECAF_ROOT_WORKING_DIRECTORY` environment variable to change back to the project root:
+> 
+> ```typescript
+> // TypeScript/Deno
+> Deno.chdir(Deno.env.get("DECAF_ROOT_WORKING_DIRECTORY")!);
+> ```
+> 
+> ```javascript
+> // JavaScript/Node
+> process.chdir(process.env.DECAF_ROOT_WORKING_DIRECTORY);
+> ```
+> 
+> ```bash
+> # Bash
+> cd "$DECAF_ROOT_WORKING_DIRECTORY"
+> ```
+
 ### Deployment script 1: Get latest release version
 
 When you decide to fully automate your deployment process, it becomes crucial that you store the latest successful deployment of your code somewhere. This becomes your single-source-of-truth for your latest release version. You can store this information anywhere you want, as long as **it is updated as the very last step of your deployment process**. 
