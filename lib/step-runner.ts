@@ -101,7 +101,7 @@ export class StepRunnerImpl implements StepRunner {
       // this.logger.debug(`Running step, ${step}. Input: ${JSON.stringify(input)}. Command: ${commandToRun}`)
       this.logger.debug(`Running step, ${step}. Command: ${commandToRun}`)
 
-      const runResult = await this.exec.run({
+      const runResult = await this.exec.runStep({
         command: commandToRun,
         input: input,
         displayLogs: true,

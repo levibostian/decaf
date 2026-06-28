@@ -23,14 +23,14 @@ Deno.test("checkoutBranch - should execute the expected command", async () => {
   await git.checkoutBranch({ branch: "main", createBranchIfNotExist: false })
 
   assertSpyCall(execMock, 0, {
-    args: [{ command: `git checkout main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
+    args: [{ command: `git checkout main`, currentWorkingDirectory: git.getDirectory() }],
   })
 
   // Now, test with createBranchIfNotExist
   await git.checkoutBranch({ branch: "main", createBranchIfNotExist: true })
 
   assertSpyCall(execMock, 1, {
-    args: [{ command: `git checkout -b main`, input: undefined, currentWorkingDirectory: git.getDirectory() }],
+    args: [{ command: `git checkout -b main`, currentWorkingDirectory: git.getDirectory() }],
   })
 })
 

@@ -157,7 +157,6 @@ export class EnvironmentImpl implements Environment {
     if (this.env.service == "github") {
       await this.exec.run({
         command: `echo "${key}=${value}" >> "$GITHUB_OUTPUT"`,
-        input: undefined,
       })
     }
 

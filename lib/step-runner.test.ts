@@ -47,7 +47,7 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
 
   const environment: Environment = mock()
   when(environment, "getCommandsForStep", () => [`echo '${JSON.stringify(expect)}'`])
-  const mockExec = { run: () => Promise.resolve({ output: undefined, stdout: JSON.stringify(expect), stderr: "", exitCode: 0 }) }
+  const mockExec = { runStep: () => Promise.resolve({ output: undefined, stdout: JSON.stringify(expect), stderr: "", exitCode: 0 }) }
   const stepRunner = new StepRunnerImpl({
     environment,
     exec: mockExec as unknown as ExecImpl,
@@ -269,7 +269,7 @@ Deno.test("deploy step runs all commands in order", async () => {
   when(environment, "getCommandsForStep", () => ["echo 'first'", "echo 'second'", "echo 'third'"])
 
   const mockExec = {
-    run: (args: { command: string }) => {
+    runStep: (args: { command: string }) => {
       executedCommands.push(args.command)
       return Promise.resolve({ output: undefined, stdout: "", stderr: "", exitCode: 0 })
     },
@@ -316,7 +316,7 @@ Deno.test("non-deploy step runs all commands and does not exit early", async () 
 
   const executedCommands: string[] = []
   const mockExec = {
-    run: (args: { command: string }) => {
+    runStep: (args: { command: string }) => {
       executedCommands.push(args.command)
       if (args.command.includes(JSON.stringify(firstOutput))) {
         return Promise.resolve({ output: firstOutput, stdout: "", stderr: "", exitCode: 0 })
@@ -372,7 +372,7 @@ Deno.test("scripts cumulatively merge all outputs so each script builds on all p
   const capturedCommands: string[] = []
   const capturedInputs: GetLatestReleaseStepInput[] = []
   const mockExec = {
-    run: (args: { command: string; input: GetLatestReleaseStepInput }) => {
+    runStep: (args: { command: string; input: GetLatestReleaseStepInput }) => {
       capturedCommands.push(args.command)
       capturedInputs.push(args.input)
       if (args.command === "script1") return Promise.resolve({ output: script1Output, stdout: "", stderr: "", exitCode: 0 })
@@ -433,7 +433,7 @@ Deno.test("scripts cannot override original decaf input fields via output", asyn
   const capturedCommands: string[] = []
   const capturedInputs: GetLatestReleaseStepInput[] = []
   const mockExec = {
-    run: (args: { command: string; input: GetLatestReleaseStepInput }) => {
+    runStep: (args: { command: string; input: GetLatestReleaseStepInput }) => {
       capturedCommands.push(args.command)
       capturedInputs.push(args.input)
       if (args.command === "script1") return Promise.resolve({ output: script1Output, stdout: "", stderr: "", exitCode: 0 })
@@ -515,7 +515,7 @@ Deno.test("all step runner methods run commands from user script working directo
   })
 
   const mockExec = {
-    run: (args: { command: string; currentWorkingDirectory?: string; envVars?: { [key: string]: string } }) => {
+    runStep: (args: { command: string; currentWorkingDirectory?: string; envVars?: { [key: string]: string } }) => {
       capturedCalls.push({ command: args.command, workingDirectory: args.currentWorkingDirectory, envVars: args.envVars })
 
       if (args.command.includes(JSON.stringify(getLatestReleaseOutput))) {
