@@ -4,7 +4,7 @@
 
 # decaf
 
-Simple, calm, and flexible tool to automate your project's deployments. 
+Simple, calm, and flexible tool to automate your project's deployments.
 
 **No more coffee breaks to deploy your code.**
 
