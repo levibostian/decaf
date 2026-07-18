@@ -5,12 +5,13 @@
     "jsr:@cross/env@^1.0.3": "1.0.3",
     "jsr:@cross/runtime@1": "1.2.1",
     "jsr:@david/console-static-text@~0.3.4": "0.3.4",
-    "jsr:@david/dax@0.48": "0.48.5",
-    "jsr:@david/path@0.3": "0.3.2",
-    "jsr:@david/path@~0.3.2": "0.3.2",
+    "jsr:@david/dax@0.49": "0.49.0",
+    "jsr:@david/path@0.3": "0.3.3",
+    "jsr:@david/path@~0.3.2": "0.3.3",
     "jsr:@david/service-store@0.3": "0.3.1",
-    "jsr:@david/shell@~0.5.4": "0.5.4",
-    "jsr:@david/which@0.7": "0.7.0",
+    "jsr:@david/shell@0.6": "0.6.0",
+    "jsr:@david/which@0.7": "0.7.3",
+    "jsr:@david/which@~0.7.1": "0.7.3",
     "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
     "jsr:@levibostian/sh-style@0.9": "0.9.0",
     "jsr:@std/assert@^1.0.12": "1.0.19",
@@ -28,6 +29,7 @@
     "jsr:@std/path@1": "1.1.6",
     "jsr:@std/path@^1.1.4": "1.1.6",
     "jsr:@std/path@^1.1.5": "1.1.6",
+    "jsr:@std/path@^1.1.6": "1.1.6",
     "jsr:@std/semver@^1.0.4": "1.0.8",
     "jsr:@std/testing@^1.0.10": "1.0.19",
     "npm:cathy@^1.4.0": "1.4.0",
@@ -52,35 +54,38 @@
     "@david/console-static-text@0.3.4": {
       "integrity": "1c596f500b075ff3c8bab1d328ca7148a88067fd9a506b16a73eeaf230c229fd"
     },
-    "@david/dax@0.48.5": {
-      "integrity": "5190696a2d6f87aee8c15cbb44fb1b80bc3eb6572c5dc796afd96014f36d86ce",
+    "@david/dax@0.49.0": {
+      "integrity": "9876274ff7cffd4d91c5e4bd362e55330bcecd3df8c4450d7c3db46e50e83111",
       "dependencies": [
         "jsr:@david/console-static-text",
         "jsr:@david/path@~0.3.2",
         "jsr:@david/shell",
-        "jsr:@david/which",
+        "jsr:@david/which@0.7",
         "jsr:@std/fmt@1"
       ]
     },
-    "@david/path@0.3.2": {
-      "integrity": "f25aaa3de4d3b9edfe25ca5edf15e3014fee7df4f77d64327e5300c27c1a0497"
+    "@david/path@0.3.3": {
+      "integrity": "19887b1c4ff36d1719b1697b4c10071853f13a85cf60e8713f6a6947e86271b0",
+      "dependencies": [
+        "jsr:@std/path@^1.1.6"
+      ]
     },
     "@david/service-store@0.3.1": {
       "integrity": "644853b912d281d42f00a1dff0bf1731a9c046d5db5c154350b40bda880bc6fb"
     },
-    "@david/shell@0.5.4": {
-      "integrity": "0074cef12702824072996beed09d0abb3476f0c27cd38aff0af1172a3a66a0ca",
+    "@david/shell@0.6.0": {
+      "integrity": "c58b1005b95ea16195d437cccebae3cd939c7b242a12067f37943b3d114dbf17",
       "dependencies": [
         "jsr:@david/console-static-text",
         "jsr:@david/path@0.3",
-        "jsr:@david/which",
+        "jsr:@david/which@~0.7.1",
         "jsr:@std/fmt@1",
         "jsr:@std/io",
         "jsr:@std/path@1"
       ]
     },
-    "@david/which@0.7.0": {
-      "integrity": "2e7517b28ecd2c99afe70284f2660f2c11548e5b684fa751889f105e0e4f8fe5"
+    "@david/which@0.7.3": {
+      "integrity": "ad6697179c4a153b774c59d06ebc056c4f87a9c27117ff74eecb120c245a2aea"
     },
     "@levibostian/cathy@2.0.1": {
       "integrity": "e4ad84fe2346faacfa96543178382a389f3f79c982f3fabe36f2fa732a2add9d"
@@ -255,7 +260,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@david/dax@0.48",
+      "jsr:@david/dax@0.49",
       "jsr:@david/service-store@0.3",
       "jsr:@levibostian/cathy@^2.0.1",
       "jsr:@levibostian/sh-style@0.9",
