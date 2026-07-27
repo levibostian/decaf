@@ -34,8 +34,8 @@
     "jsr:@std/testing@^1.0.10": "1.0.19",
     "npm:cathy@^1.4.0": "1.4.0",
     "npm:env-ci@^11.2.0": "11.2.0",
-    "npm:shell-quote@^1.8.2": "1.9.0",
-    "npm:ventojs@^2.2.0": "2.3.1"
+    "npm:shell-quote@^1.8.2": "1.10.0",
+    "npm:ventojs@^2.2.0": "2.4.0"
   },
   "jsr": {
     "@cross/deepmerge@1.0.1": {
@@ -238,8 +238,8 @@
     "shebang-regex@3.0.0": {
       "integrity": "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A=="
     },
-    "shell-quote@1.9.0": {
-      "integrity": "sha512-Iov+JwFv/2HcTpcwNMKd8+IWNb8tboQJNQTkAY/LLVK7gGH9jy+LGkVqPxfekHl+yMmiqXszdGWXgkfml7hjqA=="
+    "shell-quote@1.10.0": {
+      "integrity": "sha512-w1aiOKwKuRgtwAReIIj89puqg+I7GvX4IbLrvmhXbzQsj1+Zwi4VO3+fa6ZF91TWSjIxoEkKnMeHcLEODK5ZXA=="
     },
     "signal-exit@4.1.0": {
       "integrity": "sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw=="
@@ -247,8 +247,8 @@
     "strip-final-newline@3.0.0": {
       "integrity": "sha512-dOESqjYr96iWYylGObzd39EuNTa5VJxyvVAEm5Jnh7KGo75V43Hk1odPQkNDyXNmUR6k+gEiDVXnjB8HJ3crXw=="
     },
-    "ventojs@2.3.1": {
-      "integrity": "sha512-saGBMwQF+TZZJLTixSzwbZl+O5cNdBhMXNYAwegQ+/EsXSllSzrzgrZN7MU07ZOea3M+I/xBTwEFVb0HU6moUw=="
+    "ventojs@2.4.0": {
+      "integrity": "sha512-U2qmlBKdhkqwcbtU6ivk2K5zKTsTg9fgoODrAzoSQBzQn+c5Q7RfkOdWimb/IJqqkd5fyEzqEowC6mH0JuOhTQ=="
     },
     "which@2.0.2": {
       "integrity": "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==",
