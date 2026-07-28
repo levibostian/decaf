@@ -43,7 +43,7 @@ easier to work with. All of them are passed as input data into each of the scrip
  
 Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
  
-Parsing commits for the following git branches: ...
+Parsing commits for all remote branches...
  
 DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
       options.
@@ -131,7 +131,7 @@ easier to work with. All of them are passed as input data into each of the scrip
  
 Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
  
-Parsing commits for the following git branches: ...
+Parsing commits for all remote branches...
  
 DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
       options.
@@ -202,7 +202,7 @@ easier to work with. All of them are passed as input data into each of the scrip
  
 Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
  
-Parsing commits for the following git branches: ...
+Parsing commits for all remote branches...
  
 DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
       options.
@@ -284,6 +284,77 @@ The deployment process has completed. Bye-bye!
 "
 `;
 
+snapshot[`user facing logs > given branch filters configured, expect logs to list the specific branches 1`] = `
+"
+                                           __                             ___
+                                          /\\\\ \\\\                          /'___\\\\
+                                          \\\\_\\\\ \\\\     __    ___     __   /\\\\ \\\\__/
+                                          /'_' \\\\  /'__'\\\\ /'___\\\\ /'__'\\\\ \\\\ \\\\ ,__\\\\
+                                         /\\\\ \\\\L\\\\ \\\\/\\\\  __//\\\\ \\\\__//\\\\ \\\\L\\\\.\\\\_\\\\ \\\\ \\\\_/
+                                         \\\\ \\\\___,_\\\\ \\\\____\\\\ \\\\____\\\\ \\\\__/.\\\\_\\\\\\\\ \\\\_\\\\\\\\
+                                          \\\\/__,_ /\\\\/____/\\\\/____/\\\\/__/\\\\/_/ \\\\/_/
+  ========================================================================================================================
+                             Calm & reliable automated deployments. No more coffee breaks.
+========================================================================================================================
+ 
+Hello! I am a tool called decaf. I help you deploy your projects.
+ 
+Want to know the deployment process of this codebase? Continue reading where each step is explained to you. 
+Want to learn more about me? Visit the docs --> https://github.com/levibostian/decaf/
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Perform setup before running deployment
+------------------------------------------------------------------------------------------------------------------------
+ 
+Before we can start the deployment process, I need to perform some setup steps to prepare for the deployment.
+ 
+----------
+### Setting up git user config...
+----------
+ 
+For convenience, I set the git committer name and email, just in case you wanted to make any commits in your deployment commands:
+  name: github-actions[bot]
+  email: 41898282+github-actions[bot]@users.noreply.github.com
+ 
+If you would rather use a different name and email, you can change it with the \`git_config\` option.
+ 
+----------
+### Parsing git commits...
+----------
+ 
+To make writing scripts more convenient, I run \`git log\` and parse all of the git commits into a format that is much
+easier to work with. All of them are passed as input data into each of the scripts. 
+ 
+Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
+ 
+Parsing commits for the following git branches: main, develop...
+ 
+DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
+      options.
+ 
+------------------------------------------------------------------------------------------------------------------------
+## Find latest release & git commits made since then
+------------------------------------------------------------------------------------------------------------------------
+ 
+----------
+### Finding the latest release...
+----------
+ 
+I need to know the latest release that has been made so I can determine what has changed since then. To do that, I will
+run the script that you have provided for getting the latest release...
+ 
+DONE: The script told me that the latest release is version: v1.0.0, which was shipped from git commit: abc123
+ 
+----------
+### Finding all git commits created since the latest release...
+----------
+ 
+DONE: Looks like zero commits have been created since the latest release. This means there is no new code created and
+      therefore, the deployment process stops here. Bye-bye!
+ 
+"
+`;
+
 snapshot[`user facing logs > given running in test mode, given commits that trigger a release, expect logs to easily communicate that to the user 1`] = `
 "
                                            __                             ___
@@ -345,7 +416,7 @@ easier to work with. All of them are passed as input data into each of the scrip
  
 Docs for the format of the parsed git commits: https://github.com/levibostian/decaf/blob/main/lib/types/git.ts
  
-Parsing commits for the following git branches: ...
+Parsing commits for all remote branches...
  
 DONE: 0 commits parsed. If that took too long to run, you can optimize it with the \`branch_filters\` and \`commit_limit\`
       options.
