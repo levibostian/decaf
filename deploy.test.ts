@@ -295,6 +295,14 @@ describe("user facing logs", () => {
     await assertSnapshot(t, logger.lines.join(""))
   })
 
+  it("given branch filters configured, expect logs to list the specific branches", async (t) => {
+    const { logger } = await setupTestEnvironmentAndRun({
+      branchFilters: ["main", "develop"],
+    })
+
+    await assertSnapshot(t, logger.lines.join(""))
+  })
+
   it("given running in test mode, given commits that trigger a release, expect logs to easily communicate that to the user", async (t) => {
     const givenBaseBranch = "sweet-feature"
     const givenTargetBranch = "main"
@@ -453,6 +461,7 @@ const setupTestEnvironmentAndRun = async ({
   pullRequestsMerged,
   gitCommitsCurrentBranch,
   simulatedMergeType,
+  branchFilters,
 }: {
   latestRelease?: GetLatestReleaseStepOutput | null
   latestReleaseAfterDeploy?: GetLatestReleaseStepOutput | null
@@ -471,6 +480,7 @@ const setupTestEnvironmentAndRun = async ({
   }[]
   gitCommitsCurrentBranch?: GitCommit[]
   simulatedMergeType?: "merge" | "rebase" | "squash"
+  branchFilters?: string[]
 }) => {
   const logger = new Logger()
   logger.init() // must call init so we record the lines logged.
@@ -578,7 +588,7 @@ const setupTestEnvironmentAndRun = async ({
 
   // for simplicity, we return default values for these.
   stub(environment, "getBranchFilters", () => {
-    return []
+    return branchFilters ?? []
   })
   stub(environment, "getCommitLimit", () => {
     return 500
