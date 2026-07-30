@@ -128,7 +128,11 @@ Want to learn more about me? Visit the docs --> https://github.com/levibostian/d
   const branchFilters = environment.getBranchFilters()
   const commitLimit = environment.getCommitLimit()
 
-  log.msg(`Parsing commits for the following git branches: ${branchFilters?.join(", ") ?? currentBranch}...`)
+  if (branchFilters.length > 0) {
+    log.msg(`Parsing commits for the following git branches: ${branchFilters.join(", ")}...`)
+  } else {
+    log.msg(`Parsing commits for all remote branches...`)
+  }
 
   const { gitCommitsAllLocalBranches, gitCommitsCurrentBranch } = await convenienceStep.parseGitCommits(
     branchFilters,

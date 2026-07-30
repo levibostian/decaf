@@ -8,10 +8,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
     - name: Set up Deno
-      uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4
+      uses: jdx/mise-action@9e7f7633ff6f6d6048a9418a68d48f288f50eb14 # v4
 
     - name: Install dependencies
       run: deno install
@@ -35,7 +35,7 @@ jobs:
 
     - name: Annotate failed tests
       if: always() # Run with test/lint failures.
-      uses: granodigital/report-annotate@8443be89f9109669a14c838c42bc5fd08830cd6f # v3.3.4
+      uses: granodigital/report-annotate@fb08c421a3ccd6858ab1509848b9fe0ba1b7f48f # v3.3.5
       with:
         reports: |
           junit|reports/junit.xml
@@ -47,7 +47,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
     - name: Run install script
       run: ./install
