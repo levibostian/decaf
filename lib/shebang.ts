@@ -153,12 +153,10 @@ export async function runShebangCommand(
     suppressCommandLogs: true, // the script is located in /tmp/ with a random string name so this would just look odd.
     /**
      * We must run the shebang script in the directory where the script is located so it can resolve any relative paths it needs to run.
-     * We then pass in the DECAF_ROOT_WORKING_DIRECTORY environment variable so the script can then change to the working directory where the codebase is located and run it's commands there.
      */
     currentWorkingDirectory: tempDir,
     envVars: {
       ...envVars,
-      DECAF_ROOT_WORKING_DIRECTORY: Deno.cwd(),
     },
     throwOnNonZeroExitCode: false,
   })

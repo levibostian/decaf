@@ -23,16 +23,16 @@ jobs:
       with: 
         compile_binary: 'true'
         github_token: ${{ secrets.github_token }}
-        get_latest_release_current_branch: deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@0.2.0 get --release-branch latest
-        get_next_release_version: deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-conventional-commits.git/shebang.sh@0.3.1
+        get_latest_release_current_branch: decaf shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@put-root-dir-env-var-in-input get --release-branch latest
+        get_next_release_version: decaf shebang https://github.com/levibostian/decaf-script-conventional-commits.git/shebang.sh@0.3.1
         deploy: |
           OUTPUT_FILE_NAME=dist/bin-x86_64-Linux DENO_TARGET=x86_64-unknown-linux-gnu deno task compile
           OUTPUT_FILE_NAME=dist/bin-aarch64-Linux DENO_TARGET=aarch64-unknown-linux-gnu deno task compile
           OUTPUT_FILE_NAME=dist/bin-x86_64-Darwin DENO_TARGET=x86_64-apple-darwin deno task compile
           OUTPUT_FILE_NAME=dist/bin-aarch64-Darwin DENO_TARGET=aarch64-apple-darwin deno task compile 
-          deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-git.git/shebang.sh@0.3.0 merge-into-release-branch --release-branch latest
+          decaf shebang https://github.com/levibostian/decaf-script-git.git/shebang.sh@put-root-dir-env-var-in-input merge-into-release-branch --release-branch latest
           echo "{{nextVersionName}}" > version.txt
           cat version.txt
-          deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-git.git/shebang.sh@0.3.0 commit-and-push --add version.txt 
-          deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@0.2.0 set-github-release-assets dist/bin-x86_64-Linux#x86_64-unknown-linux-gnu dist/bin-aarch64-Linux#aarch64-unknown-linux-gnu dist/bin-x86_64-Darwin#x86_64-apple-darwin dist/bin-aarch64-Darwin#aarch64-apple-darwin
-          deno run --allow-all --quiet index.ts shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@0.2.0 set --release-branch latest
+          decaf shebang https://github.com/levibostian/decaf-script-git.git/shebang.sh@put-root-dir-env-var-in-input commit-and-push --add version.txt 
+          decaf shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@put-root-dir-env-var-in-input set-github-release-assets dist/bin-x86_64-Linux#x86_64-unknown-linux-gnu dist/bin-aarch64-Linux#aarch64-unknown-linux-gnu dist/bin-x86_64-Darwin#x86_64-apple-darwin dist/bin-aarch64-Darwin#aarch64-apple-darwin
+          decaf shebang https://github.com/levibostian/decaf-script-github-releases-release-branch.git/shebang.sh@put-root-dir-env-var-in-input set --release-branch latest

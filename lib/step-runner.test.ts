@@ -26,7 +26,6 @@ Deno.test("given output is in stdout, expect return latest step", async () => {
     environment,
     exec,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -34,6 +33,7 @@ Deno.test("given output is in stdout, expect return latest step", async () => {
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -52,7 +52,6 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
     environment,
     exec: mockExec as unknown as ExecImpl,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -60,6 +59,7 @@ Deno.test("given output is in stdout as JSON, expect output is returned", async 
     gitCurrentBranch: "main",
     gitRepoOwner: "owner",
     gitRepoName: "repo",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsAllLocalBranches: {},
     gitCommitsCurrentBranch: [],
@@ -75,7 +75,6 @@ Deno.test("given no command for step, expect return null", async () => {
     environment,
     exec,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -83,6 +82,7 @@ Deno.test("given no command for step, expect return null", async () => {
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -98,7 +98,6 @@ Deno.test("given output is not valid, expect null is returned", async () => {
     environment,
     exec,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -106,6 +105,7 @@ Deno.test("given output is not valid, expect null is returned", async () => {
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -132,7 +132,6 @@ Deno.test("supports template engine in command string", async () => {
     environment,
     exec,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -140,6 +139,7 @@ Deno.test("supports template engine in command string", async () => {
     gitCurrentBranch: "main",
     gitRepoOwner: "owner",
     gitRepoName: "repo",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsAllLocalBranches: {
       "branch-1": [
@@ -181,7 +181,6 @@ Deno.test("runGetLatestOnCurrentBranchReleaseStep - given return latest release 
     environment,
     exec,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -189,6 +188,7 @@ Deno.test("runGetLatestOnCurrentBranchReleaseStep - given return latest release 
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -210,7 +210,6 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
     environment,
     exec,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -218,6 +217,7 @@ Deno.test("determineNextReleaseVersionStep - given return next release as JSON, 
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -239,7 +239,6 @@ Deno.test("runDeployStep - given deploy command, expect to run successfully with
     environment,
     exec,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -247,6 +246,7 @@ Deno.test("runDeployStep - given deploy command, expect to run successfully with
     gitCurrentBranch: "main",
     gitRepoOwner: "owner",
     gitRepoName: "repo",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -279,7 +279,6 @@ Deno.test("deploy step runs all commands in order", async () => {
     environment,
     exec: mockExec as unknown as ExecImpl,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -287,6 +286,7 @@ Deno.test("deploy step runs all commands in order", async () => {
     gitCurrentBranch: "main",
     gitRepoOwner: "owner",
     gitRepoName: "repo",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -329,7 +329,6 @@ Deno.test("non-deploy step runs all commands and does not exit early", async () 
     environment,
     exec: mockExec as unknown as ExecImpl,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -337,6 +336,7 @@ Deno.test("non-deploy step runs all commands and does not exit early", async () 
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -385,7 +385,6 @@ Deno.test("scripts cumulatively merge all outputs so each script builds on all p
     environment,
     exec: mockExec as unknown as ExecImpl,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -393,6 +392,7 @@ Deno.test("scripts cumulatively merge all outputs so each script builds on all p
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -445,7 +445,6 @@ Deno.test("scripts cannot override original decaf input fields via output", asyn
     environment,
     exec: mockExec as unknown as ExecImpl,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -453,6 +452,7 @@ Deno.test("scripts cannot override original decaf input fields via output", asyn
     gitCurrentBranch: "main",
     gitRepoOwner: "original-owner",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -478,7 +478,6 @@ Deno.test("non-deploy step returns null if all commands have invalid output", as
     environment,
     exec,
     logger,
-    gitRootDirectory: Deno.cwd(),
     userScriptCurrentWorkingDirectory: Deno.cwd(),
   })
 
@@ -486,6 +485,7 @@ Deno.test("non-deploy step returns null if all commands have invalid output", as
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: Deno.cwd(),
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -501,8 +501,7 @@ Deno.test("non-deploy step returns null if all commands have invalid output", as
  * Tests for working directory behavior.
  */
 
-Deno.test("all step runner methods run commands from user script working directory and set DECAF_ROOT_WORKING_DIRECTORY env var", async () => {
-  const testGitRootDirectory = "/test/git/root"
+Deno.test("all step runner methods run commands from user script working directory", async () => {
   const testUserScriptWorkingDirectory = "/test/git/root/subdirectory"
   const getLatestReleaseOutput: GetLatestReleaseStepOutput = { versionName: "1.0.0", commitSha: "abc" }
   const getNextVersionOutput: GetNextReleaseVersionStepOutput = { version: "2.0.0" }
@@ -532,7 +531,6 @@ Deno.test("all step runner methods run commands from user script working directo
     environment,
     exec: mockExec as unknown as ExecImpl,
     logger,
-    gitRootDirectory: testGitRootDirectory,
     userScriptCurrentWorkingDirectory: testUserScriptWorkingDirectory,
   })
 
@@ -541,6 +539,7 @@ Deno.test("all step runner methods run commands from user script working directo
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: testUserScriptWorkingDirectory,
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -550,6 +549,7 @@ Deno.test("all step runner methods run commands from user script working directo
     gitCurrentBranch: "main",
     gitRepoOwner: "test",
     gitRepoName: "test",
+    gitRootDirectory: testUserScriptWorkingDirectory,
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -561,6 +561,7 @@ Deno.test("all step runner methods run commands from user script working directo
     gitCurrentBranch: "main",
     gitRepoOwner: "owner",
     gitRepoName: "repo",
+    gitRootDirectory: testUserScriptWorkingDirectory,
     testMode: false,
     gitCommitsCurrentBranch: [],
     gitCommitsAllLocalBranches: {},
@@ -584,21 +585,4 @@ Deno.test("all step runner methods run commands from user script working directo
     "determineNextReleaseVersionStep should run from user script working directory",
   )
   assertEquals(capturedCalls[2].workingDirectory, testUserScriptWorkingDirectory, "runDeployStep should run from user script working directory")
-
-  // Verify all three commands received DECAF_ROOT_WORKING_DIRECTORY env var with correct value
-  assertEquals(
-    capturedCalls[0].envVars?.DECAF_ROOT_WORKING_DIRECTORY,
-    testGitRootDirectory,
-    "runGetLatestOnCurrentBranchReleaseStep should pass DECAF_ROOT_WORKING_DIRECTORY env var",
-  )
-  assertEquals(
-    capturedCalls[1].envVars?.DECAF_ROOT_WORKING_DIRECTORY,
-    testGitRootDirectory,
-    "determineNextReleaseVersionStep should pass DECAF_ROOT_WORKING_DIRECTORY env var",
-  )
-  assertEquals(
-    capturedCalls[2].envVars?.DECAF_ROOT_WORKING_DIRECTORY,
-    testGitRootDirectory,
-    "runDeployStep should pass DECAF_ROOT_WORKING_DIRECTORY env var",
-  )
 })
