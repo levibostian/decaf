@@ -4,13 +4,12 @@
     "jsr:@cross/deepmerge@1": "1.0.1",
     "jsr:@cross/env@^1.0.3": "1.0.5",
     "jsr:@cross/runtime@1": "1.2.1",
-    "jsr:@david/console-static-text@~0.3.4": "0.3.4",
-    "jsr:@david/dax@0.50": "0.50.0",
-    "jsr:@david/path@~0.3.2": "0.3.3",
-    "jsr:@david/path@~0.3.3": "0.3.3",
+    "jsr:@david/console-static-text@~0.3.5": "0.3.5",
+    "jsr:@david/dax@0.50": "0.50.1",
+    "jsr:@david/path@~0.3.4": "0.3.4",
     "jsr:@david/service-store@0.3": "0.3.1",
-    "jsr:@david/shell@0.7": "0.7.0",
-    "jsr:@david/which@~0.7.3": "0.7.3",
+    "jsr:@david/shell@~0.7.2": "0.7.2",
+    "jsr:@david/which@~0.7.4": "0.7.4",
     "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
     "jsr:@levibostian/sh-style@0.9": "0.9.0",
     "jsr:@std/assert@^1.0.12": "1.0.19",
@@ -33,8 +32,8 @@
     "jsr:@std/testing@^1.0.10": "1.0.21",
     "npm:cathy@^1.4.0": "1.4.0",
     "npm:env-ci@^11.2.0": "11.2.0",
-    "npm:shell-quote@^1.8.2": "1.10.0",
-    "npm:ventojs@^2.2.0": "2.4.0"
+    "npm:shell-quote@^1.8.2": "1.12.0",
+    "npm:ventojs@^2.2.0": "2.4.1"
   },
   "jsr": {
     "@cross/deepmerge@1.0.1": {
@@ -50,19 +49,19 @@
     "@cross/runtime@1.2.1": {
       "integrity": "f462fcf2fd678f9073291b4e55209b90f58c8d508764a84205d178abdcf22fc9"
     },
-    "@david/console-static-text@0.3.4": {
-      "integrity": "1c596f500b075ff3c8bab1d328ca7148a88067fd9a506b16a73eeaf230c229fd"
+    "@david/console-static-text@0.3.5": {
+      "integrity": "7a6ab3610e6f0fa5743d56f7a05347a96afa9fae19de2d84ff964f09de441101"
     },
-    "@david/dax@0.50.0": {
-      "integrity": "a933f3b60aa1343ac069f17c946e4807b64ebfcdc3f5541b805f3d7237c568c2",
+    "@david/dax@0.50.1": {
+      "integrity": "baa67d0dda45447ff846bfa1ee25d070770ff1d6f92cf1edd512cf75a5e8e6d5",
       "dependencies": [
         "jsr:@david/console-static-text",
-        "jsr:@david/path@~0.3.2",
+        "jsr:@david/path",
         "jsr:@david/shell"
       ]
     },
-    "@david/path@0.3.3": {
-      "integrity": "19887b1c4ff36d1719b1697b4c10071853f13a85cf60e8713f6a6947e86271b0",
+    "@david/path@0.3.4": {
+      "integrity": "6e9c8e8914401fa7489c50cc9214d5593229bdeb96b23c494f43ed2a518cbf67",
       "dependencies": [
         "jsr:@std/path@^1.1.6"
       ]
@@ -70,19 +69,19 @@
     "@david/service-store@0.3.1": {
       "integrity": "644853b912d281d42f00a1dff0bf1731a9c046d5db5c154350b40bda880bc6fb"
     },
-    "@david/shell@0.7.0": {
-      "integrity": "320f6f9584c3ce582428a969457a7cf110891b66151ac11a83c78b760b3641d4",
+    "@david/shell@0.7.2": {
+      "integrity": "faea8457525c58c8409c189107a67abbfff7d9f3de6b3a369ee635be474b33ee",
       "dependencies": [
         "jsr:@david/console-static-text",
-        "jsr:@david/path@~0.3.3",
+        "jsr:@david/path",
         "jsr:@david/which",
         "jsr:@std/fmt@1",
         "jsr:@std/io",
         "jsr:@std/path@1"
       ]
     },
-    "@david/which@0.7.3": {
-      "integrity": "ad6697179c4a153b774c59d06ebc056c4f87a9c27117ff74eecb120c245a2aea"
+    "@david/which@0.7.4": {
+      "integrity": "b4ed8e7f489b3689afb4b8315944211c807f91c03229e48ab888e55336c73087"
     },
     "@levibostian/cathy@2.0.1": {
       "integrity": "e4ad84fe2346faacfa96543178382a389f3f79c982f3fabe36f2fa732a2add9d"
@@ -235,8 +234,8 @@
     "shebang-regex@3.0.0": {
       "integrity": "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A=="
     },
-    "shell-quote@1.10.0": {
-      "integrity": "sha512-w1aiOKwKuRgtwAReIIj89puqg+I7GvX4IbLrvmhXbzQsj1+Zwi4VO3+fa6ZF91TWSjIxoEkKnMeHcLEODK5ZXA=="
+    "shell-quote@1.12.0": {
+      "integrity": "sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q=="
     },
     "signal-exit@4.1.0": {
       "integrity": "sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw=="
@@ -244,8 +243,8 @@
     "strip-final-newline@3.0.0": {
       "integrity": "sha512-dOESqjYr96iWYylGObzd39EuNTa5VJxyvVAEm5Jnh7KGo75V43Hk1odPQkNDyXNmUR6k+gEiDVXnjB8HJ3crXw=="
     },
-    "ventojs@2.4.0": {
-      "integrity": "sha512-U2qmlBKdhkqwcbtU6ivk2K5zKTsTg9fgoODrAzoSQBzQn+c5Q7RfkOdWimb/IJqqkd5fyEzqEowC6mH0JuOhTQ=="
+    "ventojs@2.4.1": {
+      "integrity": "sha512-6UrIusjh+2gCfSzomX9WXVe9bCC3eryOst3HmPb+ZhS8i+80FhZDiWuqlqwOqeKxobNz0GvcXwSQJrWfgA0CeQ=="
     },
     "which@2.0.2": {
       "integrity": "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==",
