@@ -7,7 +7,7 @@
     "jsr:@david/console-static-text@~0.3.5": "0.3.5",
     "jsr:@david/dax@0.50": "0.50.1",
     "jsr:@david/path@~0.3.4": "0.3.4",
-    "jsr:@david/service-store@0.3": "0.3.1",
+    "jsr:@david/service-store@0.3": "0.3.2",
     "jsr:@david/shell@~0.7.2": "0.7.2",
     "jsr:@david/which@~0.7.4": "0.7.4",
     "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
@@ -66,8 +66,8 @@
         "jsr:@std/path@^1.1.6"
       ]
     },
-    "@david/service-store@0.3.1": {
-      "integrity": "644853b912d281d42f00a1dff0bf1731a9c046d5db5c154350b40bda880bc6fb"
+    "@david/service-store@0.3.2": {
+      "integrity": "0401ded0c4fe9fa9b1ee985b9b33ef5f6decffb49548ba8520a84a219c306dfe"
     },
     "@david/shell@0.7.2": {
       "integrity": "faea8457525c58c8409c189107a67abbfff7d9f3de6b3a369ee635be474b33ee",
