@@ -8,8 +8,8 @@
     "jsr:@david/dax@0.50": "0.50.2",
     "jsr:@david/path@~0.3.4": "0.3.4",
     "jsr:@david/service-store@0.3": "0.3.2",
-    "jsr:@david/shell@~0.7.2": "0.7.2",
-    "jsr:@david/which@~0.7.4": "0.7.4",
+    "jsr:@david/shell@~0.7.2": "0.7.3",
+    "jsr:@david/which@0.8": "0.8.0",
     "jsr:@levibostian/cathy@^2.0.1": "2.0.1",
     "jsr:@levibostian/sh-style@0.9": "0.9.0",
     "jsr:@std/assert@^1.0.12": "1.0.19",
@@ -69,8 +69,8 @@
     "@david/service-store@0.3.2": {
       "integrity": "0401ded0c4fe9fa9b1ee985b9b33ef5f6decffb49548ba8520a84a219c306dfe"
     },
-    "@david/shell@0.7.2": {
-      "integrity": "faea8457525c58c8409c189107a67abbfff7d9f3de6b3a369ee635be474b33ee",
+    "@david/shell@0.7.3": {
+      "integrity": "8e97cfb695618038dc94505d2cf36dcadb6e76a1b8c28ed28680163f9fb5730e",
       "dependencies": [
         "jsr:@david/console-static-text",
         "jsr:@david/path",
@@ -80,8 +80,8 @@
         "jsr:@std/path@1"
       ]
     },
-    "@david/which@0.7.4": {
-      "integrity": "b4ed8e7f489b3689afb4b8315944211c807f91c03229e48ab888e55336c73087"
+    "@david/which@0.8.0": {
+      "integrity": "7095cce2671bcd0fb6c87a15e0b651f44d3fa876cf376bb45cf9322eaee7f3b2"
     },
     "@levibostian/cathy@2.0.1": {
       "integrity": "e4ad84fe2346faacfa96543178382a389f3f79c982f3fabe36f2fa732a2add9d"
