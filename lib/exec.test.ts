@@ -12,6 +12,7 @@ const givenPluginInput: DeployStepInput = {
   gitCurrentBranch: "main",
   gitRepoOwner: "owner",
   gitRepoName: "repo",
+  gitRootDirectory: Deno.cwd(),
   gitCommitsSinceLastRelease: [],
   nextVersionName: "1.0.0",
   testMode: true,

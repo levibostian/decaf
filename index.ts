@@ -110,7 +110,6 @@ export async function main() {
           environment,
           exec,
           logger,
-          gitRootDirectory: git.getDirectory(),
           userScriptCurrentWorkingDirectory: environment.getUserScriptCurrentWorkingDirectory(git.getDirectory()),
         }),
         prepareEnvironmentForTestMode: new PrepareTestModeEnvStepImpl(githubApi, environment, new SimulateMergeImpl(git, logger), git),
